@@ -141,7 +141,7 @@ module "bindplane-gke" {
   }
   bindplane_secrets = {
     user            = "admin"
-    password        = "thisisnotasecret"
+    password        = "sample"
     sessions_secret = "xxxxxx-xxxxxxx-xxxxxx"
     license         = "XXXXXXXXXXXXXXXXXXXXXX"
   }
