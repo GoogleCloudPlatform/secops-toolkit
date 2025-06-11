@@ -187,6 +187,14 @@ variable "secops_data_rbac_config" {
   default = {}
 }
 
+variable "monitoring_config" {
+  description = "Cloud Monitoring configuration for SecOps."
+  type = object({
+    enabled = optional(bool, false)
+    notification_emails = optional(list(string), [])
+  })
+}
+
 variable "network_config" {
   description = "VPC config."
   type = object({

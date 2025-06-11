@@ -143,7 +143,7 @@ locals {
     secops_ASSETS_CONFIG = local.secops_assets_config
     CONTENT_TYPE         = "RESOURCE"
     PAGE_SIZE            = 1000
-    ORG_ID               = try(var.organization.id, "")
+    ORG_ID               = try(var.organization_id, "")
   }
 }
 
