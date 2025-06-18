@@ -1,0 +1,957 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+values:
+  google_cloud_scheduler_job.anonymization_jobs["anonymize-data"]:
+    app_engine_http_target: []
+    attempt_deadline: 320s
+    description: Trigger SecOps anonymization function.
+    http_target:
+      - body: eyJBQ1RJT04iOiJBTk9OWU1JWkUtREFUQSJ9
+        headers:
+          Content-Type: application/json
+        http_method: POST
+        oauth_token: []
+        oidc_token:
+          - service_account_email: secops-anonymization-scheduler@gcp-project-id.iam.gserviceaccount.com
+    name: secops_anonymize-data
+    project: gcp-project-id
+    pubsub_target: []
+    region: europe-west1
+    retry_config:
+      - retry_count: 1
+    schedule: 0 12 29 2 *
+    time_zone: Etc/UTC
+    timeouts: null
+  google_cloud_scheduler_job.anonymization_jobs["import-data"]:
+    app_engine_http_target: []
+    attempt_deadline: 320s
+    description: Trigger SecOps anonymization function.
+    http_target:
+      - body: eyJBQ1RJT04iOiJJTVBPUlQtREFUQSJ9
+        headers:
+          Content-Type: application/json
+        http_method: POST
+        oauth_token: []
+        oidc_token:
+          - service_account_email: secops-anonymization-scheduler@gcp-project-id.iam.gserviceaccount.com
+    name: secops_import-data
+    project: gcp-project-id
+    pubsub_target: []
+    region: europe-west1
+    retry_config:
+      - retry_count: 1
+    schedule: 0 13 29 2 *
+    time_zone: Etc/UTC
+    timeouts: null
+  google_cloud_scheduler_job.anonymization_jobs["trigger-export"]:
+    app_engine_http_target: []
+    attempt_deadline: 320s
+    description: Trigger SecOps anonymization function.
+    http_target:
+      - body: eyJBQ1RJT04iOiJUUklHR0VSLUVYUE9SVCJ9
+        headers:
+          Content-Type: application/json
+        http_method: POST
+        oauth_token: []
+        oidc_token:
+          - service_account_email: secops-anonymization-scheduler@gcp-project-id.iam.gserviceaccount.com
+    name: secops_trigger-export
+    project: gcp-project-id
+    pubsub_target: []
+    region: europe-west1
+    retry_config:
+      - retry_count: 1
+    schedule: 0 8 29 2 *
+    time_zone: Etc/UTC
+    timeouts: null
+  google_data_loss_prevention_deidentify_template.dlp_deidentify_template[0]:
+    deidentify_config:
+      - image_transformations: []
+        info_type_transformations:
+          - transformations:
+              - info_types:
+                  - name: PHONE_NUMBER
+                    sensitivity_score: []
+                    version: null
+                primitive_transformation:
+                  - bucketing_config: []
+                    character_mask_config: []
+                    crypto_deterministic_config: []
+                    crypto_hash_config: []
+                    crypto_replace_ffx_fpe_config: []
+                    date_shift_config: []
+                    fixed_size_bucketing_config: []
+                    redact_config: []
+                    replace_config:
+                      - new_value:
+                          - boolean_value: null
+                            date_value: []
+                            day_of_week_value: null
+                            float_value: null
+                            integer_value: 3333333333
+                            string_value: null
+                            time_value: []
+                            timestamp_value: null
+                    replace_dictionary_config: []
+                    replace_with_info_type_config: null
+                    time_part_config: []
+              - info_types:
+                  - name: AGE
+                    sensitivity_score: []
+                    version: null
+                primitive_transformation:
+                  - bucketing_config: []
+                    character_mask_config: []
+                    crypto_deterministic_config: []
+                    crypto_hash_config: []
+                    crypto_replace_ffx_fpe_config: []
+                    date_shift_config: []
+                    fixed_size_bucketing_config: []
+                    redact_config: []
+                    replace_config:
+                      - new_value:
+                          - boolean_value: null
+                            date_value: []
+                            day_of_week_value: null
+                            float_value: null
+                            integer_value: 10
+                            string_value: null
+                            time_value: []
+                            timestamp_value: null
+                    replace_dictionary_config: []
+                    replace_with_info_type_config: null
+                    time_part_config: []
+              - info_types:
+                  - name: EMAIL_ADDRESS
+                    sensitivity_score: []
+                    version: null
+                primitive_transformation:
+                  - bucketing_config: []
+                    character_mask_config: []
+                    crypto_deterministic_config: []
+                    crypto_hash_config: []
+                    crypto_replace_ffx_fpe_config: []
+                    date_shift_config: []
+                    fixed_size_bucketing_config: []
+                    redact_config: []
+                    replace_config:
+                      - new_value:
+                          - boolean_value: null
+                            date_value: []
+                            day_of_week_value: null
+                            float_value: null
+                            integer_value: null
+                            string_value: john.doe@fakedomain.com
+                            time_value: []
+                            timestamp_value: null
+                    replace_dictionary_config: []
+                    replace_with_info_type_config: null
+                    time_part_config: []
+              - info_types:
+                  - name: LAST_NAME
+                    sensitivity_score: []
+                    version: null
+                primitive_transformation:
+                  - bucketing_config: []
+                    character_mask_config: []
+                    crypto_deterministic_config: []
+                    crypto_hash_config: []
+                    crypto_replace_ffx_fpe_config: []
+                    date_shift_config: []
+                    fixed_size_bucketing_config: []
+                    redact_config: []
+                    replace_config:
+                      - new_value:
+                          - boolean_value: null
+                            date_value: []
+                            day_of_week_value: null
+                            float_value: null
+                            integer_value: null
+                            string_value: doe
+                            time_value: []
+                            timestamp_value: null
+                    replace_dictionary_config: []
+                    replace_with_info_type_config: null
+                    time_part_config: []
+              - info_types:
+                  - name: PERSON_NAME
+                    sensitivity_score: []
+                    version: null
+                primitive_transformation:
+                  - bucketing_config: []
+                    character_mask_config: []
+                    crypto_deterministic_config: []
+                    crypto_hash_config: []
+                    crypto_replace_ffx_fpe_config: []
+                    date_shift_config: []
+                    fixed_size_bucketing_config: []
+                    redact_config: []
+                    replace_config:
+                      - new_value:
+                          - boolean_value: null
+                            date_value: []
+                            day_of_week_value: null
+                            float_value: null
+                            integer_value: null
+                            string_value: john
+                            time_value: []
+                            timestamp_value: null
+                    replace_dictionary_config: []
+                    replace_with_info_type_config: null
+                    time_part_config: []
+              - info_types:
+                  - name: DATE_OF_BIRTH
+                    sensitivity_score: []
+                    version: null
+                primitive_transformation:
+                  - bucketing_config: []
+                    character_mask_config: []
+                    crypto_deterministic_config: []
+                    crypto_hash_config: []
+                    crypto_replace_ffx_fpe_config: []
+                    date_shift_config: []
+                    fixed_size_bucketing_config: []
+                    redact_config: []
+                    replace_config:
+                      - new_value:
+                          - boolean_value: null
+                            date_value:
+                              - day: 1
+                                month: 1
+                                year: 1990
+                            day_of_week_value: null
+                            float_value: null
+                            integer_value: null
+                            string_value: null
+                            time_value: []
+                            timestamp_value: null
+                    replace_dictionary_config: []
+                    replace_with_info_type_config: null
+                    time_part_config: []
+              - info_types:
+                  - name: CREDIT_CARD_NUMBER
+                    sensitivity_score: []
+                    version: null
+                primitive_transformation:
+                  - bucketing_config: []
+                    character_mask_config: []
+                    crypto_deterministic_config: []
+                    crypto_hash_config: []
+                    crypto_replace_ffx_fpe_config: []
+                    date_shift_config: []
+                    fixed_size_bucketing_config: []
+                    redact_config: []
+                    replace_config:
+                      - new_value:
+                          - boolean_value: null
+                            date_value: []
+                            day_of_week_value: null
+                            float_value: null
+                            integer_value: null
+                            string_value: '1234567812345678'
+                            time_value: []
+                            timestamp_value: null
+                    replace_dictionary_config: []
+                    replace_with_info_type_config: null
+                    time_part_config: []
+              - info_types:
+                  - name: CREDIT_CARD_TRACK_NUMBER
+                    sensitivity_score: []
+                    version: null
+                primitive_transformation:
+                  - bucketing_config: []
+                    character_mask_config: []
+                    crypto_deterministic_config: []
+                    crypto_hash_config: []
+                    crypto_replace_ffx_fpe_config: []
+                    date_shift_config: []
+                    fixed_size_bucketing_config: []
+                    redact_config: []
+                    replace_config:
+                      - new_value:
+                          - boolean_value: null
+                            date_value: []
+                            day_of_week_value: null
+                            float_value: null
+                            integer_value: null
+                            string_value: '1234567812345678'
+                            time_value: []
+                            timestamp_value: null
+                    replace_dictionary_config: []
+                    replace_with_info_type_config: null
+                    time_part_config: []
+              - info_types:
+                  - name: ETHNIC_GROUP
+                    sensitivity_score: []
+                    version: null
+                primitive_transformation:
+                  - bucketing_config: []
+                    character_mask_config: []
+                    crypto_deterministic_config: []
+                    crypto_hash_config: []
+                    crypto_replace_ffx_fpe_config: []
+                    date_shift_config: []
+                    fixed_size_bucketing_config: []
+                    redact_config: []
+                    replace_config:
+                      - new_value:
+                          - boolean_value: null
+                            date_value: []
+                            day_of_week_value: null
+                            float_value: null
+                            integer_value: null
+                            string_value: None
+                            time_value: []
+                            timestamp_value: null
+                    replace_dictionary_config: []
+                    replace_with_info_type_config: null
+                    time_part_config: []
+              - info_types:
+                  - name: GENDER
+                    sensitivity_score: []
+                    version: null
+                primitive_transformation:
+                  - bucketing_config: []
+                    character_mask_config: []
+                    crypto_deterministic_config: []
+                    crypto_hash_config: []
+                    crypto_replace_ffx_fpe_config: []
+                    date_shift_config: []
+                    fixed_size_bucketing_config: []
+                    redact_config: []
+                    replace_config:
+                      - new_value:
+                          - boolean_value: null
+                            date_value: []
+                            day_of_week_value: null
+                            float_value: null
+                            integer_value: null
+                            string_value: Gender
+                            time_value: []
+                            timestamp_value: null
+                    replace_dictionary_config: []
+                    replace_with_info_type_config: null
+                    time_part_config: []
+              - info_types:
+                  - name: IBAN_CODE
+                    sensitivity_score: []
+                    version: null
+                primitive_transformation:
+                  - bucketing_config: []
+                    character_mask_config: []
+                    crypto_deterministic_config: []
+                    crypto_hash_config: []
+                    crypto_replace_ffx_fpe_config: []
+                    date_shift_config: []
+                    fixed_size_bucketing_config: []
+                    redact_config: []
+                    replace_config:
+                      - new_value:
+                          - boolean_value: null
+                            date_value: []
+                            day_of_week_value: null
+                            float_value: null
+                            integer_value: null
+                            string_value: '2131312312312312'
+                            time_value: []
+                            timestamp_value: null
+                    replace_dictionary_config: []
+                    replace_with_info_type_config: null
+                    time_part_config: []
+              - info_types:
+                  - name: PASSPORT
+                    sensitivity_score: []
+                    version: null
+                primitive_transformation:
+                  - bucketing_config: []
+                    character_mask_config: []
+                    crypto_deterministic_config: []
+                    crypto_hash_config: []
+                    crypto_replace_ffx_fpe_config: []
+                    date_shift_config: []
+                    fixed_size_bucketing_config: []
+                    redact_config: []
+                    replace_config:
+                      - new_value:
+                          - boolean_value: null
+                            date_value: []
+                            day_of_week_value: null
+                            float_value: null
+                            integer_value: null
+                            string_value: '2131312312312312'
+                            time_value: []
+                            timestamp_value: null
+                    replace_dictionary_config: []
+                    replace_with_info_type_config: null
+                    time_part_config: []
+              - info_types:
+                  - name: STREET_ADDRESS
+                    sensitivity_score: []
+                    version: null
+                primitive_transformation:
+                  - bucketing_config: []
+                    character_mask_config: []
+                    crypto_deterministic_config: []
+                    crypto_hash_config: []
+                    crypto_replace_ffx_fpe_config: []
+                    date_shift_config: []
+                    fixed_size_bucketing_config: []
+                    redact_config: []
+                    replace_config:
+                      - new_value:
+                          - boolean_value: null
+                            date_value: []
+                            day_of_week_value: null
+                            float_value: null
+                            integer_value: null
+                            string_value: street address
+                            time_value: []
+                            timestamp_value: null
+                    replace_dictionary_config: []
+                    replace_with_info_type_config: null
+                    time_part_config: []
+              - info_types:
+                  - name: SWIFT_CODE
+                    sensitivity_score: []
+                    version: null
+                primitive_transformation:
+                  - bucketing_config: []
+                    character_mask_config: []
+                    crypto_deterministic_config: []
+                    crypto_hash_config: []
+                    crypto_replace_ffx_fpe_config: []
+                    date_shift_config: []
+                    fixed_size_bucketing_config: []
+                    redact_config: []
+                    replace_config:
+                      - new_value:
+                          - boolean_value: null
+                            date_value: []
+                            day_of_week_value: null
+                            float_value: null
+                            integer_value: null
+                            string_value: '2131312312312312'
+                            time_value: []
+                            timestamp_value: null
+                    replace_dictionary_config: []
+                    replace_with_info_type_config: null
+                    time_part_config: []
+              - info_types:
+                  - name: VEHICLE_IDENTIFICATION_NUMBER
+                    sensitivity_score: []
+                    version: null
+                primitive_transformation:
+                  - bucketing_config: []
+                    character_mask_config: []
+                    crypto_deterministic_config: []
+                    crypto_hash_config: []
+                    crypto_replace_ffx_fpe_config: []
+                    date_shift_config: []
+                    fixed_size_bucketing_config: []
+                    redact_config: []
+                    replace_config:
+                      - new_value:
+                          - boolean_value: null
+                            date_value: []
+                            day_of_week_value: null
+                            float_value: null
+                            integer_value: null
+                            string_value: '2131312312312312'
+                            time_value: []
+                            timestamp_value: null
+                    replace_dictionary_config: []
+                    replace_with_info_type_config: null
+                    time_part_config: []
+        record_transformations: []
+    description: SecOps Anonymization pipeline deidentify template.
+    display_name: sample_deidentify_config_template
+    parent: projects/gcp-project-id/locations/europe-west1
+    timeouts: null
+  google_data_loss_prevention_inspect_template.dlp_inspect_template[0]:
+    description: Data Loss prevention sample inspect config.
+    display_name: sample_inspect_config_template
+    inspect_config:
+      - content_options: null
+        custom_info_types: []
+        exclude_info_types: null
+        include_quote: null
+        info_types:
+          - name: ADVERTISING_ID
+            sensitivity_score: []
+            version: null
+          - name: AGE
+            sensitivity_score: []
+            version: null
+          - name: CREDIT_CARD_NUMBER
+            sensitivity_score: []
+            version: null
+          - name: CREDIT_CARD_TRACK_NUMBER
+            sensitivity_score: []
+            version: null
+          - name: EMAIL_ADDRESS
+            sensitivity_score: []
+            version: null
+          - name: DATE_OF_BIRTH
+            sensitivity_score: []
+            version: null
+          - name: ETHNIC_GROUP
+            sensitivity_score: []
+            version: null
+          - name: GENDER
+            sensitivity_score: []
+            version: null
+          - name: IBAN_CODE
+            sensitivity_score: []
+            version: null
+          - name: PASSPORT
+            sensitivity_score: []
+            version: null
+          - name: PERSON_NAME
+            sensitivity_score: []
+            version: null
+          - name: FIRST_NAME
+            sensitivity_score: []
+            version: null
+          - name: LAST_NAME
+            sensitivity_score: []
+            version: null
+          - name: PHONE_NUMBER
+            sensitivity_score: []
+            version: null
+          - name: STREET_ADDRESS
+            sensitivity_score: []
+            version: null
+          - name: SWIFT_CODE
+            sensitivity_score: []
+            version: null
+          - name: VEHICLE_IDENTIFICATION_NUMBER
+            sensitivity_score: []
+            version: null
+        limits: []
+        min_likelihood: POSSIBLE
+        rule_set: []
+    parent: projects/gcp-project-id/locations/europe-west1
+    timeouts: null
+  module.anonymized-bucket[0].google_storage_bucket.bucket[0]:
+    autoclass: []
+    cors: []
+    custom_placement_config: []
+    default_event_based_hold: null
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    enable_object_retention: null
+    encryption: []
+    force_destroy: false
+    hierarchical_namespace: []
+    ip_filter: []
+    labels: null
+    lifecycle_rule:
+      - action:
+          - storage_class: ''
+            type: Delete
+        condition:
+          - age: 7
+            created_before: ''
+            custom_time_before: ''
+            days_since_custom_time: null
+            days_since_noncurrent_time: null
+            matches_prefix: []
+            matches_storage_class: []
+            matches_suffix: []
+            noncurrent_time_before: ''
+            num_newer_versions: null
+            send_age_if_zero: null
+            send_days_since_custom_time_if_zero: null
+            send_days_since_noncurrent_time_if_zero: null
+            send_num_newer_versions_if_zero: null
+    location: EUROPE-WEST1
+    logging: []
+    name: pre-anonymized-data
+    project: gcp-project-id
+    requester_pays: null
+    retention_policy: []
+    storage_class: REGIONAL
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+    uniform_bucket_level_access: true
+    versioning:
+      - enabled: true
+  module.anonymized-bucket[0].google_storage_bucket_iam_member.bindings["storage-legacy-reader-dlp"]:
+    bucket: pre-anonymized-data
+    condition: []
+    role: roles/storage.legacyBucketReader
+  module.anonymized-bucket[0].google_storage_bucket_iam_member.bindings["storage-legacy-reader-function"]:
+    bucket: pre-anonymized-data
+    condition: []
+    member: serviceAccount:tf-cf-secops-anonymization@gcp-project-id.iam.gserviceaccount.com
+    role: roles/storage.legacyBucketReader
+  module.anonymized-bucket[0].google_storage_bucket_iam_member.bindings["storage-object-admin-dlp"]:
+    bucket: pre-anonymized-data
+    condition: []
+    role: roles/storage.objectAdmin
+  module.anonymized-bucket[0].google_storage_bucket_iam_member.bindings["storage-object-admin-function"]:
+    bucket: pre-anonymized-data
+    condition: []
+    member: serviceAccount:tf-cf-secops-anonymization@gcp-project-id.iam.gserviceaccount.com
+    role: roles/storage.objectAdmin
+  module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/artifactregistry.writer"]:
+    condition: []
+    project: gcp-project-id
+    role: roles/artifactregistry.writer
+  module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/logging.logWriter"]:
+    condition: []
+    project: gcp-project-id
+    role: roles/logging.logWriter
+  module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/monitoring.metricWriter"]:
+    condition: []
+    project: gcp-project-id
+    role: roles/monitoring.metricWriter
+  module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/storage.objectAdmin"]:
+    condition: []
+    project: gcp-project-id
+    role: roles/storage.objectAdmin
+  module.cloudbuild-sa[0].google_service_account.service_account[0]:
+    account_id: cloudbuild
+    create_ignore_already_exists: null
+    description: null
+    disabled: false
+    display_name: Terraform-managed.
+    email: cloudbuild@gcp-project-id.iam.gserviceaccount.com
+    member: serviceAccount:cloudbuild@gcp-project-id.iam.gserviceaccount.com
+    project: gcp-project-id
+    timeouts: null
+  module.export-bucket.google_storage_bucket.bucket[0]:
+    autoclass: []
+    cors: []
+    custom_placement_config: []
+    default_event_based_hold: null
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    enable_object_retention: null
+    encryption: []
+    force_destroy: false
+    hierarchical_namespace: []
+    ip_filter: []
+    labels: null
+    lifecycle_rule:
+      - action:
+          - storage_class: ''
+            type: Delete
+        condition:
+          - age: 7
+            created_before: ''
+            custom_time_before: ''
+            days_since_custom_time: null
+            days_since_noncurrent_time: null
+            matches_prefix: []
+            matches_storage_class: []
+            matches_suffix: []
+            noncurrent_time_before: ''
+            num_newer_versions: null
+            send_age_if_zero: null
+            send_days_since_custom_time_if_zero: null
+            send_days_since_noncurrent_time_if_zero: null
+            send_num_newer_versions_if_zero: null
+    location: EUROPE-WEST1
+    logging: []
+    name: pre-secops-export
+    project: gcp-project-id
+    requester_pays: null
+    retention_policy: []
+    storage_class: REGIONAL
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+    uniform_bucket_level_access: true
+    versioning:
+      - enabled: true
+  module.export-bucket.google_storage_bucket_iam_binding.authoritative["roles/storage.legacyBucketReader"]:
+    bucket: pre-secops-export
+    condition: []
+    members:
+      - serviceAccount:tf-cf-secops-anonymization@gcp-project-id.iam.gserviceaccount.com
+      - user:malachite-data-export-batch@prod.google.com
+    role: roles/storage.legacyBucketReader
+  module.export-bucket.google_storage_bucket_iam_binding.authoritative["roles/storage.objectAdmin"]:
+    bucket: pre-secops-export
+    condition: []
+    members:
+      - serviceAccount:tf-cf-secops-anonymization@gcp-project-id.iam.gserviceaccount.com
+      - user:malachite-data-export-batch@prod.google.com
+    role: roles/storage.objectAdmin
+  module.export-bucket.google_storage_bucket_iam_binding.authoritative["roles/storage.objectViewer"]:
+    bucket: pre-secops-export
+    condition: []
+    members:
+      - serviceAccount:tf-cf-secops-anonymization@gcp-project-id.iam.gserviceaccount.com
+    role: roles/storage.objectViewer
+  module.function.google_cloud_run_service_iam_binding.invoker[0]:
+    condition: []
+    location: europe-west1
+    members:
+      - serviceAccount:secops-anonymization-scheduler@gcp-project-id.iam.gserviceaccount.com
+    project: gcp-project-id
+    role: roles/run.invoker
+    service: pre-secops-anonymization
+  module.function.google_cloudfunctions2_function.function:
+    build_config:
+      - entry_point: main
+        on_deploy_update_policy: []
+        runtime: python310
+        service_account: projects/gcp-project-id/serviceAccounts/cloudbuild@gcp-project-id.iam.gserviceaccount.com
+        source:
+          - repo_source: []
+            storage_source:
+              - bucket: pre-gcp-project-id-anonymization
+                object: bundle-66d6b2d319aea8d89ebc2c3b0d772233.zip
+        worker_pool: null
+    description: Terraform managed.
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    event_trigger: []
+    kms_key_name: null
+    labels: null
+    location: europe-west1
+    name: pre-secops-anonymization
+    project: gcp-project-id
+    service_config:
+      - all_traffic_on_latest_revision: true
+        available_cpu: '1'
+        available_memory: 2048M
+        binary_authorization_policy: null
+        ingress_settings: ALLOW_INTERNAL_AND_GCLB
+        max_instance_count: 1
+        min_instance_count: 0
+        secret_environment_variables: []
+        secret_volumes: []
+        service_account_email: tf-cf-secops-anonymization@gcp-project-id.iam.gserviceaccount.com
+        timeout_seconds: 3600
+        vpc_connector: null
+        vpc_connector_egress_settings: null
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+  module.function.google_service_account.service_account[0]:
+    account_id: tf-cf-secops-anonymization
+    create_ignore_already_exists: null
+    description: null
+    disabled: false
+    display_name: Terraform Cloud Function secops-anonymization.
+    email: tf-cf-secops-anonymization@gcp-project-id.iam.gserviceaccount.com
+    member: serviceAccount:tf-cf-secops-anonymization@gcp-project-id.iam.gserviceaccount.com
+    project: gcp-project-id
+    timeouts: null
+  module.function.google_storage_bucket.bucket[0]:
+    autoclass: []
+    cors: []
+    custom_placement_config: []
+    default_event_based_hold: null
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    enable_object_retention: null
+    encryption: []
+    force_destroy: false
+    hierarchical_namespace: []
+    ip_filter: []
+    labels: null
+    lifecycle_rule:
+      - action:
+          - storage_class: ''
+            type: Delete
+        condition:
+          - age: 1
+            created_before: ''
+            custom_time_before: ''
+            days_since_custom_time: null
+            days_since_noncurrent_time: null
+            matches_prefix: []
+            matches_storage_class: []
+            matches_suffix: []
+            noncurrent_time_before: ''
+            num_newer_versions: null
+            send_age_if_zero: null
+            send_days_since_custom_time_if_zero: null
+            send_days_since_noncurrent_time_if_zero: null
+            send_num_newer_versions_if_zero: null
+            with_state: ARCHIVED
+    location: EUROPE-WEST1
+    logging: []
+    name: pre-gcp-project-id-anonymization
+    project: gcp-project-id
+    requester_pays: null
+    retention_policy: []
+    storage_class: STANDARD
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+    uniform_bucket_level_access: true
+    versioning:
+      - enabled: true
+  module.function.google_storage_bucket_object.bundle[0]:
+    bucket: pre-gcp-project-id-anonymization
+    cache_control: null
+    content_disposition: null
+    content_encoding: null
+    content_language: null
+    customer_encryption: []
+    detect_md5hash: different hash
+    event_based_hold: null
+    metadata: null
+    name: bundle-66d6b2d319aea8d89ebc2c3b0d772233.zip
+    retention: []
+    source: /tmp/bundle-gcp-project-id-secops-anonymization.zip
+    temporary_hold: null
+    timeouts: null
+  module.project.google_project.project[0]:
+    auto_create_network: false
+    billing_account: 12345-ABCDE-12345
+    deletion_policy: DELETE
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    folder_id: null
+    labels: null
+    name: gcp-project-id
+    org_id: null
+    project_id: gcp-project-id
+    tags: null
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+  module.project.google_project_iam_binding.authoritative["roles/chronicle.editor"]:
+    condition: []
+    members:
+      - serviceAccount:tf-cf-secops-anonymization@gcp-project-id.iam.gserviceaccount.com
+    project: gcp-project-id
+    role: roles/chronicle.editor
+  module.project.google_project_iam_binding.authoritative["roles/dlp.jobsEditor"]:
+    condition: []
+    members:
+      - serviceAccount:tf-cf-secops-anonymization@gcp-project-id.iam.gserviceaccount.com
+    project: gcp-project-id
+    role: roles/dlp.jobsEditor
+  module.project.google_project_iam_binding.authoritative["roles/dlp.reader"]:
+    condition: []
+    members:
+      - serviceAccount:tf-cf-secops-anonymization@gcp-project-id.iam.gserviceaccount.com
+    project: gcp-project-id
+    role: roles/dlp.reader
+  module.project.google_project_iam_binding.authoritative["roles/serviceusage.serviceUsageConsumer"]:
+    condition: []
+    members:
+      - serviceAccount:tf-cf-secops-anonymization@gcp-project-id.iam.gserviceaccount.com
+    project: gcp-project-id
+    role: roles/serviceusage.serviceUsageConsumer
+  module.project.google_project_iam_member.bindings["function-log-writer"]:
+    condition: []
+    member: serviceAccount:tf-cf-secops-anonymization@gcp-project-id.iam.gserviceaccount.com
+    project: gcp-project-id
+    role: roles/logging.logWriter
+  module.project.google_project_iam_member.service_agents["cloudbuild"]:
+    condition: []
+    project: gcp-project-id
+    role: roles/cloudbuild.serviceAgent
+  module.project.google_project_iam_member.service_agents["cloudbuild-sa"]:
+    condition: []
+    project: gcp-project-id
+    role: roles/cloudbuild.builds.builder
+  module.project.google_project_iam_member.service_agents["cloudscheduler"]:
+    condition: []
+    project: gcp-project-id
+    role: roles/cloudscheduler.serviceAgent
+  module.project.google_project_iam_member.service_agents["dlp-api"]:
+    condition: []
+    project: gcp-project-id
+    role: roles/dlp.serviceAgent
+  module.project.google_project_iam_member.service_agents["serverless-robot-prod"]:
+    condition: []
+    project: gcp-project-id
+    role: roles/run.serviceAgent
+  module.project.google_project_iam_member.service_agents["vpcaccess"]:
+    condition: []
+    project: gcp-project-id
+    role: roles/vpcaccess.serviceAgent
+  module.project.google_project_service.project_services["cloudbuild.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: gcp-project-id
+    service: cloudbuild.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["cloudresourcemanager.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: gcp-project-id
+    service: cloudresourcemanager.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["cloudscheduler.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: gcp-project-id
+    service: cloudscheduler.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["dlp.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: gcp-project-id
+    service: dlp.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["run.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: gcp-project-id
+    service: run.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["secretmanager.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: gcp-project-id
+    service: secretmanager.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["vpcaccess.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: gcp-project-id
+    service: vpcaccess.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["cloudscheduler.googleapis.com"]:
+    project: gcp-project-id
+    service: cloudscheduler.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["dlp.googleapis.com"]:
+    project: gcp-project-id
+    service: dlp.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["run.googleapis.com"]:
+    project: gcp-project-id
+    service: run.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["secretmanager.googleapis.com"]:
+    project: gcp-project-id
+    service: secretmanager.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["vpcaccess.googleapis.com"]:
+    project: gcp-project-id
+    service: vpcaccess.googleapis.com
+    timeouts: null
+  module.scheduler-sa.google_service_account.service_account[0]:
+    account_id: secops-anonymization-scheduler
+    create_ignore_already_exists: null
+    description: null
+    disabled: false
+    display_name: Terraform-managed.
+    email: secops-anonymization-scheduler@gcp-project-id.iam.gserviceaccount.com
+    member: serviceAccount:secops-anonymization-scheduler@gcp-project-id.iam.gserviceaccount.com
+    project: gcp-project-id
+    timeouts: null

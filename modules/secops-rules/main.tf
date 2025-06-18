@@ -34,9 +34,9 @@ locals {
 
 resource "google_chronicle_reference_list" "default" {
   for_each          = local.reference_lists
-  project           = var.project_id
-  location          = var.tenant_config.region
-  instance          = var.tenant_config.customer_id
+  project           = var.secops_config.project
+  location          = var.secops_config.region
+  instance          = var.secops_config.customer_id
   reference_list_id = each.key
   description       = each.value.description
   dynamic "entries" {
@@ -50,9 +50,9 @@ resource "google_chronicle_reference_list" "default" {
 
 resource "google_chronicle_rule" "default" {
   for_each        = local.secops_rule_deployment
-  project         = var.project_id
-  location        = var.tenant_config.region
-  instance        = var.tenant_config.customer_id
+  project         = var.secops_config.project
+  location        = var.secops_config.region
+  instance        = var.secops_config.customer_id
   text            = local.secops_rules[each.key]
   deletion_policy = "FORCE"
   depends_on = [
@@ -62,9 +62,9 @@ resource "google_chronicle_rule" "default" {
 
 resource "google_chronicle_rule_deployment" "default" {
   for_each      = local.secops_rule_deployment
-  project       = var.project_id
-  location      = var.tenant_config.region
-  instance      = var.tenant_config.customer_id
+  project       = var.secops_config.project
+  location      = var.secops_config.region
+  instance      = var.secops_config.customer_id
   rule          = google_chronicle_rule.default[each.key].rule_id
   enabled       = each.value.enabled
   alerting      = each.value.alerting

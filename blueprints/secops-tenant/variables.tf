@@ -190,7 +190,7 @@ variable "secops_data_rbac_config" {
 variable "monitoring_config" {
   description = "Cloud Monitoring configuration for SecOps."
   type = object({
-    enabled = optional(bool, false)
+    enabled             = optional(bool, false)
     notification_emails = optional(list(string), [])
   })
 }
@@ -206,8 +206,8 @@ variable "network_config" {
 
 variable "organization_id" {
   description = "GCP Organization ID. This is required only if tenant_nodes is configured for ingesting logs at org level."
-  type = string
-  default = null
+  type        = string
+  default     = null
 }
 
 variable "tenant_nodes" {

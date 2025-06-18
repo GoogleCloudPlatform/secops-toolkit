@@ -14,63 +14,23 @@
  * limitations under the License.
  */
 
-resource "google_chronicle_data_access_label" "labels" {
-  for_each             = coalesce(var.secops_data_rbac_config.labels, {})
-  project              = module.project.project_id
-  location             = var.secops_tenant_config.region
-  instance             = var.secops_tenant_config.customer_id
-  data_access_label_id = each.value.label_id
-  udm_query            = each.value.udm_query
-  description          = each.value.description
-}
-
-resource "google_chronicle_data_access_scope" "example" {
-  for_each             = coalesce(var.secops_data_rbac_config.scopes, {})
-  project              = module.project.project_id
-  location             = var.secops_tenant_config.region
-  instance             = var.secops_tenant_config.customer_id
-  data_access_scope_id = each.value.scope_id
-  description          = each.value.description
-  allow_all            = length(each.value.denied_data_access_labels) != 0
-  dynamic "denied_data_access_labels" {
-    for_each = each.value.denied_data_access_labels
-    content {
-      log_type          = denied_data_access_labels.value.log_type
-      data_access_label = denied_data_access_labels.value.data_access_label
-      asset_namespace   = denied_data_access_labels.value.asset_namespace
-      dynamic "ingestion_label" {
-        for_each = coalesce(denied_data_access_labels.value.ingestion_label, {})
-        content {
-          ingestion_label_key   = ingestion_label.ingestion_label_key
-          ingestion_label_value = ingestion_label.ingestion_label_value
-        }
-      }
-    }
+module "secops-data-rbac" {
+  source = "../../modules/secops-data-rbac"
+  secops_config = {
+    customer_id = var.secops_tenant_config.customer_id
+    project     = module.project.project_id
+    region      = var.secops_tenant_config.region
   }
-  dynamic "allowed_data_access_labels" {
-    for_each = each.value.allowed_data_access_labels
-    content {
-      log_type          = allowed_data_access_labels.value.log_type
-      data_access_label = allowed_data_access_labels.value.data_access_label
-      asset_namespace   = allowed_data_access_labels.value.asset_namespace
-      dynamic "ingestion_label" {
-        for_each = coalesce(allowed_data_access_labels.value.ingestion_label, {})
-        content {
-          ingestion_label_key   = ingestion_label.ingestion_label_key
-          ingestion_label_value = ingestion_label.ingestion_label_value
-        }
-      }
-    }
-  }
-  depends_on = [google_chronicle_data_access_label.labels]
+  labels = var.secops_data_rbac_config.labels
+  scopes = var.secops_data_rbac_config.scopes
 }
 
 module "secops-rules" {
-  source     = "../../modules/secops-rules"
-  project_id = module.project.project_id
-  tenant_config = {
-    region      = var.secops_tenant_config.region
+  source = "../../modules/secops-rules"
+  secops_config = {
     customer_id = var.secops_tenant_config.customer_id
+    project     = module.project.project_id
+    region      = var.secops_tenant_config.region
   }
   factories_config = {
     rules                = "./data/secops_rules.yaml"

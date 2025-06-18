@@ -198,11 +198,11 @@ resource "restful_resource" "cai_feeds" {
   delete_path     = "$query_unescape(body.name)"
   read_selector   = "feeds.#(displayName==\"${lower(each.key)}\")"
   body = {
-    name: lower(each.key),
-    display_name: lower(each.key),
-    details: merge({
-      feed_source_type: var.secops_ingestion_config.ingest_feed_type,
-      log_type: "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/logTypes/${each.key}",
+    name : lower(each.key),
+    display_name : lower(each.key),
+    details : merge({
+      feed_source_type : var.secops_ingestion_config.ingest_feed_type,
+      log_type : "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/logTypes/${each.key}",
       }, var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB" ?
     { https_push_google_cloud_pubsub_settings : {} } : { httpsPushWebhookSettings : {} })
   }

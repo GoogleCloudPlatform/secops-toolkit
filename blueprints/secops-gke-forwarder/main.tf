@@ -24,16 +24,16 @@ locals {
 
 module "project" {
   source = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/project"
-  billing_account = (var.project_create != null
-    ? var.project_create.billing_account_id
+  billing_account = (var.project_create_config != null
+    ? var.project_create_config.billing_account_id
     : null
   )
-  parent = (var.project_create != null
-    ? var.project_create.parent
+  parent = (var.project_create_config != null
+    ? var.project_create_config.parent
     : null
   )
   prefix        = var.prefix
-  project_reuse = var.project_create != null ? null : {}
+  project_reuse = var.project_create_config != null ? null : {}
   name          = var.project_id
   services = concat([
     "compute.googleapis.com",

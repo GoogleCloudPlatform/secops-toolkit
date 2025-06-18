@@ -44,8 +44,8 @@ locals {
   }
   secops_webhook_feeds_id = {
     for key, value in restful_resource.webhook_feeds : key =>
-    [for feed in value.output.feeds: element(split("/", feed.name), length(split("/", feed.name)) - 1)
-      if try(feed.displayName == lower(key), false)][0]
+    [for feed in value.output.feeds : element(split("/", feed.name), length(split("/", feed.name)) - 1)
+    if try(feed.displayName == lower(key), false)][0]
   }
 }
 
@@ -60,12 +60,12 @@ resource "restful_resource" "webhook_feeds" {
   delete_path     = "$query_unescape(body.name)"
   read_selector   = "feeds.#(displayName==\"${lower(each.key)}\")"
   body = {
-    name: lower(each.key),
-    display_name: coalesce(each.value.display_name, lower(each.key)),
-    details: {
-      feed_source_type: "HTTPS_PUSH_WEBHOOK",
-      log_type: "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/logTypes/${each.key}",
-      httpsPushWebhookSettings: {}
+    name : lower(each.key),
+    display_name : coalesce(each.value.display_name, lower(each.key)),
+    details : {
+      feed_source_type : "HTTPS_PUSH_WEBHOOK",
+      log_type : "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/logTypes/${each.key}",
+      httpsPushWebhookSettings : {}
     }
   }
   write_only_attrs = ["details"]
@@ -94,19 +94,19 @@ resource "restful_resource" "azure_ad_feeds" {
     "name" : lower(each.key),
     "display_name" : lower(each.key),
     "details" : {
-      feed_source_type: "API",
-      log_type: "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/logTypes/${each.value.log_type}",
-      (each.value.feed_type): merge({
-        authentication: {
-          client_id: var.third_party_integration_config.azure_ad.oauth_credentials.client_id,
-          client_secret: var.third_party_integration_config.azure_ad.oauth_credentials.client_secret,
+      feed_source_type : "API",
+      log_type : "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/logTypes/${each.value.log_type}",
+      (each.value.feed_type) : merge({
+        authentication : {
+          client_id : var.third_party_integration_config.azure_ad.oauth_credentials.client_id,
+          client_secret : var.third_party_integration_config.azure_ad.oauth_credentials.client_secret,
         },
-        hostname: each.value.hostname,
-        auth_endpoint: "login.microsoftonline.com",
-        tenant_id: var.third_party_integration_config.azure_ad.tenant_id,
+        hostname : each.value.hostname,
+        auth_endpoint : "login.microsoftonline.com",
+        tenant_id : var.third_party_integration_config.azure_ad.tenant_id,
         }, each.key == "azure-ad-context" ? {
-        retrieve_groups: var.third_party_integration_config.azure_ad.retrieve_groups
-        retrieve_devices: var.third_party_integration_config.azure_ad.retrieve_devices
+        retrieve_groups : var.third_party_integration_config.azure_ad.retrieve_groups
+        retrieve_devices : var.third_party_integration_config.azure_ad.retrieve_devices
       } : {})
     }
   }

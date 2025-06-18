@@ -1,19 +1,33 @@
 # Contributing
 
-Thank you for considering contributing to this project!
+# How to contribute
 
-We welcome contributions of all kinds. To get started:
+We'd love to accept your patches and contributions to this project.
 
-1. **Sign [Google CLA](https://cla.developers.google.com/about/google-individual)**
-2. **Fork the repository** on GitHub.
-3. **Make your changes** in a new branch.
-4. **Submit a pull request** with a clear description of your changes.
+## Before you begin
 
-We will review your pull request and provide feedback as soon as possible.
+### Sign our Contributor License Agreement
 
-Thank you for your contributions!
+Contributions to this project must be accompanied by a
+[Contributor License Agreement](https://cla.developers.google.com/about) (CLA).
+You (or your employer) retain the copyright to your contribution; this simply
+gives us permission to use and redistribute your contributions as part of the
+project.
 
-## Useful Commands
+If you or your current employer have already signed the Google CLA (even if it
+was for a different project), you probably don't need to do it again.
+
+Visit <https://cla.developers.google.com/> to see your current agreements or to
+sign a new one.
+
+### Review our community guidelines
+
+This project follows
+[Google's Open Source Community Guidelines](https://opensource.google/conduct/).
+
+## Contribution process
+
+### Useful Commands
 
 Create virtual environment for testing and generate docs
 
@@ -27,3 +41,10 @@ Generate tfdoc (example for `secops-tenant`)
 ```shell
 ./tools/tfdoc.py blueprints/secops-tenant
 ```
+
+
+### Code reviews
+
+All submissions, including submissions by project members, require review. We
+use GitHub pull requests for this purpose. Consult
+[GitHub Help](https://help.github.com/articles/about-pull-requests/) for more information on using pull requests.

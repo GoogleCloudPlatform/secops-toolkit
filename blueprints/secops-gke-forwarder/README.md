@@ -112,9 +112,9 @@ Then running the command `kubectl get pods` you should receive the following mes
 module "test" {
   source     = "./fabric/blueprints/secops/secops-gke-forwarder"
   project_id = "test"
-  project_create = {
-    billing_account_id = "12345-ABCDEF-12345"
-    parent             = "folders/2345678901"
+  project_create_config = {
+    billing_account = "12345-ABCDEF-12345"
+    parent          = "folders/2345678901"
   }
   region = "europe-west8"
   network_config = {

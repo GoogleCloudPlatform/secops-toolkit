@@ -1,0 +1,618 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+values:
+  helm_release.bindplane:
+    atomic: false
+    chart: bindplane
+    cleanup_on_fail: false
+    create_namespace: false
+    dependency_update: false
+    description: null
+    devel: null
+    disable_crd_hooks: false
+    disable_openapi_validation: false
+    disable_webhooks: false
+    force_update: false
+    keyring: null
+    lint: false
+    max_history: 0
+    name: bindplane
+    namespace: bindplane
+    pass_credentials: false
+    postrender: []
+    recreate_pods: false
+    render_subchart_notes: true
+    replace: false
+    repository: https://observiq.github.io/bindplane-op-helm
+    repository_ca_file: null
+    repository_cert_file: null
+    repository_key_file: null
+    repository_password: null
+    repository_username: null
+    reset_values: false
+    reuse_values: false
+    set: []
+    set_list: []
+    set_sensitive: []
+    skip_crds: false
+    status: deployed
+    timeout: 300
+    upgrade_install: null
+    verify: false
+    version: 1.29.3
+    wait: true
+    wait_for_jobs: false
+  module.addresses.google_compute_address.internal["ingress"]:
+    address_type: INTERNAL
+    description: Terraform managed.
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    ip_version: null
+    ipv6_endpoint_type: null
+    labels: null
+    name: ingress
+    network: null
+    project: tmp-test
+    purpose: SHARED_LOADBALANCER_VIP
+    region: europe-west8
+    subnetwork: https://www.googleapis.com/compute/v1/projects/prod-net-landing-0/regions/europe-west1/subnetworks/gke
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+  module.addresses.google_compute_address.psc["postgresql"]:
+    address_type: INTERNAL
+    description: Terraform managed.
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    ip_version: null
+    ipv6_endpoint_type: null
+    labels: null
+    name: postgresql
+    network: null
+    project: tmp-test
+    region: europe-west8
+    subnetwork: https://www.googleapis.com/compute/v1/projects/prod-net-landing-0/regions/europe-west1/subnetworks/gke
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+  module.addresses.google_compute_forwarding_rule.psc_consumer["postgresql"]:
+    all_ports: null
+    allow_global_access: null
+    allow_psc_global_access: true
+    backend_service: null
+    description: null
+    ip_collection: null
+    is_mirroring_collector: null
+    labels: null
+    load_balancing_scheme: ''
+    name: postgresql
+    no_automate_dns_zone: null
+    ports: null
+    project: tmp-test
+    recreate_closed_psc: true
+    region: europe-west8
+    service_label: null
+    source_ip_ranges: null
+    subnetwork: https://www.googleapis.com/compute/v1/projects/prod-net-landing-0/regions/europe-west1/subnetworks/gke
+    timeouts: null
+  module.bindplane-cluster.google_container_cluster.cluster:
+    addons_config:
+      - cloudrun_config:
+          - disabled: true
+            load_balancer_type: null
+        config_connector_config:
+          - enabled: false
+        gke_backup_agent_config:
+          - enabled: false
+        horizontal_pod_autoscaling:
+          - disabled: false
+        http_load_balancing:
+          - disabled: false
+        kalm_config:
+          - enabled: false
+    allow_net_admin: false
+    binary_authorization: []
+    cluster_autoscaling:
+      - auto_provisioning_defaults:
+          - boot_disk_kms_key: null
+            disk_size: null
+            disk_type: null
+            image_type: null
+            min_cpu_platform: null
+            service_account: default
+            shielded_instance_config: []
+        autoscaling_profile: null
+        resource_limits: []
+    control_plane_endpoints_config:
+      - dns_endpoint_config:
+          - allow_external_traffic: false
+        ip_endpoints_config:
+          - enabled: true
+    cost_management_config:
+      - enabled: true
+    deletion_protection: false
+    description: null
+    disable_l4_lb_firewall_reconciliation: false
+    dns_config: []
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    enable_autopilot: true
+    enable_cilium_clusterwide_network_policy: false
+    enable_fqdn_network_policy: false
+    enable_intranode_visibility: true
+    enable_k8s_beta_apis: []
+    enable_kubernetes_alpha: false
+    enable_l4_ilb_subsetting: false
+    enable_legacy_abac: false
+    enable_multi_networking: false
+    enable_shielded_nodes: true
+    enable_tpu: false
+    fleet: []
+    gateway_api_config:
+      - channel: CHANNEL_STANDARD
+    in_transit_encryption_config: null
+    initial_node_count: 1
+    ip_allocation_policy:
+      - additional_pod_ranges_config: []
+        cluster_secondary_range_name: pods
+        services_secondary_range_name: services
+        stack_type: IPV4
+    location: europe-west8
+    logging_config:
+      - enable_components:
+          - APISERVER
+          - CONTROLLER_MANAGER
+          - SCHEDULER
+          - SYSTEM_COMPONENTS
+          - WORKLOADS
+    maintenance_policy:
+      - daily_maintenance_window:
+          - start_time: 03:00
+        maintenance_exclusion: []
+        recurring_window: []
+    master_auth:
+      - client_certificate_config:
+          - issue_client_certificate: false
+    master_authorized_networks_config:
+      - cidr_blocks:
+          - cidr_block: 10.0.0.0/8
+            display_name: rfc-1918-10-8
+    min_master_version: null
+    monitoring_config:
+      - enable_components:
+          - APISERVER
+          - CONTROLLER_MANAGER
+          - DAEMONSET
+          - DEPLOYMENT
+          - HPA
+          - POD
+          - SCHEDULER
+          - STATEFULSET
+          - STORAGE
+          - SYSTEM_COMPONENTS
+        managed_prometheus:
+          - enabled: true
+    name: bindplane-op
+    network: https://www.googleapis.com/compute/v1/projects/prod-net-landing-0/global/networks/prod-landing-0
+    network_performance_config: []
+    network_policy: []
+    networking_mode: VPC_NATIVE
+    node_pool_auto_config:
+      - linux_node_config: []
+        network_tags: []
+        node_kubelet_config:
+          - insecure_kubelet_readonly_port_enabled: 'TRUE'
+        resource_manager_tags: null
+    pod_security_policy_config: []
+    private_cluster_config:
+      - enable_private_endpoint: null
+        enable_private_nodes: true
+        master_global_access_config:
+          - enabled: true
+        private_endpoint_subnetwork: null
+    project: tmp-test
+    release_channel:
+      - channel: REGULAR
+    remove_default_node_pool: null
+    resource_labels: null
+    resource_usage_export_config: []
+    secret_manager_config: []
+    subnetwork: https://www.googleapis.com/compute/v1/projects/prod-net-landing-0/regions/europe-west1/subnetworks/gke
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+    user_managed_keys_config: []
+  module.bindplane-deployment.kubernetes_namespace.namespace:
+    metadata:
+      - annotations: null
+        generate_name: null
+        labels: null
+        name: bindplane
+    timeouts: null
+    wait_for_default_service_account: false
+  module.bindplane-deployment.kubernetes_secret.bindplane_secret:
+    binary_data: null
+    binary_data_wo: null
+    binary_data_wo_revision: null
+    data:
+      license: XXXXXXXXXXXXXXXXXXXXXX
+      password: sample
+      sessions_secret: xxxxxx-xxxxxxx-xxxxxx
+      username: admin
+    data_wo: null
+    data_wo_revision: null
+    immutable: null
+    metadata:
+      - annotations: null
+        generate_name: null
+        labels: null
+        name: bindplane
+        namespace: bindplane
+    timeouts: null
+    type: Opaque
+    wait_for_service_account_token: true
+  module.bindplane-deployment.kubernetes_secret.tls:
+    binary_data: null
+    binary_data_wo: null
+    binary_data_wo_revision: null
+    data_wo: null
+    data_wo_revision: null
+    immutable: null
+    metadata:
+      - annotations: null
+        generate_name: null
+        labels: null
+        name: bindplane-tls
+        namespace: bindplane
+    timeouts: null
+    type: kubernetes.io/tls
+    wait_for_service_account_token: true
+  module.bindplane-sa.google_project_iam_member.project-roles["tmp-test-roles/pubsub.editor"]:
+    condition: []
+    project: tmp-test
+    role: roles/pubsub.editor
+  module.bindplane-sa.google_service_account.service_account[0]:
+    account_id: bindplane
+    create_ignore_already_exists: null
+    description: null
+    disabled: false
+    display_name: Terraform-managed.
+    email: bindplane@tmp-test.iam.gserviceaccount.com
+    member: serviceAccount:bindplane@tmp-test.iam.gserviceaccount.com
+    project: tmp-test
+    timeouts: null
+  module.bindplane-sa.google_service_account_iam_binding.authoritative["roles/iam.workloadIdentityUser"]:
+    condition: []
+    members:
+      - serviceAccount:tmp-test.svc.id.goog[bindplane/bindplane]
+    role: roles/iam.workloadIdentityUser
+  module.db.google_sql_database.databases["bindplane"]:
+    deletion_policy: DELETE
+    instance: tmp-bindplane
+    name: bindplane
+    project: tmp-test
+    timeouts: null
+  module.db.google_sql_database_instance.primary:
+    clone: []
+    database_version: POSTGRES_13
+    deletion_protection: false
+    name: tmp-bindplane
+    project: tmp-test
+    region: europe-west8
+    restore_backup_context: []
+    root_password: null
+    settings:
+      - activation_policy: ALWAYS
+        active_directory_config: []
+        advanced_machine_features: []
+        availability_type: REGIONAL
+        collation: null
+        database_flags: []
+        deletion_protection_enabled: false
+        deny_maintenance_period: []
+        disk_autoresize: true
+        disk_autoresize_limit: 0
+        disk_type: PD_SSD
+        edition: ENTERPRISE
+        enable_dataplex_integration: null
+        enable_google_ml_integration: null
+        ip_configuration:
+          - allocated_ip_range: null
+            authorized_networks: []
+            custom_subject_alternative_names: null
+            enable_private_path_for_google_cloud_services: false
+            ipv4_enabled: false
+            private_network: null
+            psc_config:
+              - allowed_consumer_projects:
+                  - tmp-test
+                psc_auto_connections: []
+                psc_enabled: true
+            server_ca_pool: null
+        maintenance_window: []
+        password_validation_policy: []
+        pricing_plan: PER_USE
+        retain_backups_on_delete: null
+        sql_server_audit_config: []
+        tier: db-g1-small
+        time_zone: null
+    timeouts: null
+  module.db.google_sql_user.users["bindplane"]:
+    deletion_policy: null
+    instance: tmp-bindplane
+    name: bindplane
+    password_policy: []
+    password_wo: null
+    password_wo_version: null
+    project: tmp-test
+    timeouts: null
+    type: null
+  module.db.random_password.passwords["bindplane"]:
+    keepers: null
+    length: 16
+    lower: true
+    min_lower: 1
+    min_numeric: 1
+    min_special: 1
+    min_upper: 1
+    number: true
+    numeric: true
+    override_special: null
+    special: true
+    upper: true
+  module.dns[0].google_dns_managed_zone.dns_managed_zone[0]:
+    cloud_logging_config:
+      - enable_logging: false
+    description: Terraform managed.
+    dns_name: example.com.
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    force_destroy: false
+    forwarding_config: []
+    labels: null
+    name: bindplane
+    peering_config: []
+    private_visibility_config:
+      - gke_clusters: []
+        networks:
+          - network_url: https://www.googleapis.com/compute/v1/projects/prod-net-landing-0/global/networks/prod-landing-0
+    project: tmp-test
+    reverse_lookup: false
+    service_directory_config: []
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+    visibility: private
+  module.dns[0].google_dns_record_set.dns_record_set["A bindplane"]:
+    managed_zone: bindplane
+    name: bindplane.example.com.
+    project: tmp-test
+    routing_policy: []
+    ttl: 600
+    type: A
+  module.fleet.google_gke_hub_membership.default["bindplane"]:
+    authority: []
+    description: null
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    endpoint:
+      - gke_cluster:
+          - {}
+    labels: null
+    location: global
+    membership_id: bindplane
+    project: tmp-test
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+  module.project.google_project.project[0]:
+    auto_create_network: false
+    billing_account: 12345-ABCDEF-12345
+    deletion_policy: DELETE
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    folder_id: '2345678901'
+    labels: null
+    name: tmp-test
+    org_id: null
+    project_id: tmp-test
+    tags: null
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+  module.project.google_project_iam_binding.authoritative["roles/pubsub.editor"]:
+    condition: []
+    project: tmp-test
+    role: roles/pubsub.editor
+  module.project.google_project_iam_member.service_agents["anthossupport"]:
+    condition: []
+    project: tmp-test
+    role: roles/anthossupport.serviceAgent
+  module.project.google_project_iam_member.service_agents["chronicle"]:
+    condition: []
+    project: tmp-test
+    role: roles/chronicle.serviceAgent
+  module.project.google_project_iam_member.service_agents["compute-system"]:
+    condition: []
+    project: tmp-test
+    role: roles/compute.serviceAgent
+  module.project.google_project_iam_member.service_agents["container-engine-robot"]:
+    condition: []
+    project: tmp-test
+    role: roles/container.serviceAgent
+  module.project.google_project_iam_member.service_agents["gkehub"]:
+    condition: []
+    project: tmp-test
+    role: roles/gkehub.serviceAgent
+  module.project.google_project_iam_member.service_agents["gkenode"]:
+    condition: []
+    project: tmp-test
+    role: roles/container.defaultNodeServiceAgent
+  module.project.google_project_iam_member.service_agents["monitoring-notification"]:
+    condition: []
+    project: tmp-test
+    role: roles/monitoring.notificationServiceAgent
+  module.project.google_project_service.project_services["chronicle.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: chronicle.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["compute.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: compute.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["connectgateway.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: connectgateway.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["container.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: container.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["gkeconnect.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: gkeconnect.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["gkehub.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: gkehub.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["iap.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: iap.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["logging.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: logging.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["monitoring.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: monitoring.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["chronicle.googleapis.com"]:
+    project: tmp-test
+    service: chronicle.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["connectgateway.googleapis.com"]:
+    project: tmp-test
+    service: connectgateway.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["container.googleapis.com"]:
+    project: tmp-test
+    service: container.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["gkehub.googleapis.com"]:
+    project: tmp-test
+    service: gkehub.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["iap.googleapis.com"]:
+    project: tmp-test
+    service: iap.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["monitoring.googleapis.com"]:
+    project: tmp-test
+    service: monitoring.googleapis.com
+    timeouts: null
+  module.pubsub.google_pubsub_topic.default:
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    ingestion_data_source_settings: []
+    kms_key_name: null
+    labels: null
+    message_retention_duration: null
+    message_transforms: []
+    name: bindplane
+    project: tmp-test
+    schema_settings: []
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+  tls_cert_request.server_csr[0]:
+    dns_names:
+      - bindplane.example.com
+    ip_addresses: null
+    subject:
+      - common_name: Gitlab
+        country: IT
+        email_address: null
+        locality: Milan
+        organization: Example
+        organizational_unit: Example
+        postal_code: null
+        province: Lombardy
+        serial_number: null
+        street_address: null
+    uris: null
+  tls_locally_signed_cert.server_singed_cert[0]:
+    allowed_uses:
+      - digital_signature
+      - key_encipherment
+      - server_auth
+      - client_auth
+    early_renewal_hours: 0
+    is_ca_certificate: false
+    ready_for_renewal: false
+    set_subject_key_id: false
+    validity_period_hours: 87600
+  tls_private_key.ca_private_key[0]:
+    algorithm: RSA
+    ecdsa_curve: P224
+    rsa_bits: 2048
+  tls_private_key.server_key[0]:
+    algorithm: RSA
+    ecdsa_curve: P224
+    rsa_bits: 2048
+  tls_self_signed_cert.ca_cert[0]:
+    allowed_uses:
+      - digital_signature
+      - cert_signing
+      - crl_signing
+    dns_names: null
+    early_renewal_hours: 0
+    ip_addresses: null
+    is_ca_certificate: true
+    ready_for_renewal: false
+    set_authority_key_id: false
+    set_subject_key_id: false
+    subject:
+      - common_name: Bindplane
+        country: IT
+        email_address: null
+        locality: Milan
+        organization: Example
+        organizational_unit: Example
+        postal_code: null
+        province: Lombardy
+        serial_number: null
+        street_address: null
+    uris: null
+    validity_period_hours: 87600

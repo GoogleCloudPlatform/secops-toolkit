@@ -27,9 +27,9 @@ terraform {
     }
   }
   provider_meta "google" {
-    module_name = "google-pso-tool/cloud-foundation-fabric/modules/secops-rules:v39.1.0-tofu"
+    module_name = "google-pso-tool/secops-toolkit/modules/secops-rules:v39.1.0-tofu"
   }
   provider_meta "google-beta" {
-    module_name = "google-pso-tool/cloud-foundation-fabric/modules/secops-rules:v39.1.0-tofu"
+    module_name = "google-pso-tool/secops-toolkit/modules/secops-rules:v39.1.0-tofu"
   }
 }

@@ -1,0 +1,976 @@
+values:
+  module.chronicle-forwarder-deployment.kubernetes_deployment.cfps["tenant-1"]:
+    metadata:
+      - annotations: null
+        generate_name: null
+        labels:
+          app: cfps-tenant-1
+        name: cfps-tenant-1
+        namespace: ten-1
+    spec:
+      - min_ready_seconds: 0
+        paused: false
+        progress_deadline_seconds: 600
+        replicas: '2'
+        revision_history_limit: 10
+        selector:
+          - match_expressions: []
+            match_labels:
+              app: cfps-tenant-1
+        template:
+          - metadata:
+              - annotations: null
+                generate_name: null
+                labels:
+                  app: cfps-tenant-1
+                namespace: null
+            spec:
+              - active_deadline_seconds: null
+                affinity: []
+                automount_service_account_token: true
+                container:
+                  - args: null
+                    command: null
+                    env: []
+                    env_from: []
+                    image: gcr.io/chronicle-container/cf_production_stable
+                    image_pull_policy: IfNotPresent
+                    lifecycle: []
+                    liveness_probe:
+                      - exec: []
+                        failure_threshold: 3
+                        grpc: []
+                        http_get:
+                          - host: null
+                            http_header: []
+                            path: /meta/available
+                            port: '8080'
+                            scheme: HTTP
+                        initial_delay_seconds: null
+                        period_seconds: 30
+                        success_threshold: 1
+                        tcp_socket: []
+                        timeout_seconds: 1
+                    name: cfps
+                    port: []
+                    readiness_probe:
+                      - exec: []
+                        failure_threshold: 1
+                        grpc: []
+                        http_get:
+                          - host: null
+                            http_header: []
+                            path: /meta/ready
+                            port: '8080'
+                            scheme: HTTP
+                        initial_delay_seconds: null
+                        period_seconds: 30
+                        success_threshold: 1
+                        tcp_socket: []
+                        timeout_seconds: 1
+                    resources:
+                      - limits:
+                          cpu: '4'
+                          memory: 6Gi
+                        requests:
+                          cpu: '2'
+                          memory: 2Gi
+                    security_context: []
+                    startup_probe: []
+                    stdin: false
+                    stdin_once: false
+                    termination_message_path: /dev/termination-log
+                    tty: false
+                    volume_device: []
+                    volume_mount:
+                      - mount_path: /opt/chronicle/external/
+                        mount_propagation: None
+                        name: cfps-secret-config-tenant-1
+                        read_only: true
+                        sub_path: null
+                    working_dir: null
+                dns_config: []
+                dns_policy: ClusterFirst
+                enable_service_links: true
+                host_aliases: []
+                host_ipc: false
+                host_network: false
+                host_pid: false
+                init_container: []
+                node_selector: null
+                os: []
+                priority_class_name: null
+                restart_policy: Always
+                runtime_class_name: null
+                security_context: []
+                share_process_namespace: false
+                subdomain: null
+                termination_grace_period_seconds: 30
+                toleration: []
+                topology_spread_constraint: []
+                volume:
+                  - aws_elastic_block_store: []
+                    azure_disk: []
+                    azure_file: []
+                    ceph_fs: []
+                    cinder: []
+                    config_map: []
+                    csi: []
+                    downward_api: []
+                    empty_dir: []
+                    ephemeral: []
+                    fc: []
+                    flex_volume: []
+                    flocker: []
+                    gce_persistent_disk: []
+                    git_repo: []
+                    glusterfs: []
+                    host_path: []
+                    iscsi: []
+                    local: []
+                    name: cfps-secret-config-tenant-1
+                    nfs: []
+                    persistent_volume_claim: []
+                    photon_persistent_disk: []
+                    projected: []
+                    quobyte: []
+                    rbd: []
+                    secret:
+                      - default_mode: '0644'
+                        items: []
+                        optional: null
+                        secret_name: cfps-secret-config-tenant-1
+                    vsphere_volume: []
+    timeouts: null
+    wait_for_rollout: true
+  module.chronicle-forwarder-deployment.kubernetes_deployment.cfps["tenant-2"]:
+    metadata:
+      - annotations: null
+        generate_name: null
+        labels:
+          app: cfps-tenant-2
+        name: cfps-tenant-2
+        namespace: tenant-2
+    spec:
+      - min_ready_seconds: 0
+        paused: false
+        progress_deadline_seconds: 600
+        replicas: '2'
+        revision_history_limit: 10
+        selector:
+          - match_expressions: []
+            match_labels:
+              app: cfps-tenant-2
+        template:
+          - metadata:
+              - annotations: null
+                generate_name: null
+                labels:
+                  app: cfps-tenant-2
+                namespace: null
+            spec:
+              - active_deadline_seconds: null
+                affinity: []
+                automount_service_account_token: true
+                container:
+                  - args: null
+                    command: null
+                    env: []
+                    env_from: []
+                    image: gcr.io/chronicle-container/cf_production_stable
+                    image_pull_policy: IfNotPresent
+                    lifecycle: []
+                    liveness_probe:
+                      - exec: []
+                        failure_threshold: 3
+                        grpc: []
+                        http_get:
+                          - host: null
+                            http_header: []
+                            path: /meta/available
+                            port: '8080'
+                            scheme: HTTP
+                        initial_delay_seconds: null
+                        period_seconds: 30
+                        success_threshold: 1
+                        tcp_socket: []
+                        timeout_seconds: 1
+                    name: cfps
+                    port: []
+                    readiness_probe:
+                      - exec: []
+                        failure_threshold: 1
+                        grpc: []
+                        http_get:
+                          - host: null
+                            http_header: []
+                            path: /meta/ready
+                            port: '8080'
+                            scheme: HTTP
+                        initial_delay_seconds: null
+                        period_seconds: 30
+                        success_threshold: 1
+                        tcp_socket: []
+                        timeout_seconds: 1
+                    resources:
+                      - limits:
+                          cpu: '4'
+                          memory: 6Gi
+                        requests:
+                          cpu: '2'
+                          memory: 2Gi
+                    security_context: []
+                    startup_probe: []
+                    stdin: false
+                    stdin_once: false
+                    termination_message_path: /dev/termination-log
+                    tty: false
+                    volume_device: []
+                    volume_mount:
+                      - mount_path: /opt/chronicle/external/
+                        mount_propagation: None
+                        name: cfps-secret-config-tenant-2
+                        read_only: true
+                        sub_path: null
+                    working_dir: null
+                dns_config: []
+                dns_policy: ClusterFirst
+                enable_service_links: true
+                host_aliases: []
+                host_ipc: false
+                host_network: false
+                host_pid: false
+                init_container: []
+                node_selector: null
+                os: []
+                priority_class_name: null
+                restart_policy: Always
+                runtime_class_name: null
+                security_context: []
+                share_process_namespace: false
+                subdomain: null
+                termination_grace_period_seconds: 30
+                toleration: []
+                topology_spread_constraint: []
+                volume:
+                  - aws_elastic_block_store: []
+                    azure_disk: []
+                    azure_file: []
+                    ceph_fs: []
+                    cinder: []
+                    config_map: []
+                    csi: []
+                    downward_api: []
+                    empty_dir: []
+                    ephemeral: []
+                    fc: []
+                    flex_volume: []
+                    flocker: []
+                    gce_persistent_disk: []
+                    git_repo: []
+                    glusterfs: []
+                    host_path: []
+                    iscsi: []
+                    local: []
+                    name: cfps-secret-config-tenant-2
+                    nfs: []
+                    persistent_volume_claim: []
+                    photon_persistent_disk: []
+                    projected: []
+                    quobyte: []
+                    rbd: []
+                    secret:
+                      - default_mode: '0644'
+                        items: []
+                        optional: null
+                        secret_name: cfps-secret-config-tenant-2
+                    vsphere_volume: []
+    timeouts: null
+    wait_for_rollout: true
+  module.chronicle-forwarder-deployment.kubernetes_horizontal_pod_autoscaler_v2.cfps["tenant-1"]:
+    metadata:
+      - annotations: null
+        generate_name: null
+        labels: null
+        name: cfps-tenant-1-hpa
+        namespace: ten-1
+    spec:
+      - max_replicas: 5
+        metric:
+          - container_resource: []
+            external: []
+            object: []
+            pods: []
+            resource:
+              - name: cpu
+                target:
+                  - average_utilization: 80
+                    average_value: null
+                    type: Utilization
+                    value: null
+            type: Resource
+        min_replicas: 2
+        scale_target_ref:
+          - api_version: null
+            kind: Deployment
+            name: cfps-tenant-1
+  module.chronicle-forwarder-deployment.kubernetes_horizontal_pod_autoscaler_v2.cfps["tenant-2"]:
+    metadata:
+      - annotations: null
+        generate_name: null
+        labels: null
+        name: cfps-tenant-2-hpa
+        namespace: tenant-2
+    spec:
+      - max_replicas: 5
+        metric:
+          - container_resource: []
+            external: []
+            object: []
+            pods: []
+            resource:
+              - name: cpu
+                target:
+                  - average_utilization: 80
+                    average_value: null
+                    type: Utilization
+                    value: null
+            type: Resource
+        min_replicas: 2
+        scale_target_ref:
+          - api_version: null
+            kind: Deployment
+            name: cfps-tenant-2
+  module.chronicle-forwarder-deployment.kubernetes_namespace.namespace["tenant-1"]:
+    metadata:
+      - annotations: null
+        generate_name: null
+        labels: null
+        name: ten-1
+    timeouts: null
+    wait_for_default_service_account: false
+  module.chronicle-forwarder-deployment.kubernetes_namespace.namespace["tenant-2"]:
+    metadata:
+      - annotations: null
+        generate_name: null
+        labels: null
+        name: tenant-2
+    timeouts: null
+    wait_for_default_service_account: false
+  module.chronicle-forwarder-deployment.kubernetes_secret.secret_config["tenant-1"]:
+    binary_data: null
+    binary_data_wo: null
+    binary_data_wo_revision: null
+    data:
+      config.conf: "      output:\n  url: malachiteingestion-pa.googleapis.com:443\n\
+        \  identity:\n    identity:\n    collector_id: COLLECTOR_ID \\\n    customer_id:\
+        \ CUSTOMER_ID \\\n\ncollectors:\n  - syslog:\n      common:\n        enabled:\
+        \ true\n        data_type: \"WINDOWS_DHCP\"\n        data_hint:\n        batch_n_seconds:\
+        \ 10\n        batch_n_bytes: 1048576\n      tcp_address: 0.0.0.0:10514\n \
+        \     udp_address: 0.0.0.0:10514\n      connection_timeout_sec: 60\n     \
+        \ tcp_buffer_size: 524288\n  - syslog:\n      common:\n        enabled: true\n\
+        \        data_type: \"WINDOWS_DNS\"\n        data_hint:\n        batch_n_seconds:\
+        \ 10\n        batch_n_bytes: 1048576\n      tcp_address: 0.0.0.0:10515\n \
+        \     connection_timeout_sec: 60\n      tcp_buffer_size: 524288\n"
+    data_wo: null
+    data_wo_revision: null
+    immutable: null
+    metadata:
+      - annotations: null
+        generate_name: null
+        labels: null
+        name: cfps-secret-config-tenant-1
+        namespace: ten-1
+    timeouts: null
+    type: Opaque
+    wait_for_service_account_token: true
+  module.chronicle-forwarder-deployment.kubernetes_secret.secret_config["tenant-2"]:
+    binary_data: null
+    binary_data_wo: null
+    binary_data_wo_revision: null
+    data:
+      config.conf: "# Copyright 2023 Google LLC\n#\n# Licensed under the Apache License,\
+        \ Version 2.0 (the \"License\");\n# you may not use this file except in compliance\
+        \ with the License.\n# You may obtain a copy of the License at\n#\n#     https://www.apache.org/licenses/LICENSE-2.0\n\
+        #\n# Unless required by applicable law or agreed to in writing, software\n\
+        # distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT\
+        \ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See\
+        \ the License for the specific language governing permissions and\n# limitations\
+        \ under the License.\n\noutput:\n  compression: true\n  url: europe-malachiteingestion-pa.googleapis.com:443\n\
+        \  identity:\n    secret_key: |\n            {\n      \"type\": \"service_account\"\
+        ,\n      \"project_id\": \"xxxx\",\n      \"private_key_id\": \"xxxxxxxxxxxxxx\"\
+        ,\n      \"private_key\": \"-----BEGIN PRIVATE KEY-----\\nsdcCDSCsLxhfQIOwdvzCn5wcwJ7xVA=\\\
+        n-----END PRIVATE KEY-----\\n\",\n      \"client_email\": \"sample@sample.iam.gserviceaccount.com\"\
+        ,\n      \"client_id\": \"ASDCVSACSA\",\n      \"auth_uri\": \"https://accounts.google.com/o/oauth2/auth\"\
+        ,\n      \"token_uri\": \"https://oauth2.googleapis.com/token\",\n      \"\
+        auth_provider_x509_cert_url\": \"https://www.googleapis.com/oauth2/v1/certs\"\
+        ,\n      \"client_x509_cert_url\": \"https://www.googleapis.com/robot/v1/metadata/x509/sample.iam.gserviceaccount.com\"\
+        ,\n      \"universe_domain\": \"googleapis.com\"\n      }\n      \n    collector_id:\
+        \ XXXXXXX-XXXX-XXXX-XXXX-XXXXXX\n    customer_id: XXXXXXX-XXXX-XXXX-XXXX-XXXXXX\n\
+        server:\n  graceful_timeout: 15s\n  drain_timeout: 10s\n  http:\n    port:\
+        \ 8080\n    host: 0.0.0.0\n    read_timeout: 3s\n    read_header_timeout:\
+        \ 3s\n    write_timeout: 3s\n    idle_timeout: 3s\n    routes:\n    - meta:\n\
+        \        available_status: 204\n        ready_status: 204\n        unready_status:\
+        \ 503\ncollectors:\n- syslog:\n    common:\n      enabled: true\n      data_type:\
+        \ PAN_FIREWALL\n      data_hint:\n      batch_n_seconds: 10\n      batch_n_bytes:\
+        \ 1048576\n    tcp_address: 0.0.0.0:2001\n    udp_address: 0.0.0.0:2001\n\
+        \    connection_timeout_sec: 60\n- syslog:\n    common:\n      enabled: true\n\
+        \      data_type: F5_BIGIP_LTM\n      data_hint:\n      batch_n_seconds: 10\n\
+        \      batch_n_bytes: 1048576\n    tcp_address: 0.0.0.0:2011\n    udp_address:\
+        \ 0.0.0.0:2011\n    connection_timeout_sec: 60\n- syslog:\n    common:\n \
+        \     enabled: true\n      data_type: NIX_SYSTEM\n      data_hint:\n     \
+        \ batch_n_seconds: 10\n      batch_n_bytes: 1048576\n    tcp_address: 0.0.0.0:2021\n\
+        \    udp_address: 0.0.0.0:2021\n    connection_timeout_sec: 60\n- syslog:\n\
+        \    common:\n      enabled: true\n      data_type: AUDITD\n      data_hint:\n\
+        \      batch_n_seconds: 10\n      batch_n_bytes: 1048576\n    tcp_address:\
+        \ 0.0.0.0:2031\n    udp_address: 0.0.0.0:2031\n    connection_timeout_sec:\
+        \ 60\n- syslog:\n    common:\n      enabled: true\n      data_type: WINEVTLOG\n\
+        \      data_hint:\n      batch_n_seconds: 10\n      batch_n_bytes: 1048576\n\
+        \    tcp_address: 0.0.0.0:2041\n    udp_address: 0.0.0.0:2041\n    connection_timeout_sec:\
+        \ 60\n- syslog:\n    common:\n      enabled: true\n      data_type: WINDOWS_DEFENDER_AV\n\
+        \      data_hint:\n      batch_n_seconds: 10\n      batch_n_bytes: 1048576\n\
+        \    tcp_address: 0.0.0.0:2051\n    udp_address: 0.0.0.0:2051\n    connection_timeout_sec:\
+        \ 60\n- syslog:\n    common:\n      enabled: true\n      data_type: POWERSHELL\n\
+        \      data_hint:\n      batch_n_seconds: 10\n      batch_n_bytes: 1048576\n\
+        \    tcp_address: 0.0.0.0:2061\n    udp_address: 0.0.0.0:2061\n    connection_timeout_sec:\
+        \ 60\n- syslog:\n    common:\n      enabled: true\n      data_type: WINDOWS_FIREWALL\n\
+        \      data_hint:\n      batch_n_seconds: 10\n      batch_n_bytes: 1048576\n\
+        \    tcp_address: 0.0.0.0:2071\n    udp_address: 0.0.0.0:2071\n    connection_timeout_sec:\
+        \ 60\n"
+    data_wo: null
+    data_wo_revision: null
+    immutable: null
+    metadata:
+      - annotations: null
+        generate_name: null
+        labels: null
+        name: cfps-secret-config-tenant-2
+        namespace: tenant-2
+    timeouts: null
+    type: Opaque
+    wait_for_service_account_token: true
+  module.chronicle-forwarder-deployment.kubernetes_service.service_tcp["tenant-1"]:
+    metadata:
+      - annotations:
+          networking.gke.io/load-balancer-type: Internal
+        generate_name: null
+        labels: null
+        name: cfps-tenant-1-tcp
+        namespace: ten-1
+    spec:
+      - allocate_load_balancer_node_ports: true
+        external_ips: null
+        external_name: null
+        load_balancer_class: null
+        load_balancer_ip: null
+        load_balancer_source_ranges: null
+        port:
+          - app_protocol: null
+            name: hc
+            port: 8080
+            protocol: TCP
+            target_port: '8080'
+          - app_protocol: null
+            name: tcp-2001
+            port: 2001
+            protocol: TCP
+            target_port: '2001'
+          - app_protocol: null
+            name: tcp-2011
+            port: 2011
+            protocol: TCP
+            target_port: '2011'
+          - app_protocol: null
+            name: tcp-2021
+            port: 2021
+            protocol: TCP
+            target_port: '2021'
+          - app_protocol: null
+            name: tcp-2031
+            port: 2031
+            protocol: TCP
+            target_port: '2031'
+          - app_protocol: null
+            name: tcp-2041
+            port: 2041
+            protocol: TCP
+            target_port: '2041'
+          - app_protocol: null
+            name: tcp-2051
+            port: 2051
+            protocol: TCP
+            target_port: '2051'
+          - app_protocol: null
+            name: tcp-2061
+            port: 2061
+            protocol: TCP
+            target_port: '2061'
+          - app_protocol: null
+            name: tcp-2071
+            port: 2071
+            protocol: TCP
+            target_port: '2071'
+        publish_not_ready_addresses: false
+        selector:
+          app: cfps-tenant-1
+        session_affinity: None
+        type: LoadBalancer
+    timeouts:
+      create: 5m
+    wait_for_load_balancer: true
+  module.chronicle-forwarder-deployment.kubernetes_service.service_tcp["tenant-2"]:
+    metadata:
+      - annotations:
+          networking.gke.io/load-balancer-type: Internal
+        generate_name: null
+        labels: null
+        name: cfps-tenant-2-tcp
+        namespace: tenant-2
+    spec:
+      - allocate_load_balancer_node_ports: true
+        external_ips: null
+        external_name: null
+        load_balancer_class: null
+        load_balancer_ip: null
+        load_balancer_source_ranges: null
+        port:
+          - app_protocol: null
+            name: hc
+            port: 8080
+            protocol: TCP
+            target_port: '8080'
+          - app_protocol: null
+            name: tcp-2001
+            port: 2001
+            protocol: TCP
+            target_port: '2001'
+          - app_protocol: null
+            name: tcp-2011
+            port: 2011
+            protocol: TCP
+            target_port: '2011'
+          - app_protocol: null
+            name: tcp-2021
+            port: 2021
+            protocol: TCP
+            target_port: '2021'
+          - app_protocol: null
+            name: tcp-2031
+            port: 2031
+            protocol: TCP
+            target_port: '2031'
+          - app_protocol: null
+            name: tcp-2041
+            port: 2041
+            protocol: TCP
+            target_port: '2041'
+          - app_protocol: null
+            name: tcp-2051
+            port: 2051
+            protocol: TCP
+            target_port: '2051'
+          - app_protocol: null
+            name: tcp-2061
+            port: 2061
+            protocol: TCP
+            target_port: '2061'
+          - app_protocol: null
+            name: tcp-2071
+            port: 2071
+            protocol: TCP
+            target_port: '2071'
+        publish_not_ready_addresses: false
+        selector:
+          app: cfps-tenant-2
+        session_affinity: None
+        type: LoadBalancer
+    timeouts:
+      create: 5m
+    wait_for_load_balancer: true
+  module.chronicle-forwarder-deployment.kubernetes_service.service_udp["tenant-1"]:
+    metadata:
+      - annotations:
+          networking.gke.io/load-balancer-type: Internal
+        generate_name: null
+        labels: null
+        name: cfps-tenant-1-udp
+        namespace: ten-1
+    spec:
+      - allocate_load_balancer_node_ports: true
+        external_ips: null
+        external_name: null
+        load_balancer_class: null
+        load_balancer_ip: null
+        load_balancer_source_ranges: null
+        port:
+          - app_protocol: null
+            name: udp-2001
+            port: 2001
+            protocol: UDP
+            target_port: '2001'
+          - app_protocol: null
+            name: udp-2011
+            port: 2011
+            protocol: UDP
+            target_port: '2011'
+          - app_protocol: null
+            name: udp-2021
+            port: 2021
+            protocol: UDP
+            target_port: '2021'
+          - app_protocol: null
+            name: udp-2031
+            port: 2031
+            protocol: UDP
+            target_port: '2031'
+          - app_protocol: null
+            name: udp-2041
+            port: 2041
+            protocol: UDP
+            target_port: '2041'
+          - app_protocol: null
+            name: udp-2051
+            port: 2051
+            protocol: UDP
+            target_port: '2051'
+          - app_protocol: null
+            name: udp-2061
+            port: 2061
+            protocol: UDP
+            target_port: '2061'
+          - app_protocol: null
+            name: udp-2071
+            port: 2071
+            protocol: UDP
+            target_port: '2071'
+        publish_not_ready_addresses: false
+        selector:
+          app: cfps-tenant-1
+        session_affinity: None
+        type: LoadBalancer
+    timeouts: null
+    wait_for_load_balancer: true
+  module.chronicle-forwarder-deployment.kubernetes_service.service_udp["tenant-2"]:
+    metadata:
+      - annotations:
+          networking.gke.io/load-balancer-type: Internal
+        generate_name: null
+        labels: null
+        name: cfps-tenant-2-udp
+        namespace: tenant-2
+    spec:
+      - allocate_load_balancer_node_ports: true
+        external_ips: null
+        external_name: null
+        load_balancer_class: null
+        load_balancer_ip: null
+        load_balancer_source_ranges: null
+        port:
+          - app_protocol: null
+            name: udp-2001
+            port: 2001
+            protocol: UDP
+            target_port: '2001'
+          - app_protocol: null
+            name: udp-2011
+            port: 2011
+            protocol: UDP
+            target_port: '2011'
+          - app_protocol: null
+            name: udp-2021
+            port: 2021
+            protocol: UDP
+            target_port: '2021'
+          - app_protocol: null
+            name: udp-2031
+            port: 2031
+            protocol: UDP
+            target_port: '2031'
+          - app_protocol: null
+            name: udp-2041
+            port: 2041
+            protocol: UDP
+            target_port: '2041'
+          - app_protocol: null
+            name: udp-2051
+            port: 2051
+            protocol: UDP
+            target_port: '2051'
+          - app_protocol: null
+            name: udp-2061
+            port: 2061
+            protocol: UDP
+            target_port: '2061'
+          - app_protocol: null
+            name: udp-2071
+            port: 2071
+            protocol: UDP
+            target_port: '2071'
+        publish_not_ready_addresses: false
+        selector:
+          app: cfps-tenant-2
+        session_affinity: None
+        type: LoadBalancer
+    timeouts: null
+    wait_for_load_balancer: true
+  module.chronicle-forwarder.google_container_cluster.cluster:
+    addons_config:
+      - cloudrun_config:
+          - disabled: true
+            load_balancer_type: null
+        config_connector_config:
+          - enabled: false
+        gke_backup_agent_config:
+          - enabled: false
+        horizontal_pod_autoscaling:
+          - disabled: false
+        http_load_balancing:
+          - disabled: false
+        kalm_config:
+          - enabled: false
+    allow_net_admin: false
+    binary_authorization: []
+    cluster_autoscaling:
+      - auto_provisioning_defaults:
+          - boot_disk_kms_key: null
+            disk_size: null
+            disk_type: null
+            image_type: null
+            min_cpu_platform: null
+            service_account: default
+            shielded_instance_config: []
+        autoscaling_profile: null
+        resource_limits: []
+    control_plane_endpoints_config:
+      - dns_endpoint_config:
+          - allow_external_traffic: true
+        ip_endpoints_config:
+          - enabled: true
+    cost_management_config:
+      - enabled: true
+    deletion_protection: false
+    description: null
+    disable_l4_lb_firewall_reconciliation: false
+    dns_config: []
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    enable_autopilot: true
+    enable_cilium_clusterwide_network_policy: false
+    enable_fqdn_network_policy: false
+    enable_intranode_visibility: true
+    enable_k8s_beta_apis: []
+    enable_kubernetes_alpha: false
+    enable_l4_ilb_subsetting: false
+    enable_legacy_abac: false
+    enable_multi_networking: false
+    enable_shielded_nodes: true
+    enable_tpu: false
+    fleet: []
+    gateway_api_config:
+      - channel: CHANNEL_STANDARD
+    in_transit_encryption_config: null
+    initial_node_count: 1
+    ip_allocation_policy:
+      - additional_pod_ranges_config: []
+        cluster_secondary_range_name: pods
+        services_secondary_range_name: services
+        stack_type: IPV4
+    location: europe-west8
+    logging_config:
+      - enable_components:
+          - APISERVER
+          - CONTROLLER_MANAGER
+          - SCHEDULER
+          - SYSTEM_COMPONENTS
+          - WORKLOADS
+    maintenance_policy:
+      - daily_maintenance_window:
+          - start_time: 03:00
+        maintenance_exclusion: []
+        recurring_window: []
+    master_auth:
+      - client_certificate_config:
+          - issue_client_certificate: false
+    master_authorized_networks_config:
+      - cidr_blocks:
+          - cidr_block: 10.0.0.0/8
+            display_name: rfc-1918-10-8
+    min_master_version: null
+    monitoring_config:
+      - enable_components:
+          - APISERVER
+          - CONTROLLER_MANAGER
+          - DAEMONSET
+          - DEPLOYMENT
+          - HPA
+          - POD
+          - SCHEDULER
+          - STATEFULSET
+          - STORAGE
+          - SYSTEM_COMPONENTS
+        managed_prometheus:
+          - enabled: true
+    name: chronicle-log-ingestion
+    network: https://www.googleapis.com/compute/v1/projects/prod-net-landing-0/global/networks/prod-landing-0
+    network_performance_config: []
+    network_policy: []
+    networking_mode: VPC_NATIVE
+    node_pool_auto_config:
+      - linux_node_config: []
+        network_tags: []
+        node_kubelet_config:
+          - insecure_kubelet_readonly_port_enabled: 'TRUE'
+        resource_manager_tags: null
+    pod_security_policy_config: []
+    private_cluster_config:
+      - enable_private_endpoint: null
+        enable_private_nodes: true
+        private_endpoint_subnetwork: null
+    project: test
+    release_channel:
+      - channel: REGULAR
+    remove_default_node_pool: null
+    resource_labels: null
+    resource_usage_export_config: []
+    secret_manager_config: []
+    subnetwork: https://www.googleapis.com/compute/v1/projects/prod-net-landing-0/regions/europe-west1/subnetworks/gke
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+    user_managed_keys_config: []
+  module.fleet.google_gke_hub_membership.default["chronicle-log-ingestion"]:
+    authority: []
+    description: null
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    endpoint:
+      - gke_cluster:
+          - {}
+    labels: null
+    location: global
+    membership_id: chronicle-log-ingestion
+    project: test
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+  module.project.google_project.project[0]:
+    auto_create_network: false
+    billing_account: 12345-ABCDEF-12345
+    deletion_policy: DELETE
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    folder_id: '2345678901'
+    labels: null
+    name: tmp-test
+    org_id: null
+    project_id: tmp-test
+    tags: null
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+  module.project.google_project_iam_member.service_agents["anthossupport"]:
+    condition: []
+    project: tmp-test
+    role: roles/anthossupport.serviceAgent
+  module.project.google_project_iam_member.service_agents["chronicle"]:
+    condition: []
+    project: tmp-test
+    role: roles/chronicle.serviceAgent
+  module.project.google_project_iam_member.service_agents["compute-system"]:
+    condition: []
+    project: tmp-test
+    role: roles/compute.serviceAgent
+  module.project.google_project_iam_member.service_agents["container-engine-robot"]:
+    condition: []
+    project: tmp-test
+    role: roles/container.serviceAgent
+  module.project.google_project_iam_member.service_agents["gkehub"]:
+    condition: []
+    project: tmp-test
+    role: roles/gkehub.serviceAgent
+  module.project.google_project_iam_member.service_agents["gkenode"]:
+    condition: []
+    project: tmp-test
+    role: roles/container.defaultNodeServiceAgent
+  module.project.google_project_iam_member.service_agents["monitoring-notification"]:
+    condition: []
+    project: tmp-test
+    role: roles/monitoring.notificationServiceAgent
+  module.project.google_project_service.project_services["chronicle.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: chronicle.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["compute.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: compute.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["connectgateway.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: connectgateway.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["container.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: container.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["gkeconnect.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: gkeconnect.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["gkehub.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: gkehub.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["iap.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: iap.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["logging.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: logging.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["monitoring.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: tmp-test
+    service: monitoring.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["chronicle.googleapis.com"]:
+    project: tmp-test
+    service: chronicle.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["connectgateway.googleapis.com"]:
+    project: tmp-test
+    service: connectgateway.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["container.googleapis.com"]:
+    project: tmp-test
+    service: container.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["gkehub.googleapis.com"]:
+    project: tmp-test
+    service: gkehub.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["iap.googleapis.com"]:
+    project: tmp-test
+    service: iap.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["monitoring.googleapis.com"]:
+    project: tmp-test
+    service: monitoring.googleapis.com
+    timeouts: null

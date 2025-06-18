@@ -26,11 +26,6 @@ variable "factories_config" {
   default  = {}
 }
 
-variable "project_id" {
-  description = "Project used for resources."
-  type        = string
-}
-
 variable "reference_lists_config" {
   description = "SecOps Reference lists configuration."
   type = map(object({
@@ -63,10 +58,11 @@ variable "rules_config" {
   }
 }
 
-variable "tenant_config" {
-  description = "SecOps Tenant configuration."
+variable "secops_config" {
+  description = "SecOps configuration."
   type = object({
     customer_id = string
+    project     = string
     region      = string
   })
 }
