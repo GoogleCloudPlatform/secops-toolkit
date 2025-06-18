@@ -68,8 +68,14 @@ jobs:
         run: |
           terraform fmt -recursive -check -diff $GITHUB_WORKSPACE
 
-      - name: TFLint
-        run: cd cloud-run-single && tflint --recursive -f compact
+      - name: TFLint Modules
+        run: cd modules && tflint --recursive -f compact
+
+      - name: TFLint Blueprints
+        run: cd blueprints && tflint --recursive -f compact
+
+      - name: TFLint Pipelines
+        run: cd pipelines && tflint --recursive -f compact
 
       - name: Check documentation
         id: documentation
