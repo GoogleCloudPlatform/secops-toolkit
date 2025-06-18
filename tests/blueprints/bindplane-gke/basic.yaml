@@ -27,11 +27,12 @@ values:
     force_update: false
     keyring: null
     lint: false
+    manifest: null
     max_history: 0
     name: bindplane
     namespace: bindplane
     pass_credentials: false
-    postrender: []
+    postrender: null
     recreate_pods: false
     render_subchart_notes: true
     replace: false
@@ -43,13 +44,16 @@ values:
     repository_username: null
     reset_values: false
     reuse_values: false
-    set: []
-    set_list: []
-    set_sensitive: []
+    set: null
+    set_list: null
+    set_sensitive: null
+    set_wo: null
+    set_wo_revision: null
     skip_crds: false
     status: deployed
     timeout: 300
-    upgrade_install: null
+    values:
+      - null
     verify: false
     version: 1.29.3
     wait: true

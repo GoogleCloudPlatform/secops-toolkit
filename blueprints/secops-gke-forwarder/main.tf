@@ -25,7 +25,7 @@ locals {
 module "project" {
   source = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/project"
   billing_account = (var.project_create_config != null
-    ? var.project_create_config.billing_account_id
+    ? var.project_create_config.billing_account
     : null
   )
   parent = (var.project_create_config != null

@@ -146,14 +146,12 @@ possibly on GCS) before adopting the pipeline (of course).
 
 ```hcl
 module "test" {
-  source        = "./secops-toolkit/pipelines/detection-as-code"
-  secops_config = {
-    location = "eu"
-    instance = "XXXXXX-XXX-XXXXXX"
-    project  = "secops-project"
-  }
+  source             = "./secops-toolkit/pipelines/detection-as-code"
+  secops_customer_id = "xxxxxxxxxxxx"
+  secops_project_id  = var.project_id
+  secops_region      = "eu"
 }
-# tftest modules=1 resources=2 files=rule,config
+# tftest modules=1 resources=5 files=rule,config
 ```
 
 ```

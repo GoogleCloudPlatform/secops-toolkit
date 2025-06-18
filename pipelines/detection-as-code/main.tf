@@ -15,28 +15,27 @@
  */
 
 locals {
-  reference_lists = yamldecode(file(var.secops_content_config.reference_lists))
+  reference_lists = yamldecode(file("${path.module}/${var.secops_content_config.reference_lists}"))
   reference_list_type_mapping = {
     STRING = "REFERENCE_LIST_SYNTAX_TYPE_PLAIN_TEXT_STRING"
     REGEX  = "REFERENCE_LIST_SYNTAX_TYPE_REGEX"
     CIDR   = "REFERENCE_LIST_SYNTAX_TYPE_CIDR"
   }
   secops_rules = {
-    for file_name in fileset("rules", "*.yaral") : replace(file_name, ".yaral", "") => file("rules/${file_name}")
+    for file_name in fileset("${path.module}/rules", "*.yaral") : replace(file_name, ".yaral", "") => file("${path.module}/rules/${file_name}")
   }
-  secops_rule_deployment = yamldecode(file(var.secops_content_config.rules))
+  secops_rule_deployment = yamldecode(file("${path.module}/${var.secops_content_config.rules}"))
 }
 
 resource "google_chronicle_reference_list" "reference_list" {
   for_each          = local.reference_lists
-  provider          = "google-beta"
   project           = var.secops_project_id
   location          = var.secops_region
   instance          = var.secops_customer_id
   reference_list_id = each.key
   description       = each.value.description
   dynamic "entries" {
-    for_each = toset(split("\n", file("reference_lists/${each.key}.txt")))
+    for_each = toset(split("\n", file("${path.module}/reference_lists/${each.key}.txt")))
     content {
       value = entries.value
     }
@@ -46,7 +45,6 @@ resource "google_chronicle_reference_list" "reference_list" {
 
 resource "google_chronicle_rule" "rule" {
   for_each        = local.secops_rule_deployment
-  provider        = "google-beta"
   project         = var.secops_project_id
   location        = var.secops_region
   instance        = var.secops_customer_id
@@ -59,7 +57,6 @@ resource "google_chronicle_rule" "rule" {
 
 resource "google_chronicle_rule_deployment" "rule_deployment" {
   for_each      = local.secops_rule_deployment
-  provider      = "google-beta"
   project       = var.secops_project_id
   location      = var.secops_region
   instance      = var.secops_customer_id
