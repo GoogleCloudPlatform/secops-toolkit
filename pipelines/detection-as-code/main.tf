@@ -47,9 +47,9 @@ resource "google_chronicle_reference_list" "reference_list" {
 resource "google_chronicle_rule" "rule" {
   for_each        = local.secops_rule_deployment
   provider        = "google-beta"
-  project           = var.secops_project_id
-  location          = var.secops_region
-  instance          = var.secops_customer_id
+  project         = var.secops_project_id
+  location        = var.secops_region
+  instance        = var.secops_customer_id
   deletion_policy = "FORCE"
   text            = local.secops_rules[each.key]
   depends_on = [
@@ -60,9 +60,9 @@ resource "google_chronicle_rule" "rule" {
 resource "google_chronicle_rule_deployment" "rule_deployment" {
   for_each      = local.secops_rule_deployment
   provider      = "google-beta"
-  project           = var.secops_project_id
-  location          = var.secops_region
-  instance          = var.secops_customer_id
+  project       = var.secops_project_id
+  location      = var.secops_region
+  instance      = var.secops_customer_id
   rule          = google_chronicle_rule.rule[each.key].rule_id
   enabled       = each.value.enabled
   alerting      = each.value.alerting
