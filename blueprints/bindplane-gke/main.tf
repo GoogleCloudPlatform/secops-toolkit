@@ -198,8 +198,8 @@ module "bindplane-deployment" {
   depends_on        = [module.bindplane-cluster]
   bindplane_secrets = var.bindplane_secrets
   bindplane_tls = {
-    cer = coalesce(var.bindplane_config.tls_certificate_cer, try(tls_locally_signed_cert.server_singed_cert.0.cert_pem, null))
-    key = coalesce(var.bindplane_config.tls_certificate_key, try(tls_private_key.server_key.0.private_key_pem, null))
+    cer = coalesce(var.bindplane_config.tls_certificate_cer, try(tls_locally_signed_cert.server_singed_cert[0].cert_pem, null))
+    key = coalesce(var.bindplane_config.tls_certificate_key, try(tls_private_key.server_key[0].private_key_pem, null))
   }
 }
 

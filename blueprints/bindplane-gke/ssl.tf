@@ -42,7 +42,7 @@ resource "tls_private_key" "ca_private_key" {
 
 resource "tls_self_signed_cert" "ca_cert" {
   count             = local.bootstrap_self_signed_cert ? 1 : 0
-  private_key_pem   = tls_private_key.ca_private_key.0.private_key_pem
+  private_key_pem   = tls_private_key.ca_private_key[0].private_key_pem
   is_ca_certificate = true
   dynamic "subject" {
     for_each = toset(local.cert_subjects)
@@ -74,7 +74,7 @@ resource "tls_private_key" "server_key" {
 
 resource "tls_cert_request" "server_csr" {
   count           = local.bootstrap_self_signed_cert ? 1 : 0
-  private_key_pem = tls_private_key.server_key.0.private_key_pem
+  private_key_pem = tls_private_key.server_key[0].private_key_pem
   dns_names       = ["${var.dns_config.hostname}.${var.dns_config.domain}"]
 
   dynamic "subject" {
@@ -92,9 +92,9 @@ resource "tls_cert_request" "server_csr" {
 
 resource "tls_locally_signed_cert" "server_singed_cert" {
   count              = local.bootstrap_self_signed_cert ? 1 : 0
-  cert_request_pem   = tls_cert_request.server_csr.0.cert_request_pem
-  ca_private_key_pem = tls_private_key.ca_private_key.0.private_key_pem
-  ca_cert_pem        = tls_self_signed_cert.ca_cert.0.cert_pem
+  cert_request_pem   = tls_cert_request.server_csr[0].cert_request_pem
+  ca_private_key_pem = tls_private_key.ca_private_key[0].private_key_pem
+  ca_cert_pem        = tls_self_signed_cert.ca_cert[0].cert_pem
 
   validity_period_hours = 87600 //  3650 days or 10 years
 

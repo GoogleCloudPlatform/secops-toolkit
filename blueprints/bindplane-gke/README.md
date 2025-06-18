@@ -68,12 +68,12 @@ data "google_client_config" "identity" {
 
 provider "kubernetes" {
   host  = module.bindplane-gke.fleet_host
-  token = try(data.google_client_config.identity.0.access_token, null)
+  token = try(data.google_client_config.identity[0].access_token, null)
 }
 
 provider "kubectl" {
   host = module.bindplane-gke.fleet_host
-  token = try(data.google_client_config.identity.0.access_token, null)
+  token = try(data.google_client_config.identity[0].access_token, null)
 }
 ```
 

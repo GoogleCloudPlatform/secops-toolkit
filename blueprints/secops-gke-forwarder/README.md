@@ -58,12 +58,12 @@ data "google_client_config" "identity" {
 
 provider "kubernetes" {
   host  = module.chronicle-forwarder.fleet_host
-  token = try(data.google_client_config.identity.0.access_token, null)
+  token = try(data.google_client_config.identity[0].access_token, null)
 }
 
 provider "kubectl" {
   host = module.chronicle-forwarder.fleet_host
-  token = try(data.google_client_config.identity.0.access_token, null)
+  token = try(data.google_client_config.identity[0].access_token, null)
 }
 ```
 

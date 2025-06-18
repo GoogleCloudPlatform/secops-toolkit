@@ -17,8 +17,8 @@
 locals {
   dlp_config = var.dlp_config == null ? {
     region                 = var.regions.primary
-    deidentify_template_id = google_data_loss_prevention_deidentify_template.dlp_deidentify_template.0.id
-    inspect_template_id    = google_data_loss_prevention_inspect_template.dlp_inspect_template.0.id
+    deidentify_template_id = google_data_loss_prevention_deidentify_template.dlp_deidentify_template[0].id
+    inspect_template_id    = google_data_loss_prevention_inspect_template.dlp_inspect_template[0].id
   } : var.dlp_config
 }
 
@@ -132,7 +132,7 @@ module "function" {
   service_account_create = true
   ingress_settings       = "ALLOW_INTERNAL_AND_GCLB"
   build_worker_pool      = var.cloud_function_config.build_worker_pool_id
-  build_service_account  = var.cloud_function_config.build_sa != null ? var.cloud_function_config.build_sa : module.cloudbuild-sa.0.id
+  build_service_account  = var.cloud_function_config.build_sa != null ? var.cloud_function_config.build_sa : module.cloudbuild-sa[0].id
   bucket_config = {
     lifecycle_delete_age_days = 1
   }
@@ -151,7 +151,7 @@ module "function" {
     SECOPS_EXPORT_BUCKET       = module.export-bucket.name
     LOG_EXECUTION_ID           = "true"
     }, var.skip_anonymization ? {} : {
-    SECOPS_OUTPUT_BUCKET       = module.anonymized-bucket.0.name
+    SECOPS_OUTPUT_BUCKET       = module.anonymized-bucket[0].name
     DLP_DEIDENTIFY_TEMPLATE_ID = local.dlp_config.deidentify_template_id
     DLP_INSPECT_TEMPLATE_ID    = local.dlp_config.inspect_template_id
     DLP_REGION                 = local.dlp_config.region

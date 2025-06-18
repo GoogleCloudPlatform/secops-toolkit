@@ -170,7 +170,7 @@ module "cai-pubsub-topics" {
   project_id = module.project.project_id
   name       = "secops_topic_${lower(each.key)}"
   iam = {
-    "roles/pubsub.publisher" = ["serviceAccount:${module.cai-to-secops.0.service_account_email}"]
+    "roles/pubsub.publisher" = ["serviceAccount:${module.cai-to-secops[0].service_account_email}"]
   }
   subscriptions = {
     (lower(each.key)) = {
@@ -179,7 +179,7 @@ module "cai-pubsub-topics" {
         attributes = {}
         no_wrapper = var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB" ? false : true
         oidc_token = var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB" ? {
-          service_account_email = module.cai-to-secops-pubsub-sa.0.email
+          service_account_email = module.cai-to-secops-pubsub-sa[0].email
         } : null
       }
     }
@@ -227,8 +227,8 @@ module "cai-to-secops" {
   bucket_name            = "${module.project.project_id}-cai-cf-source"
   service_account_create = true
   ingress_settings       = "ALLOW_INTERNAL_AND_GCLB"
-  build_worker_pool      = google_cloudbuild_worker_pool.dev_private_pool.0.id
-  build_service_account  = module.cloudbuild-sa.0.id
+  build_worker_pool      = google_cloudbuild_worker_pool.dev_private_pool[0].id
+  build_service_account  = module.cloudbuild-sa[0].id
   bucket_config = {
     lifecycle_delete_age_days = 1
   }
@@ -241,7 +241,7 @@ module "cai-to-secops" {
   }
   iam = {
     "roles/run.invoker" = [
-      "serviceAccount:${module.cai-to-secops-scheduler-sa.0.email}"
+      "serviceAccount:${module.cai-to-secops-scheduler-sa[0].email}"
     ]
   }
 }
@@ -260,12 +260,12 @@ resource "google_cloud_scheduler_job" "cai_job" {
   }
   http_target {
     http_method = "POST"
-    uri         = module.cai-to-secops.0.uri
+    uri         = module.cai-to-secops[0].uri
     body        = base64encode(jsonencode(local.cai_function_config))
     headers     = { "Content-Type" : "application/json" }
     oidc_token {
-      service_account_email = module.cai-to-secops-scheduler-sa.0.email
-      audience              = module.cai-to-secops.0.uri
+      service_account_email = module.cai-to-secops-scheduler-sa[0].email
+      audience              = module.cai-to-secops[0].uri
     }
   }
 }

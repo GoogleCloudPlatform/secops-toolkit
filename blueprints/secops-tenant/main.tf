@@ -53,7 +53,7 @@ module "folders" {
   }
   iam = var.secops_ingestion_config.ingest_assets_data ? {
     "roles/cloudasset.viewer" = [
-      "serviceAccount:${module.cai-to-secops.0.service_account_email}"
+      "serviceAccount:${module.cai-to-secops[0].service_account_email}"
     ]
   } : {}
 }
@@ -122,9 +122,9 @@ module "project" {
       ))
     },
     local.bootstrap_secops_integration ? {
-      "roles/artifactregistry.writer" = ["serviceAccount:${module.cloudbuild-sa.0.email}"]
-      "roles/storage.objectAdmin"     = ["serviceAccount:${module.cloudbuild-sa.0.email}"]
-      "roles/logging.logWriter"       = ["serviceAccount:${module.cloudbuild-sa.0.email}"]
+      "roles/artifactregistry.writer" = ["serviceAccount:${module.cloudbuild-sa[0].email}"]
+      "roles/storage.objectAdmin"     = ["serviceAccount:${module.cloudbuild-sa[0].email}"]
+      "roles/logging.logWriter"       = ["serviceAccount:${module.cloudbuild-sa[0].email}"]
     } : {}
   )
   iam_bindings_additive = merge(
@@ -172,7 +172,7 @@ resource "google_vpc_access_connector" "connector" {
   name          = "connector"
   region        = var.regions.primary
   ip_cidr_range = var.network_config.functions_connector_ip_range
-  network       = module.vpc.0.self_link
+  network       = module.vpc[0].self_link
 }
 
 module "cloudbuild-sa" {
@@ -193,7 +193,7 @@ resource "google_cloudbuild_worker_pool" "dev_private_pool" {
     no_external_ip = false
   }
   network_config {
-    peered_network          = module.vpc.0.id
+    peered_network          = module.vpc[0].id
     peered_network_ip_range = var.network_config.cloud_build_ip_range
   }
 }

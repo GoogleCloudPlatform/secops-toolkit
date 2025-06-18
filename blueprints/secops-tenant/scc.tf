@@ -56,7 +56,7 @@ module "pubsub-gcp-scc-topics" {
     ("sub_gcp_scc_${lower(each.value.scc_finding_class)}") = {
       iam = {
         "roles/pubsub.subscriber" = [
-          "serviceAccount:${module.scc-to-secops.0.service_account_email}"
+          "serviceAccount:${module.scc-to-secops[0].service_account_email}"
         ]
       }
     }
@@ -84,8 +84,8 @@ module "scc-to-secops" {
   bucket_name            = "${var.project_id}-cf-source"
   service_account_create = true
   ingress_settings       = "ALLOW_INTERNAL_AND_GCLB"
-  build_worker_pool      = google_cloudbuild_worker_pool.dev_private_pool.0.id
-  build_service_account  = module.cloudbuild-sa.0.id
+  build_worker_pool      = google_cloudbuild_worker_pool.dev_private_pool[0].id
+  build_service_account  = module.cloudbuild-sa[0].id
   bucket_config = {
     lifecycle_delete_age_days = 1
   }
@@ -100,12 +100,12 @@ module "scc-to-secops" {
   secrets = {}
   iam = {
     "roles/run.invoker" = [
-      "serviceAccount:${module.scc-to-secops-scheduler-sa.0.email}"
+      "serviceAccount:${module.scc-to-secops-scheduler-sa[0].email}"
     ]
   }
   vpc_connector = {
     create          = false
-    name            = google_vpc_access_connector.connector.0.id
+    name            = google_vpc_access_connector.connector[0].id
     egress_settings = "ALL_TRAFFIC"
   }
 }
@@ -124,12 +124,12 @@ resource "google_cloud_scheduler_job" "scc_jobs" {
   }
   http_target {
     http_method = "POST"
-    uri         = module.scc-to-secops.0.uri
+    uri         = module.scc-to-secops[0].uri
     body        = base64encode("{\"SUBSCRIPTION_ID\":\"${join("", ["sub_gcp_scc_", lower(each.value.scc_finding_class)])}\", \"SECOPS_DATA_TYPE\": \"${each.key}\"}")
     headers     = { "Content-Type" : "application/json" }
     oidc_token {
-      service_account_email = module.scc-to-secops-scheduler-sa.0.email
-      audience              = module.scc-to-secops.0.uri
+      service_account_email = module.scc-to-secops-scheduler-sa[0].email
+      audience              = module.scc-to-secops[0].uri
     }
   }
 }
