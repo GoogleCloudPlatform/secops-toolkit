@@ -27,19 +27,19 @@ This section details the available Terraform blueprints for deploying and managi
 
 ### SecOps Anonymization Pipeline
 
-<a href="./blueprints/secops-anonymization-pipeline/" title="SecOps Anonymization Pipeline"><img src="./blueprints/secops-anonymization-pipeline/images/diagram.png" align="left" width="280px"></a> This [blueprint](./secops-gke-forwarder/) is a comprehensive and adaptable solution for constructing a SecOps pipeline for exporting raw data from a SecOps tenant, optionally anonymize this data and then import data back in a different SecOps tenant.
+<a href="./blueprints/secops-anonymization-pipeline/" title="SecOps Anonymization Pipeline"><img src="./blueprints/secops-anonymization-pipeline/images/diagram.png" align="left" width="280px"></a> This [blueprint](./blueprints/secops-gke-forwarder/) is a comprehensive and adaptable solution for constructing a SecOps pipeline for exporting raw data from a SecOps tenant, optionally anonymize this data and then import data back in a different SecOps tenant.
 
 <br clear="left">
 
 ### SecOps GKE Forwarder
 
-<a href="./blueprints/secops-gke-forwarder/" title="SecOps GKE Forwarder"><img src="./blueprints/secops-gke-forwarder/images/diagram.png" align="left" width="280px"></a> This [blueprint](./secops-gke-forwarder/) is a modular and scalable solution for setting up a SecOps forwarder on Google Kubernetes Engine (GKE). This forwarder is designed to handle multi-tenant data ingestion, ensuring secure and efficient log forwarding to your SecOps SIEM instances.
+<a href="./blueprints/secops-gke-forwarder/" title="SecOps GKE Forwarder"><img src="./blueprints/secops-gke-forwarder/images/diagram.png" align="left" width="280px"></a> This [blueprint](./blueprints/secops-gke-forwarder/) is a modular and scalable solution for setting up a SecOps forwarder on Google Kubernetes Engine (GKE). This forwarder is designed to handle multi-tenant data ingestion, ensuring secure and efficient log forwarding to your SecOps SIEM instances.
 
 <br clear="left">
 
 ### SecOps Tenant
 
-<a href="./blueprints/secops-tenant/" title="SecOps Tenant"><img src="./blueprints/secops-tenant/images/diagram.png" align="left" width="280px"></a> This [blueprint](./secops-gke-forwarder/) allows automated configuration of a SecOps instance at both infrastructure and application level with out-of-the-box Feeds integration, automated deployment of SecOps rules and reference lists, as well as Data RBAC scopes.
+<a href="./blueprints/secops-tenant/" title="SecOps Tenant"><img src="./blueprints/secops-tenant/images/diagram.png" align="left" width="280px"></a> This [blueprint](./blueprints/secops-tenant/) allows automated configuration of a SecOps instance at both infrastructure and application level with out-of-the-box Feeds integration, automated deployment of SecOps rules and reference lists, as well as Data RBAC scopes.
 
 <br clear="left">
 
@@ -55,6 +55,6 @@ This repository provides a collection of sample repositories for automating Goog
 
 ### Detection As Code
 
-<a href="./pipelines/detection-as-code/" title="Detection As Code pipeline"><img src="./pipelines/detection-as-code/images/diagram.png" align="left" width="280px"></a> This [sample repository](./detection-as-code/) contains ready-to-use code for automated deployment of detection rules and reference lists in Google SecOps via CICD (currently with sample pipelines for GitLab and GitHub).
+<a href="./pipelines/detection-as-code/" title="Detection As Code pipeline"><img src="./pipelines/detection-as-code/images/diagram.png" align="left" width="280px"></a> This [sample repository](./pipelines/detection-as-code/) contains ready-to-use code for automated deployment of detection rules and reference lists in Google SecOps via CICD (currently with sample pipelines for GitLab and GitHub).
 
 <br clear="left">
