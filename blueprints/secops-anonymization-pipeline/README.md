@@ -6,7 +6,7 @@ This application template offers a comprehensive and adaptable solution for cons
 
 The [`project.yaml`](./project.yaml) file describes the project-level configuration needed in terms of API activation and IAM bindings.
 
-If you are deploying this inside a FAST-enabled organization, the file can be lightly edited to match your configuration, and then used directly in the [project factory](../../stages/2-project-factory/).
+If you are deploying this inside a FAST-enabled organization, the file can be lightly edited to match your configuration, and then used directly in the [project factory](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric/tree/master/fast/stages/2-project-factory).
 
 This Terraform can of course be deployed using any pre-existing project. In that case use the YAML file to determine the configuration you need to set on the project:
 

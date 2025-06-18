@@ -32,7 +32,7 @@ Some high level features of the current version of the stage are:
 - API/Services enablement
 - Data RBAC configuration with labels and scopes
 - IAM setup for the SecOps instance based on groups from Cloud Identity or WIF (with supports for Data RBAC)
-- Detection Rules and reference lists management via terraform (leveraging [secops-rules](github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/secops-rules) module)
+- Detection Rules and reference lists management via terraform (leveraging [secops-rules](../../modules/secops-rules) module)
 - API Key setup for Webhook feeds
 - Integration with Workspace for alerts and logs ingestion via SecOps Feeds
 
@@ -100,11 +100,11 @@ secops_iam = {
 
 ### SecOps rules and reference list management
 
-This stage leverages the [secops-rules](github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/secops-rules) for automated SecOps rules and reference list deployment via Terraform.
+This stage leverages the [secops-rules](../../modules/secops-rules) for automated SecOps rules and reference list deployment via Terraform.
 
 By default, the stage will try to deploy sample rule and reference list available in the [rules](./data/rules) and [reference_lists](./data/reference_lists) folders according to the configuration files `secops_rules.yaml` and `secops_reference_lists.yaml`.
 
-The configuration can be updated via the `factory_config` variable as per the `secops-rules` module [README.md](github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/secops-rules/README.md).
+The configuration can be updated via the `factory_config` variable as per the `secops-rules` module [README.md](../../modules/secops-rules/README.md).
 
 ### Google Workspace integration
 
