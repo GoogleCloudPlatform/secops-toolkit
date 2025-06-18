@@ -187,7 +187,7 @@ module "bindplane-sa" {
     "roles/iam.workloadIdentityUser" = ["serviceAccount:${module.project.project_id}.svc.id.goog[bindplane/bindplane]"]
   }
   iam_project_roles = {
-    "${module.project.project_id}" = [
+    (module.project.project_id) = [
       "roles/pubsub.editor"
     ]
   }
