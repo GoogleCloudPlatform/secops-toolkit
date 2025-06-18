@@ -146,7 +146,7 @@ possibly on GCS) before adopting the pipeline (of course).
 
 ```hcl
 module "test" {
-  source        = "./fabric/blueprints/secops/detection-as-code"
+  source        = "./secops-toolkit/pipelines/detection-as-code"
   secops_config = {
     location = "eu"
     instance = "XXXXXX-XXX-XXXXXX"

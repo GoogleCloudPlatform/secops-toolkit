@@ -60,7 +60,7 @@ def _test_terraform_example(plan_validator, example):
     tmp_path = Path(tmp_path)
     tf_var_files = []
     if example.type == 'hcl':
-      (tmp_path / 'fabric').symlink_to(BASE_PATH.parents[1])
+      (tmp_path / 'secops-toolkit').symlink_to(BASE_PATH.parents[1])
       (tmp_path / 'variables.tf').symlink_to(BASE_PATH / 'variables.tf')
       (tmp_path / 'main.tf').write_text(example.code)
       assets_path = (BASE_PATH.parent / str(example.module).replace('-', '_') /

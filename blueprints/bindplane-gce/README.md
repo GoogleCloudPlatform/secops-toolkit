@@ -43,13 +43,13 @@ This example will create a `cloud-config` that uses the module's defaults, creat
 
 ```hcl
 module "cos-bindplane" {
-  source            = "./fabric/modules/cloud-config-container/bindplane"
+  source            = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-config-container/bindplane"
   bindplane_license = "XXXXXXXXX"
   password          = "secret"
 }
 
 module "bindplane" {
-  source     = "./fabric/modules/compute-vm"
+  source     = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/compute-vm"
   project_id = "my-project"
   zone       = "europe-west8-b"
   name       = "cos-nginx"

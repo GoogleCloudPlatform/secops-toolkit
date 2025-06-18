@@ -120,7 +120,7 @@ Test the solution triggering an export from the Cloud Scheduler page, after few 
 
 ```hcl
 module "test" {
-  source = "./fabric/fast/project-templates/secops-anonymization-pipeline"
+  source = "./secops-toolkit/blueprints/secops-anonymization-pipeline"
   secops_config = {
     region            = "europe"
     alpha_apis_region = "eu"

@@ -133,7 +133,7 @@ Access the management console leveraging credentials bootstrapped via terraform 
 
 ```hcl
 module "bindplane-gke" {
-  source     = "./fabric/blueprints/secops/bindplane-gke"
+  source     = "./secops-toolkit/blueprints/bindplane-gke"
   project_id = "test"
   project_create = {
     billing_account_id = "12345-ABCDEF-12345"

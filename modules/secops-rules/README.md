@@ -20,7 +20,7 @@ This is a sample usage of the secops-rules module for deploying a rule (network_
 
 ```hcl
 module "secops" {
-  source        = "./fabric/modules/secops-rules"
+  source        = "./secops-toolkit/modules/secops-rules"
   secops_config = var.secops_config
   reference_lists_config = {
     "private_ip_ranges" = {
@@ -112,7 +112,7 @@ The module includes a secops rules and reference list factory (see [Resource Fac
 
 ```hcl
 module "secops" {
-  source        = "./fabric/modules/secops-rules"
+  source        = "./secops-toolkit/modules/secops-rules"
   secops_config = var.secops_config
   factories_config = {
     rules                = "./secops_rules.yaml"

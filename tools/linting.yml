@@ -70,7 +70,7 @@ jobs:
         run: tflint --recursive -f compact
 
       - name: Check documentation
-        id: documentation-fabric
+        id: documentation-secops-toolkit
         run: |
           python3 tools/check_documentation.py --show-diffs --no-show-summary modules fast blueprints
 

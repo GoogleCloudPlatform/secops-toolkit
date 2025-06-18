@@ -110,7 +110,7 @@ Then running the command `kubectl get pods` you should receive the following mes
 
 ```hcl
 module "test" {
-  source     = "./fabric/blueprints/secops/secops-gke-forwarder"
+  source     = "./secops-toolkit/blueprints/secops/secops-gke-forwarder"
   project_id = "test"
   project_create_config = {
     billing_account = "12345-ABCDEF-12345"
