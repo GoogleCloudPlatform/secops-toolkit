@@ -110,6 +110,9 @@ module "project" {
       "chronicle.referenceLists.get",
       "chronicle.referenceLists.update"
     ]
+    "secopsIngestion" = [
+      "chronicle.logs.import"
+    ]
   }
   iam = merge(
     {
