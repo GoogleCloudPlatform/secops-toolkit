@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+variable "_tests" {
+  description = "Dummy variable populated by tests pipeline."
+  type        = bool
+  default     = false
+}
+
 variable "gcp_logs_ingestion_config" {
   description = "Configuration for GCP logs to collect via Log Sink."
   type = object({
