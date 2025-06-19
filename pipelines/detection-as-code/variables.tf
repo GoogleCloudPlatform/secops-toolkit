@@ -26,10 +26,9 @@ variable "secops_content_config" {
   }
 }
 
-variable "secops_region" {
-  description = "SecOps region."
+variable "secops_customer_id" {
+  description = "SecOps customer ID."
   type        = string
-  default     = "eu"
 }
 
 variable "secops_project_id" {
@@ -37,7 +36,8 @@ variable "secops_project_id" {
   type        = string
 }
 
-variable "secops_customer_id" {
-  description = "SecOps customer ID."
+variable "secops_region" {
+  description = "SecOps region."
   type        = string
+  default     = "eu"
 }

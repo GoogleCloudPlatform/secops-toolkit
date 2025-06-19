@@ -20,7 +20,7 @@ This is a sample usage of the secops-rules module for deploying a rule (network_
 
 ```hcl
 module "secops" {
-  source        = "./fabric/modules/secops-rules"
+  source        = "./secops-toolkit/modules/secops-rules"
   secops_config = var.secops_config
   reference_lists_config = {
     "private_ip_ranges" = {
@@ -108,11 +108,11 @@ fe80::/10
 
 ### SecOps Rules Factory
 
-The module includes a secops rules and reference list factory (see [Resource Factories](../../blueprints/factories/)) for the configuration of rules and reference lists leveraging YAML configuration files. Each configuration file for rules and reference lists contains more than one rule with a structure that reflects the `rules_config` and `reference_lists_config` variables. Again rules and reference list definition is available in the corresponding yaral and txt files in the data folder.
+The module includes a secops rules and reference list factory (see [Resource Factories](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric/tree/master/blueprints/factories)) for the configuration of rules and reference lists leveraging YAML configuration files. Each configuration file for rules and reference lists contains more than one rule with a structure that reflects the `rules_config` and `reference_lists_config` variables. Again rules and reference list definition is available in the corresponding yaral and txt files in the data folder.
 
 ```hcl
 module "secops" {
-  source        = "./fabric/modules/secops-rules"
+  source        = "./secops-toolkit/modules/secops-rules"
   secops_config = var.secops_config
   factories_config = {
     rules                = "./secops_rules.yaml"

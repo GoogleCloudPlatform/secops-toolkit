@@ -307,7 +307,7 @@ values:
     project: test-project
     timeouts: null
     udm_query: principal.hostname="google.com"
-  module.secops-data-rbac.google_chronicle_data_access_scope.example["google"]:
+  module.secops-data-rbac.google_chronicle_data_access_scope.scopes["google"]:
     allow_all: false
     allowed_data_access_labels:
       - asset_namespace: null

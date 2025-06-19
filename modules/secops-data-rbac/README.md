@@ -18,7 +18,7 @@ This is a sample usage of the secops-data-rbac module for configuring a Data RBA
 
 ```hcl
 module "secops-data-rbac" {
-  source        = "./fabric/modules/secops-data-rbac"
+  source        = "./secops-toolkit/modules/secops-data-rbac"
   secops_config = var.secops_config
   labels = {
     google = {

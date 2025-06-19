@@ -15,21 +15,15 @@
  */
 
 data "google_client_config" "default" {
+  count = var._tests ? 0 : 1
 }
-
-#data "google_service_account_access_token" "secops_dev_api" {
-#  provider               = google
-#  target_service_account = module.secops-dev-api-client-sa.email
-#  scopes                 = ["userinfo-email", "cloud-platform"]
-#  lifetime               = "1200s"
-#}
 
 provider "restful" {
   base_url = "https://${var.secops_tenant_config.region}-chronicle.googleapis.com/v1alpha/"
   security = {
     http = {
       token = {
-        token = data.google_client_config.default.access_token
+        token = var._tests ? "" : data.google_client_config.default[0].access_token
       }
     }
   }

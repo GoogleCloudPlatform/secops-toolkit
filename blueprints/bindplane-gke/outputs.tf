@@ -21,11 +21,12 @@ output "bindplane_hostname" {
 
 output "ca_cert" {
   description = "TLS CA certificate."
-  value       = try(tls_self_signed_cert.ca_cert.0.cert_pem, null)
+  value       = try(tls_self_signed_cert.ca_cert[0].cert_pem, null)
 }
 
 output "cluster_ca_certificate" {
   description = "GKE CA Certificate."
+  sensitive   = true
   value       = module.bindplane-cluster.ca_certificate
 }
 

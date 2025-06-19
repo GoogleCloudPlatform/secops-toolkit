@@ -58,12 +58,12 @@ data "google_client_config" "identity" {
 
 provider "kubernetes" {
   host  = module.chronicle-forwarder.fleet_host
-  token = try(data.google_client_config.identity.0.access_token, null)
+  token = try(data.google_client_config.identity[0].access_token, null)
 }
 
 provider "kubectl" {
   host = module.chronicle-forwarder.fleet_host
-  token = try(data.google_client_config.identity.0.access_token, null)
+  token = try(data.google_client_config.identity[0].access_token, null)
 }
 ```
 
@@ -97,7 +97,7 @@ Then running the command `kubectl get pods` you should receive the following mes
 | [project_id](variables.tf#L57) | Project id, references existing project if `project_create` is null. | <code>string</code> | ✓ |  |
 | [region](variables.tf#L62) | GCP region. | <code>string</code> | ✓ |  |
 | [chronicle_forwarder](variables.tf#L17) | Chronicle GKE forwarder configuration. | <code title="object&#40;&#123;&#10;  cluster_name &#61; optional&#40;string, &#34;chronicle-log-ingestion&#34;&#41;&#10;  master_authorized_ranges &#61; optional&#40;map&#40;string&#41;, &#123;&#10;    rfc-1918-10-8 &#61; &#34;10.0.0.0&#47;8&#34;&#10;  &#125;&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>&#123;&#125;</code> |
-| [project_create](variables.tf#L48) | Provide values if project creation is needed, uses existing project if null. Parent is in 'folders/nnn' or 'organizations/nnn' format. | <code title="object&#40;&#123;&#10;  billing_account_id &#61; string&#10;  parent             &#61; string&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>null</code> |
+| [project_create_config](variables.tf#L48) | Create project instead of using an existing one. | <code title="object&#40;&#123;&#10;  billing_account &#61; string&#10;  parent          &#61; optional&#40;string&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>null</code> |
 | [tenants](variables.tf#L67) | Chronicle forwarders tenants config. | <code title="map&#40;object&#40;&#123;&#10;  chronicle_forwarder_image &#61; optional&#40;string, &#34;cf_production_stable&#34;&#41;&#10;  chronicle_region          &#61; string&#10;  tenant_id                 &#61; string&#10;  namespace                 &#61; string&#10;  forwarder_config &#61; object&#40;&#123;&#10;    config_file_content &#61; optional&#40;string&#41;&#10;    customer_id         &#61; optional&#40;string&#41;&#10;    collector_id        &#61; optional&#40;string&#41;&#10;    secret_key          &#61; optional&#40;string&#41;&#10;    tls_config &#61; optional&#40;object&#40;&#123;&#10;      required &#61; optional&#40;bool, false&#41;&#10;      cert_pub &#61; optional&#40;string&#41;&#10;      cert_key &#61; optional&#40;string&#41;&#10;    &#125;&#41;, &#123; required &#61; false &#125;&#41;&#10;  &#125;&#41;&#10;&#125;&#41;&#41;">map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
 
 ## Outputs
@@ -110,7 +110,7 @@ Then running the command `kubectl get pods` you should receive the following mes
 
 ```hcl
 module "test" {
-  source     = "./fabric/blueprints/secops/secops-gke-forwarder"
+  source     = "./secops-toolkit/blueprints/secops-gke-forwarder"
   project_id = "test"
   project_create_config = {
     billing_account = "12345-ABCDEF-12345"

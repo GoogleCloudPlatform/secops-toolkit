@@ -121,7 +121,7 @@ module "pubsub-gcp-logs-topics" {
         attributes = {}
         no_wrapper = var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB" ? false : true
         oidc_token = var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB" ? {
-          service_account_email = module.gcp-logs-to-chronicle-pubsub-sa.0.email
+          service_account_email = module.gcp-logs-to-chronicle-pubsub-sa[0].email
         } : null
       }
     }

@@ -68,12 +68,12 @@ data "google_client_config" "identity" {
 
 provider "kubernetes" {
   host  = module.bindplane-gke.fleet_host
-  token = try(data.google_client_config.identity.0.access_token, null)
+  token = try(data.google_client_config.identity[0].access_token, null)
 }
 
 provider "kubectl" {
   host = module.bindplane-gke.fleet_host
-  token = try(data.google_client_config.identity.0.access_token, null)
+  token = try(data.google_client_config.identity[0].access_token, null)
 }
 ```
 
@@ -125,15 +125,15 @@ Access the management console leveraging credentials bootstrapped via terraform 
 |---|---|:---:|
 | [bindplane_hostname](outputs.tf#L17) | BindPlane OP Management console hostname. |  |
 | [ca_cert](outputs.tf#L22) | TLS CA certificate. |  |
-| [cluster_ca_certificate](outputs.tf#L27) | GKE CA Certificate. |  |
-| [fleet_host](outputs.tf#L32) | GKE Fleet host. |  |
-| [lb_ip_address](outputs.tf#L37) | Ingress LB address. |  |
+| [cluster_ca_certificate](outputs.tf#L27) | GKE CA Certificate. | ✓ |
+| [fleet_host](outputs.tf#L33) | GKE Fleet host. |  |
+| [lb_ip_address](outputs.tf#L38) | Ingress LB address. |  |
 <!-- END TFDOC -->
 ## Test
 
 ```hcl
 module "bindplane-gke" {
-  source     = "./fabric/blueprints/secops/bindplane-gke"
+  source     = "./secops-toolkit/blueprints/bindplane-gke"
   project_id = "test"
   project_create = {
     billing_account_id = "12345-ABCDEF-12345"

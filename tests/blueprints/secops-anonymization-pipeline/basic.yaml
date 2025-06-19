@@ -716,7 +716,7 @@ values:
           - repo_source: []
             storage_source:
               - bucket: pre-gcp-project-id-anonymization
-                object: bundle-66d6b2d319aea8d89ebc2c3b0d772233.zip
+                object: bundle-d1d24ae15a8d5aa1061224538ac43c72.zip
         worker_pool: null
     description: Terraform managed.
     effective_labels:
@@ -810,7 +810,7 @@ values:
     detect_md5hash: different hash
     event_based_hold: null
     metadata: null
-    name: bundle-66d6b2d319aea8d89ebc2c3b0d772233.zip
+    name: bundle-d1d24ae15a8d5aa1061224538ac43c72.zip
     retention: []
     source: /tmp/bundle-gcp-project-id-secops-anonymization.zip
     temporary_hold: null

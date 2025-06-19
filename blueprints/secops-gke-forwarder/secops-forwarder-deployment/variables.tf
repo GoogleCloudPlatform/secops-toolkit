@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-variable "image" {
-  description = "Container image to use."
-  type        = string
-  nullable    = false
-  default     = "redis:6.2"
-}
-
 variable "tenants" {
   description = "Chronicle forwarders tenants config."
   type = map(object({
