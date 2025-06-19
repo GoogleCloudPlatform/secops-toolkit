@@ -26,6 +26,7 @@ output "ca_cert" {
 
 output "cluster_ca_certificate" {
   description = "GKE CA Certificate."
+  sensitive   = true
   value       = module.bindplane-cluster.ca_certificate
 }
 

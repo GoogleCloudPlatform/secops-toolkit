@@ -125,9 +125,9 @@ Access the management console leveraging credentials bootstrapped via terraform 
 |---|---|:---:|
 | [bindplane_hostname](outputs.tf#L17) | BindPlane OP Management console hostname. |  |
 | [ca_cert](outputs.tf#L22) | TLS CA certificate. |  |
-| [cluster_ca_certificate](outputs.tf#L27) | GKE CA Certificate. |  |
-| [fleet_host](outputs.tf#L32) | GKE Fleet host. |  |
-| [lb_ip_address](outputs.tf#L37) | Ingress LB address. |  |
+| [cluster_ca_certificate](outputs.tf#L27) | GKE CA Certificate. | ✓ |
+| [fleet_host](outputs.tf#L33) | GKE Fleet host. |  |
+| [lb_ip_address](outputs.tf#L38) | Ingress LB address. |  |
 <!-- END TFDOC -->
 ## Test
 
