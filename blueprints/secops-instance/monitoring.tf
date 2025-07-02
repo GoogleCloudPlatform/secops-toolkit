@@ -16,14 +16,13 @@
 
 # tfdoc:file:description Cloud Monitoring.
 
-# 1. Create a notification channel to receive email alerts
 resource "google_monitoring_notification_channel" "email_notification" {
   for_each     = var.monitoring_config.enabled ? toset(var.monitoring_config.notification_emails) : []
   project      = module.project.project_id
-  display_name = "SecOps Ingestion Alert"
+  display_name = "SecOps Notification email"
   type         = "email"
   labels = {
-    email_address = "bruzzechesse@google.com"
+    email_address = each.value
   }
 }
 

@@ -1,0 +1,8 @@
+- events:
+    - event:
+        metadata:
+          description: Thi
+          eventTimestamp: '2025-07-01T20:59:13Z'
+          eventType: GENERIC_EVENT
+          logType: NIX_SYSTEM
+          vendorName: ACME Labs
