@@ -49,8 +49,6 @@ locals {
   }
 }
 
-# Webhook Feeds
-
 resource "restful_resource" "webhook_feeds" {
   for_each        = var.webhook_feeds_config
   path            = local.secops_feeds_api_path

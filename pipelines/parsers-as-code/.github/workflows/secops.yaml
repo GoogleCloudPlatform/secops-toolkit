@@ -1,0 +1,126 @@
+# Copyright 2025 Google
+#
+# This software is provided as-is, without warranty or representation for any use or purpose.
+# Your use of it is subject to your agreement with Google.
+
+name: "SecOps Parsers As Code"
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+      - opened
+      - synchronize
+
+env:
+  SECOPS_CUSTOMER_ID: xxxxxxxxx
+  SECOPS_PROJECT_ID: xxxxxxxxx
+  SECOPS_REGION: xx
+  SERVICE_ACCOUNT: xxxxxxx@xxxxxx.iam.gserviceaccount.com
+  WIF_PROVIDER: projects/XXXXXX/locations/global/workloadIdentityPools/xxxxxxx/providers/xxxxxxxxx
+  SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+  TF_VERSION: 1.6.5
+
+jobs:
+  secops-pr:
+    permissions:
+      contents: read
+      id-token: write
+      issues: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@v3
+
+      # set up authentication via Workload identity Federation and gcloud
+
+      - id: gcp-auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{env.WIF_PROVIDER}}
+          service_account: ${{env.SERVICE_ACCOUNT}}
+          access_token_lifetime: 900s
+
+      - id: gcp-sdk
+        name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          install_components: alpha
+
+      - id: install-python
+        name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - id: install-dependencies
+        name: Install Dependencies
+        run: |
+          pip install -r ./requirements.txt
+        shell: bash
+
+      - id: verify-deploy-parsers
+        if: github.event.pull_request.merged != true && success()
+        name: verify-deploy-parsers
+        env:
+          # Set PYTHONPATH for this specific step
+          PYTHONPATH: ${{ github.workspace }}
+        continue-on-error: true
+        run: python main.py verify-deploy-parsers
+        shell: bash
+
+      - id: activate-parsers
+        if: github.event.pull_request.merged == true && success()
+        name: activate-parsers
+        env:
+          # Set PYTHONPATH for this specific step
+          PYTHONPATH: ${{ github.workspace }}
+        continue-on-error: true
+        run: python main.py activate-parsers
+        shell: bash
+
+      # PR comment with parsers deployment result from previous steps
+
+      - id: pr-comment
+        name: Post comment to Pull Request
+        continue-on-error: true
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request' && steps.verify-deploy-parsers.outcome == 'success'
+        with:
+          script: |
+            // toJSON() creates a safe, escaped string.
+            // JSON.parse() turns that safe string back into a usable object.
+            const data = JSON.parse(${{ toJSON(steps.verify-deploy-parsers.outputs.pr_comment_data) }});
+
+            // Now data is an OBJECT, and data.title will work correctly.
+            const commentBody = `
+              ## ${data.title}
+              ${data.summary}
+              <details><summary>Show Details</summary>
+            
+              ${data.details}
+
+              </details>
+            `;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: commentBody
+            });
+
+      - id: check-verify-parsers
+        name: Check verify parsers failure
+        if: github.event.pull_request.merged != true && steps.verify-deploy-parsers.outcome != 'success'
+        run: exit 1
+
+      - id: check-activate-parsers
+        name: Check deploy parsers failure
+        if: github.event.pull_request.merged == true && steps.activate-parsers.outcome != 'success'
+        run: exit 1

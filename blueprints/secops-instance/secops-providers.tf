@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 Google LLC
+ * Copyright 2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-module "secops-tenant-secrets" {
-  source     = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/secret-manager"
-  project_id = module.project.project_id
-  secrets = { for k in local.secops_sa_types : k => {locations = [var.regions.primary]}}
-  versions = {
-    for k in local.secops_sa_types : k => {
-      latest = {
-        enabled = true,
-        data = base64decode(local.secops_service_accounts[k])
+data "google_client_config" "default" {
+  count = var._tests ? 0 : 1
+}
+
+provider "restful" {
+  base_url = "https://${var.secops_tenant_config.region}-chronicle.googleapis.com/v1alpha/"
+  security = {
+    http = {
+      token = {
+        token = var._tests ? "" : data.google_client_config.default[0].access_token
       }
     }
   }

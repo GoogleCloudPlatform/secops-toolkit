@@ -16,33 +16,27 @@
 
 # default provider do not use this
 provider "restful" {
-  base_url = "https://${var.secops_tenant_config.alpha_apis_region}-chronicle.googleapis.com/v1alpha/projects/${module.project.project_id}"
+  base_url = "https://${var.secops_config.alpha_apis_region}-chronicle.googleapis.com/v1alpha/projects/xxxxxxxxxx"
 }
 
 data "google_client_config" "default" {
+  count = var._tests ? 0 : 1
 }
 
-#data "google_service_account_access_token" "secops_dev_api" {
-#  provider               = google
-#  target_service_account = module.secops-dev-api-client-sa.email
-#  scopes                 = ["userinfo-email", "cloud-platform"]
-#  lifetime               = "1200s"
-#}
-
 provider "restful" {
-  base_url = "https://${var.secops_tenant_config.region}-chronicle.googleapis.com/v1alpha/"
+  base_url = "https://${var.secops_config.region}-chronicle.googleapis.com/v1alpha/"
   alias    = "feeds"
   security = {
     http = {
       token = {
-        token = data.google_client_config.default.access_token
+        token = var._tests ? "" : data.google_client_config.default[0].access_token
       }
     }
   }
 }
 
 provider "restful" {
-  base_url = "https://${var.secops_tenant_config.region == "us" ? "" : join("",[var.secops_tenant_config.alpha_apis_region,"-"])}backstory.googleapis.com/v1/partner/customer"
+  base_url = "https://${var.secops_config.region == "us" ? "" : concat(var.secops_config.alpha_apis_region,"-")}backstory.googleapis.com/v1/partner/customer"
   alias    = "customer"
   security = {
     http = {
