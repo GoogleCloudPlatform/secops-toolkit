@@ -1,0 +1,23 @@
+secops_ingestion_config:
+  ingest_scc_findings: false
+  ingest_assets_data: false
+  ingest_workspace_data: false
+secops_tenant_config:
+  tenant_id: "tenant-1"
+  tenant_code: "tenant-1"
+  tenant_name: "tenant-1"
+  tenant_description: "Tenant 1"
+  tenant_subdomains:
+    - "tenant-1"
+  master_tenant: false
+project_id: "prod-cs-tenant-1"
+org_id: "XXXXXXXXXXX"
+tenant_nodes:
+  include_org: false
+  folders:
+#    mof:
+#      folder_id: "folders/765907462668"
+#      include_children: true
+secops_group_principals:
+  admins:
+  viewers:

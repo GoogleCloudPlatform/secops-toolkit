@@ -117,7 +117,7 @@ module "pubsub-gcp-logs-topics" {
   subscriptions = {
     (lower(each.key)) = {
       push = {
-        endpoint   = "https://${var.secops_tenant_config.region}-chronicle.googleapis.com/v1alpha/projects/${module.project.number}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/feeds/${local.secops_log_feeds_id[each.key]}:importPushLogs${var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_WEBHOOK" ? format("?key=%s&secret=%s", google_apikeys_key.feed_api_key.key_string, local.secops_log_feeds_secret[each.key]) : ""}"
+        endpoint   = "https://${var.secops_tenant_config.region}-chronicle.googleapis.com/v1alpha/projects/${module.project.number}/locations/${var.secops_tenant_config.region}/instances/${local.secops_customer_id}/feeds/${local.secops_log_feeds_id[each.key]}:importPushLogs${var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_WEBHOOK" ? format("?key=%s&secret=%s", google_apikeys_key.feed_api_key.key_string, local.secops_log_feeds_secret[each.key]) : ""}"
         attributes = {}
         no_wrapper = var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB" ? false : true
         oidc_token = var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB" ? {
@@ -143,7 +143,7 @@ resource "restful_resource" "feeds" {
     "display_name" : lower(each.key),
     "details" : merge({
       "feed_source_type" : var.secops_ingestion_config.ingest_feed_type,
-      "log_type" : "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/logTypes/${each.key}",
+      "log_type" : "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${local.secops_customer_id}/logTypes/${each.key}",
       }, var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB" ?
     { https_push_google_cloud_pubsub_settings : {} } : { httpsPushWebhookSettings : {} })
   }

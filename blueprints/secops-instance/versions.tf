@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-module "secops-tenant-secrets" {
-  source     = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/secret-manager"
-  project_id = module.project.project_id
-  secrets = { for k in local.secops_sa_types : k => {locations = [var.regions.primary]}}
-  versions = {
-    for k in local.secops_sa_types : k => {
-      latest = {
-        enabled = true,
-        data = base64decode(local.secops_service_accounts[k])
-      }
+terraform {
+  required_providers {
+    restful = {
+      source  = "magodo/restful"
+      version = "= 0.21.0"
     }
   }
 }

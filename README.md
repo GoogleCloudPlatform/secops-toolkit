@@ -9,7 +9,7 @@
 
 This repository provides a comprehensive collection of Terraform blueprints, modules, and CICD pipelines designed to automate the implementation of custom integrations, agents, and configurations for Google Cloud SecOps (formerly Chronicle). It aims to provide modular and scalable solutions for various SecOps automation needs.
 
-## Blueprints
+# Blueprints
 
 This section details the available Terraform blueprints for deploying and managing Google Cloud SecOps components and integrations.
 
@@ -43,18 +43,24 @@ This section details the available Terraform blueprints for deploying and managi
 
 <br clear="left">
 
-## Modules
+# Modules
 
 This folder contains a suite of Terraform modules for Google SecOps automation. These modules are designed to be composed together and can be forked and modified where the use of third-party code and sources is not allowed.
 
 Modules aim to stay close to the low-level provider resources they encapsulate and share a similar interface that combines management of one resource or set of resources, and their corresponding IAM bindings.
 
-## Pipelines
+# Pipelines
 
 This repository provides a collection of sample repositories for automating Google Cloud SecOps configuration through CICD pipelines.
 
 ### Detection As Code
 
 <a href="./pipelines/detection-as-code/" title="Detection As Code pipeline"><img src="./pipelines/detection-as-code/images/diagram.png" align="left" width="280px"></a> This [sample repository](./pipelines/detection-as-code/) contains ready-to-use code for automated deployment of detection rules and reference lists in Google SecOps via CICD (currently with sample pipelines for GitLab and GitHub).
+
+<br clear="left">
+
+## Parsers As Code
+
+<a href="./pipelines/parsers-as-code/" title="Parsers As Code pipeline"><img src="./pipelines/parsers-as-code/images/diagram.png" align="left" width="280px"></a> This [sample repository](./parsers-as-code/) provides a framework for managing SecOps parsers as code.
 
 <br clear="left">

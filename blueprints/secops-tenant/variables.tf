@@ -83,14 +83,6 @@ variable "gcp_logs_ingestion_config" {
   default = {}
 }
 
-variable "monitoring_config" {
-  description = "Cloud Monitoring configuration for SecOps."
-  type = object({
-    enabled             = optional(bool, false)
-    notification_emails = optional(list(string), [])
-  })
-}
-
 variable "network_config" {
   description = "VPC config."
   type = object({
@@ -132,40 +124,6 @@ variable "regions" {
   }
 }
 
-variable "secops_data_rbac_config" {
-  description = "SecOps Data RBAC scope and labels config."
-  type = object({
-    labels = optional(map(object({
-      description = string
-      label_id    = string
-      udm_query   = string
-    })))
-    scopes = optional(map(object({
-      description = string
-      scope_id    = string
-      allowed_data_access_labels = optional(list(object({
-        data_access_label = optional(string)
-        log_type          = optional(string)
-        asset_namespace   = optional(string)
-        ingestion_label = optional(object({
-          ingestion_label_key   = string
-          ingestion_label_value = optional(string)
-        }))
-      })), [])
-      denied_data_access_labels = optional(list(object({
-        data_access_label = optional(string)
-        log_type          = optional(string)
-        asset_namespace   = optional(string)
-        ingestion_label = optional(object({
-          ingestion_label_key   = string
-          ingestion_label_value = optional(string)
-        }))
-      })), [])
-    })))
-  })
-  default = {}
-}
-
 variable "secops_group_principals" {
   description = "Groups ID in IdP assigned to SecOps admins, editors, viewers roles."
   type = object({
@@ -174,16 +132,6 @@ variable "secops_group_principals" {
     viewers = optional(list(string), [])
   })
   default = {}
-}
-
-variable "secops_iam" {
-  description = "SecOps IAM configuration in {PRINCIPAL => {roles => [ROLES], scopes => [SCOPES]}} format."
-  type = map(object({
-    roles  = list(string)
-    scopes = optional(list(string))
-  }))
-  default  = {}
-  nullable = false
 }
 
 variable "secops_ingestion_config" {
@@ -238,8 +186,17 @@ variable "secops_ingestion_config" {
 variable "secops_tenant_config" {
   description = "SecOps Tenant configuration."
   type = object({
-    customer_id = string
-    region      = string
+    tenant_status      = optional(string, "BUILD")
+    tenant_id          = string
+    tenant_code        = string
+    tenant_name        = optional(string, "")
+    tenant_description = optional(string, "")
+    tenant_subdomains  = list(string)
+    region             = string
+    alpha_apis_region  = string
+    retention_duration = optional(string, "ONE_YEAR")
+    sso_config         = optional(string, null)
+    master_tenant      = optional(bool, false)
   })
 }
 
@@ -253,43 +210,4 @@ variable "tenant_nodes" {
     })), {})
   })
   default = {}
-}
-
-variable "third_party_integration_config" {
-  description = "SecOps Feeds configuration for Workspace logs and entities ingestion."
-  type = object({
-    azure_ad = optional(object({
-      oauth_credentials = object({
-        client_id     = string
-        client_secret = string
-      })
-      retrieve_devices = optional(bool, true)
-      retrieve_groups  = optional(bool, true)
-      tenant_id        = string
-    }))
-    okta = optional(object({
-      auth_header_key_values     = map(string)
-      hostname                   = string
-      manager_id_reference_field = string
-    }))
-    workspace = optional(object({
-      customer_id    = string
-      delegated_user = string
-      applications = optional(list(string), ["access_transparency", "admin", "calendar", "chat", "drive", "gcp",
-        "gplus", "groups", "groups_enterprise", "jamboard", "login", "meet", "mobile", "rules", "saml", "token",
-        "user_accounts", "context_aware_access", "chrome", "data_studio", "keep",
-      ])
-    }))
-  })
-  default = {}
-}
-
-variable "webhook_feeds_config" {
-  description = "SecOps Webhook feeds config."
-  type = map(object({
-    display_name = optional(string)
-    log_type     = string
-  }))
-  default  = {}
-  nullable = false
 }

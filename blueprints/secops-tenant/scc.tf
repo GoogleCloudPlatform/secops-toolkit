@@ -15,7 +15,7 @@
  */
 
 locals {
-  scc_chronicle_data_type = {
+  scc_secops_data_type = {
     GCP_SECURITYCENTER_MISCONFIGURATION = {
       scc_finding_class = "MISCONFIGURATION"
     }
@@ -44,11 +44,11 @@ module "scc-to-secops-scheduler-sa" {
   count      = var.secops_ingestion_config.ingest_scc_findings ? 1 : 0
   source     = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/iam-service-account"
   project_id = module.project.project_id
-  name       = "scc-to-chronicle-scheduler"
+  name       = "scc-to-secops-scheduler"
 }
 
 module "pubsub-gcp-scc-topics" {
-  for_each   = try(var.secops_ingestion_config.ingest_scc_findings, false) == true ? local.scc_chronicle_data_type : {}
+  for_each   = try(var.secops_ingestion_config.ingest_scc_findings, false) == true ? local.scc_secops_data_type : {}
   source     = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/pubsub"
   project_id = module.project.project_id
   name       = "gcp_scc_${lower(each.value.scc_finding_class)}"
@@ -64,7 +64,7 @@ module "pubsub-gcp-scc-topics" {
 }
 
 resource "google_scc_notification_config" "scc_notification_configs" {
-  for_each     = try(var.secops_ingestion_config.ingest_scc_findings, false) == true ? local.scc_chronicle_data_type : {}
+  for_each     = try(var.secops_ingestion_config.ingest_scc_findings, false) == true ? local.scc_secops_data_type : {}
   config_id    = "cs-${module.project.project_id}-${lower(each.value.scc_finding_class)}"
   organization = try(var.organization_id, null)
   description  = "SCC ${lower(each.value.scc_finding_class)} Notifications"
@@ -94,7 +94,7 @@ module "scc-to-secops" {
   }
   environment_variables = {
     PROJECT_ID         = module.project.project_id
-    SECOPS_CUSTOMER_ID = var.secops_tenant_config.customer_id
+    SECOPS_CUSTOMER_ID = local.secops_customer_id
     SECOPS_REGION      = var.secops_tenant_config.region
   }
   secrets = {}
@@ -111,10 +111,10 @@ module "scc-to-secops" {
 }
 
 resource "google_cloud_scheduler_job" "scc_jobs" {
-  for_each         = var.secops_ingestion_config.ingest_scc_findings ? local.scc_chronicle_data_type : {}
+  for_each         = var.secops_ingestion_config.ingest_scc_findings ? local.scc_secops_data_type : {}
   project          = module.project.project_id
-  name             = "scc_${lower(each.value.scc_finding_class)}_to_chronicle_siem"
-  description      = "Call cloud function to export SCC ${lower(each.value.scc_finding_class)} to Chronicle"
+  name             = "scc_${lower(each.value.scc_finding_class)}_to_secops_siem"
+  description      = "Call cloud function to export SCC ${lower(each.value.scc_finding_class)} to SecOps"
   schedule         = "*/5 * * * *"
   time_zone        = "Etc/UTC"
   attempt_deadline = "320s"

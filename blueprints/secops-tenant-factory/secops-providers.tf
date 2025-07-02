@@ -16,7 +16,7 @@
 
 # default provider do not use this
 provider "restful" {
-  base_url = "https://${var.secops_tenant_config.alpha_apis_region}-chronicle.googleapis.com/v1alpha/projects/${module.project.project_id}"
+  base_url = "https://${var.secops_config.alpha_apis_region}-chronicle.googleapis.com/v1alpha/projects/xxxxxxxxxx"
 }
 
 data "google_client_config" "default" {
@@ -24,7 +24,7 @@ data "google_client_config" "default" {
 }
 
 provider "restful" {
-  base_url = "https://${var.secops_tenant_config.region}-chronicle.googleapis.com/v1alpha/"
+  base_url = "https://${var.secops_config.region}-chronicle.googleapis.com/v1alpha/"
   alias    = "feeds"
   security = {
     http = {
@@ -36,7 +36,7 @@ provider "restful" {
 }
 
 provider "restful" {
-  base_url = "https://${var.secops_tenant_config.region == "us" ? "" : join("",[var.secops_tenant_config.alpha_apis_region,"-"])}backstory.googleapis.com/v1/partner/customer"
+  base_url = "https://${var.secops_config.region == "us" ? "" : concat(var.secops_config.alpha_apis_region,"-")}backstory.googleapis.com/v1/partner/customer"
   alias    = "customer"
   security = {
     http = {
