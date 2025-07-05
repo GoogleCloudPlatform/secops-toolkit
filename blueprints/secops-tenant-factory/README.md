@@ -14,6 +14,10 @@ The code is meant to be executed by a high level service accounts with powerful 
 - billing permissions to attach BA to newly created projects
 - SA should be assigned permissions to impersonate Backstory Service Account for Customer Management API
 
+<p align="center">
+  <img src="images/diagram.png" alt="SecOps Tenant Factory">
+</p>
+
 <!-- BEGIN TOC -->
 * [SecOps Tenant Factory WIP](#secops-tenant-factory-wip)
     * [Running the blueprint](#running-the-blueprint)

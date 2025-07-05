@@ -12,15 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-project_id = "test-project"
+billing_account = "XXXXXXXXXX"
 
-project_create_config = {
-  parent          = "folders/123456789"
-  billing_account = "abcabcabcabcabca"
-}
-
-secops_tenant_config = {
-  customer_id       = "xxxxxxxxxxxxxxxx"
+secops_config = {
+  backstory_sa_email = "gitlab@bruzz-prod-secops-0.iam.gserviceaccount.com"
   region            = "europe"
   alpha_apis_region = "eu"
 }
+
+tenant_folder = "folders/123456789"

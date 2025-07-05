@@ -26,14 +26,14 @@ locals {
       secops_group_principals = try(v.secops_group_principals, {})
       secops_ingestion_config = try(v.secops_ingestion_config, {})
       secops_tenant_config = can(v.secops_tenant_config) ? {
-        tenant_id          = try(v.secops_tenant_config.tenant_id, null)
-        tenant_code        = try(v.secops_tenant_config.tenant_code, null)
-        tenant_subdomains  = try(v.secops_tenant_config.tenant_subdomains, null)
-        master_tenant      = try(v.secops_tenant_config.master_tenant, false)
+        tenant_id         = try(v.secops_tenant_config.tenant_id, null)
+        tenant_code       = try(v.secops_tenant_config.tenant_code, null)
+        tenant_subdomains = try(v.secops_tenant_config.tenant_subdomains, null)
+        master_tenant     = try(v.secops_tenant_config.master_tenant, false)
       } : null
-      project_id                 = try(v.project_id, true)
-      project_create             = try(v.project_create, null)
-      organization_id            = try(v.organization_id, var.organization_id)
+      project_id      = try(v.project_id, true)
+      project_create  = try(v.project_create, null)
+      organization_id = try(v.organization_id, var.organization_id)
       tenant_nodes = {
         include_org = try(v.tenant_nodes.include_org, false)
         folders     = coalesce(v.tenant_nodes.folders, {})
@@ -43,8 +43,8 @@ locals {
 }
 
 module "tenants" {
-  for_each                   = local.tenants
-  source                     = "../secops-tenant"
+  for_each                = local.tenants
+  source                  = "../secops-tenant"
   secops_group_principals = each.value.secops_group_principals
   secops_ingestion_config = each.value.secops_ingestion_config
   secops_tenant_config = merge(each.value.secops_tenant_config, {
@@ -52,15 +52,15 @@ module "tenants" {
     region             = var.secops_config.region
     alpha_apis_region  = var.secops_config.alpha_apis_region
   })
-  project_id            = each.value.project_id
+  project_id = each.value.project_id
   project_create_config = coalesce(each.value.project_create, {
     parent          = var.tenant_folder
     billing_account = var.billing_account
   })
-  organization_id  = each.value.organization_id
-  tenant_nodes     = each.value.tenant_nodes
+  organization_id = each.value.organization_id
+  tenant_nodes    = each.value.tenant_nodes
   providers = {
-    restful.feeds     = restful.secops-api
+    restful.feeds    = restful.secops-api
     restful.customer = restful.secops-customer-api
   }
 }
