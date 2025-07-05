@@ -12,8 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Sample Tenant provisioning
+
 project_id = "test-project"
+
+project_create_config = {
+  billing_account = "XXXXX-XXXXX-XXXXXXX"
+  parent          = "folders/12321321"
+}
+
+secops_tenant_config = {
+  region            = "europe"
+  tenant_id         = "tenant"
+  tenant_code       = "tenant"
+  tenant_subdomains = ["tenant"]
+  alpha_apis_region = "eu"
+}
+
+# Sample GCP multi-tenant logs, assets, SCC findings ingestion
+
+project_id = "test-project"
+project_create_config = {
+  billing_account = "XXXXX-XXXXX-XXXXXXX"
+  parent          = "folders/12321321"
+}
 secops_tenant_config = {
   customer_id = "xxxxxxx-xxxxx-xxxxxx-xxxxxxx"
   region      = "europe"
+  alpha_apis_region = "eu"
 }
