@@ -22,8 +22,8 @@ variable "_tests" {
 
 variable "billing_account" {
   description = "Billing account id for SecOps projects."
-  type = string
-  nullable = false
+  type        = string
+  nullable    = false
 }
 
 variable "factories_config" {
@@ -67,5 +67,5 @@ variable "secops_config" {
 
 variable "tenant_folder" {
   description = "GCP folder hosting SecOps tenant projects."
-  type = string
+  type        = string
 }
