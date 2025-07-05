@@ -49,12 +49,18 @@ variable "factories_config" {
   }
 }
 
+variable "organization_id" {
+  description = "GCP Organization ID. This is required only if tenant_nodes is configured for ingesting logs at org level."
+  type        = string
+  default     = null
+}
+
 variable "secops_config" {
   description = "SecOps configuration including customer management API key SA email."
   type = object({
-    backstory_sa      = string
-    region            = string
-    alpha_apis_region = string
+    backstory_sa_email = string
+    region             = string
+    alpha_apis_region  = string
   })
   nullable = false
 }

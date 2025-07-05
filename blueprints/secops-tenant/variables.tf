@@ -186,18 +186,23 @@ variable "secops_ingestion_config" {
 variable "secops_tenant_config" {
   description = "SecOps Tenant configuration."
   type = object({
-    tenant_status      = optional(string, "BUILD")
-    tenant_id          = string
-    tenant_code        = string
-    tenant_name        = optional(string, "")
-    tenant_description = optional(string, "")
-    tenant_subdomains  = list(string)
+    backstory_sa_email = optional(string)
+    customer_id        = optional(string)
+    tenant_id          = optional(string)
+    tenant_code        = optional(string)
+    tenant_subdomains  = optional(list(string), [])
     region             = string
     alpha_apis_region  = string
     retention_duration = optional(string, "ONE_YEAR")
     sso_config         = optional(string, null)
-    master_tenant      = optional(bool, false)
   })
+  validation {
+    condition = (
+      (var.secops_tenant_config.customer_id != null && var.secops_tenant_config.tenant_id == null && var.secops_tenant_config.tenant_code == null && var.secops_tenant_config.backstory_sa_email == null) ||
+      (var.secops_tenant_config.customer_id == null && var.secops_tenant_config.tenant_id != null && var.secops_tenant_config.tenant_code != null && var.secops_tenant_config.backstory_sa_email != null)
+    )
+    error_message = "Either 'customer_id' must be provided, or both 'tenant_id', 'tenant_code' and 'backstory_sa_email' must be provided, but not both."
+  }
 }
 
 variable "tenant_nodes" {

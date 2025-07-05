@@ -28,15 +28,12 @@ locals {
       secops_tenant_config = can(v.secops_tenant_config) ? {
         tenant_id          = try(v.secops_tenant_config.tenant_id, null)
         tenant_code        = try(v.secops_tenant_config.tenant_code, null)
-        tenant_name        = try(v.secops_tenant_config.tenant_name, null)
-        tenant_description = try(v.secops_tenant_config.tenant_description, null)
         tenant_subdomains  = try(v.secops_tenant_config.tenant_subdomains, null)
         master_tenant      = try(v.secops_tenant_config.master_tenant, false)
       } : null
       project_id                 = try(v.project_id, true)
       project_create             = try(v.project_create, null)
-      org_id                     = try(v.org_id, var.organization.id)
-      prefix                     = try(v.prefix, var.prefix)
+      organization_id            = try(v.organization_id, var.organization_id)
       tenant_nodes = {
         include_org = try(v.tenant_nodes.include_org, false)
         folders     = coalesce(v.tenant_nodes.folders, {})
@@ -51,20 +48,19 @@ module "tenants" {
   secops_group_principals = each.value.secops_group_principals
   secops_ingestion_config = each.value.secops_ingestion_config
   secops_tenant_config = merge(each.value.secops_tenant_config, {
-    region            = var.secops_config.region
-    alpha_apis_region = var.secops_config.alpha_apis_region
+    backstory_sa_email = var.secops_config.backstory_sa_email
+    region             = var.secops_config.region
+    alpha_apis_region  = var.secops_config.alpha_apis_region
   })
-  private_build_pool         = google_cloudbuild_worker_pool.prod_private_pool.0.id
-  secops_project_name     = each.value.project_id
-  project_create = coalesce(each.value.project_create, {
-    parent                    = var.tenant_folder
-    secops_billing_account_id = var.billing_account
+  project_id            = each.value.project_id
+  project_create_config = coalesce(each.value.project_create, {
+    parent          = var.tenant_folder
+    billing_account = var.billing_account
   })
-  org_id                        = each.value.org_id
-  prefix                        = each.value.prefix
-  tenant_nodes                  = each.value.tenant_nodes
+  organization_id  = each.value.organization_id
+  tenant_nodes     = each.value.tenant_nodes
   providers = {
-    restful.feeds     = restful.prod-secops-api
-    restful.customers = restful.prod-secops-customer-management
+    restful.feeds     = restful.secops-api
+    restful.customer = restful.secops-customer-api
   }
 }
