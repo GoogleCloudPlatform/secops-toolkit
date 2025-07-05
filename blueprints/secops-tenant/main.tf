@@ -18,12 +18,12 @@ locals {
   secops_feeds_api_path        = "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${local.secops_customer_id}/feeds"
   bootstrap_log_integration    = var.tenant_nodes.include_org == true || try(length(var.tenant_nodes.folders), 0) != 0
   bootstrap_secops_integration = var.secops_ingestion_config.ingest_assets_data || var.secops_ingestion_config.ingest_scc_findings || local.bootstrap_log_integration || var.secops_ingestion_config.ingest_workspace_data
-  secops_customer_id           = restful_resource.customer.output.id
-  # SecOps Service account keys:
-  secops_sa_types = ["ADMIN", "BACKSTORY_API", "BIGQUERY_API", "FORWARDER_API", "INGESTION_API"]
-  secops_service_accounts = {
-    for credential in restful_resource.customer.output.credentials : credential.credentialType => credential.credential
-  }
+  bootstrap_secops_tenant      = var.secops_tenant_config.customer_id == null
+  secops_customer_id           = coalesce(var.secops_tenant_config.customer_id, try(restful_resource.customer[0].output.id, null))
+  secops_sa_types              = ["ADMIN", "BACKSTORY_API", "BIGQUERY_API", "FORWARDER_API", "INGESTION_API"]
+  secops_service_accounts = try({
+    for credential in restful_resource.customer[0].output.credentials : credential.credentialType => credential.credential
+  }, null)
 }
 
 module "organization" {
@@ -127,6 +127,7 @@ module "project" {
 }
 
 resource "restful_resource" "customer" {
+  count           = local.bootstrap_secops_tenant ? 1 : 0
   provider        = restful.customer
   path            = "/createcustomer"
   create_method   = "POST"
@@ -150,8 +151,7 @@ resource "restful_resource" "customer" {
   write_only_attrs = ["customer_name", "customer_code", "customer_subdomains", "retention_duration", "gcp_project", "auth_version"]
   lifecycle {
     ignore_changes = [
-      body,
-      output
+      body
     ]
   }
 }

@@ -28,6 +28,12 @@ This repository provides a collection of Terraform blueprints designed to automa
 
 ## SecOps Tenant
 
-<a href="./secops-tenant/" title="SecOps Tenant"><img src="./secops-tenant/images/diagram.png" align="left" width="280px"></a> This [blueprint](./secops-gke-forwarder/) allows automated configuration of SecOps instance at both infrastructure and application level with out of the box Feeds integration, automated deployment of SecOps rules and reference lists as well as Data RBAC scopes.
+<a href="./secops-tenant/" title="SecOps Tenant"><img src="./secops-tenant/images/diagram.png" align="left" width="280px"></a> This [blueprint](./secops-tenant/) allows automated configuration of SecOps instance at both infrastructure and application level with out of the box Feeds integration, automated deployment of SecOps rules and reference lists as well as Data RBAC scopes.
+
+<br clear="left">
+
+## SecOps Tenant Factory
+
+<a href="./secops-tenant-factory/" title="SecOps Tenant Factory"><img src="./secops-tenant-factory/images/diagram.png" align="left" width="280px"></a> This [blueprint](./secops-tenant-factory/) implements end-to-end configuration of new projects and SecOps SIEM tenants via YAML data configurations and [secops-tenant](./secops-tenant) blueprint code.
 
 <br clear="left">

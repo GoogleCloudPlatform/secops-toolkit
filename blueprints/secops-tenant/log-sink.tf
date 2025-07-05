@@ -88,9 +88,7 @@ locals {
     } if v.enabled
   }
   secops_log_feeds_id = {
-    for key, value in restful_resource.feeds : key =>
-    [for feed in jsondecode(value.output).feeds : element(split("/", feed.name), length(split("/", feed.name)) - 1)
-    if try(feed.displayName == lower(key), false)][0]
+    for key, value in restful_resource.feeds : key => element(split("/", value.output.name), length(split("/", value.output.name)) - 1)
   }
   secops_log_feeds_secret = {
     for key, value in restful_operation.feeds_secret : key => value.output.secret
@@ -104,7 +102,7 @@ module "gcp-logs-to-chronicle-pubsub-sa" {
   name       = "gcp-logs-to-secops-pubsub"
   iam = {
     "roles/iam.serviceAccountTokenCreator" = [
-      "serviceAccount:${module.project.service_agents.pubsub}"
+      module.project.service_agents.pubsub.iam_email
     ]
   }
 }
@@ -119,7 +117,7 @@ module "pubsub-gcp-logs-topics" {
       push = {
         endpoint   = "https://${var.secops_tenant_config.region}-chronicle.googleapis.com/v1alpha/projects/${module.project.number}/locations/${var.secops_tenant_config.region}/instances/${local.secops_customer_id}/feeds/${local.secops_log_feeds_id[each.key]}:importPushLogs${var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_WEBHOOK" ? format("?key=%s&secret=%s", google_apikeys_key.feed_api_key.key_string, local.secops_log_feeds_secret[each.key]) : ""}"
         attributes = {}
-        no_wrapper = var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB" ? false : true
+        no_wrapper = var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB" ? { write_metadata = false } : { write_metadata = true }
         oidc_token = var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB" ? {
           service_account_email = module.gcp-logs-to-chronicle-pubsub-sa.0.email
         } : null
@@ -132,6 +130,7 @@ resource "restful_resource" "feeds" {
   for_each = local.bootstrap_log_integration ? {
     for k, v in var.gcp_logs_ingestion_config : k => v if v.enabled
   } : {}
+  provider = restful.feeds
   path            = local.secops_feeds_api_path
   create_method   = "POST"
   delete_method   = "DELETE"
@@ -148,12 +147,16 @@ resource "restful_resource" "feeds" {
     { https_push_google_cloud_pubsub_settings : {} } : { httpsPushWebhookSettings : {} })
   }
   write_only_attrs = ["details"]
+  lifecycle {
+    ignore_changes = [body]
+  }
 }
 
 resource "restful_operation" "feeds_secret" {
   for_each = local.bootstrap_log_integration ? {
     for k, v in var.gcp_logs_ingestion_config : k => v if v.enabled && var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_WEBHOOK"
   } : {}
+  provider = restful.feeds
   path   = "${local.secops_feeds_api_path}/${local.secops_log_feeds_id[each.key]}:generateSecret"
   method = "POST"
 }

@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SecOps Tenant configuration file",
+  "description": "A schema to validate the structure of the tenant YAML file.",
+  "type": "object",
+  "required": [
+    "secops_ingestion_config",
+    "secops_tenant_config",
+    "project_id",
+    "organization_id",
+    "tenant_nodes",
+    "secops_group_principals"
+  ],
+  "properties": {
+    "secops_ingestion_config": {
+      "type": "object",
+      "properties": {
+        "ingest_scc_findings": {
+          "type": "boolean"
+        },
+        "ingest_assets_data": {
+          "type": "boolean"
+        },
+        "ingest_workspace_data": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "ingest_scc_findings",
+        "ingest_assets_data",
+        "ingest_workspace_data"
+      ]
+    },
+    "secops_tenant_config": {
+      "type": "object",
+      "properties": {
+        "tenant_id": {
+          "type": "string"
+        },
+        "tenant_code": {
+          "type": "string"
+        },
+        "tenant_subdomains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "master_tenant": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "tenant_id",
+        "tenant_code",
+        "tenant_subdomains",
+        "master_tenant"
+      ]
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "tenant_nodes": {
+      "type": "object",
+      "properties": {
+        "include_org": {
+          "type": "boolean"
+        },
+        "folders": {
+          "type": "object",
+          "properties": {
+            "tenant": {
+              "type": "object",
+              "properties": {
+                "folder_id": {
+                  "type": "string",
+                  "pattern": "^folders/[0-9]+$"
+                },
+                "include_children": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "folder_id",
+                "include_children"
+              ]
+            }
+          }
+        }
+      },
+      "required": [
+        "include_org",
+        "folders"
+      ]
+    },
+    "secops_group_principals": {
+      "type": "object",
+      "properties": {
+        "admins": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "editors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "viewers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "email"
+          }
+        }
+      },
+      "required": [
+        "admins",
+        "editors",
+        "viewers"
+      ]
+    }
+  }
+}
