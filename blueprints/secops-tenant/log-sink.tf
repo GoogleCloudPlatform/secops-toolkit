@@ -130,7 +130,7 @@ resource "restful_resource" "feeds" {
   for_each = local.bootstrap_log_integration ? {
     for k, v in var.gcp_logs_ingestion_config : k => v if v.enabled
   } : {}
-  provider = restful.feeds
+  provider        = restful.feeds
   path            = local.secops_feeds_api_path
   create_method   = "POST"
   delete_method   = "DELETE"
@@ -157,6 +157,6 @@ resource "restful_operation" "feeds_secret" {
     for k, v in var.gcp_logs_ingestion_config : k => v if v.enabled && var.secops_ingestion_config.ingest_feed_type == "HTTPS_PUSH_WEBHOOK"
   } : {}
   provider = restful.feeds
-  path   = "${local.secops_feeds_api_path}/${local.secops_log_feeds_id[each.key]}:generateSecret"
-  method = "POST"
+  path     = "${local.secops_feeds_api_path}/${local.secops_log_feeds_id[each.key]}:generateSecret"
+  method   = "POST"
 }
