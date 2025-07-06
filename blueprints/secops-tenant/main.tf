@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-# tfdoc:file:description Project and IAM.
-
 locals {
-  secops_api_key_secret_key    = "secops-feeds-api-key"
-  secops_workspace_int_sa_key  = "secops-workspace-ing-sa-key"
-  secops_feeds_api_path        = "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/feeds"
+  secops_feeds_api_path        = "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${local.secops_customer_id}/feeds"
   bootstrap_log_integration    = var.tenant_nodes.include_org == true || try(length(var.tenant_nodes.folders), 0) != 0
   bootstrap_secops_integration = var.secops_ingestion_config.ingest_assets_data || var.secops_ingestion_config.ingest_scc_findings || local.bootstrap_log_integration || var.secops_ingestion_config.ingest_workspace_data
+  bootstrap_secops_tenant      = var.secops_tenant_config.customer_id == null
+  secops_customer_id           = coalesce(var.secops_tenant_config.customer_id, try(restful_resource.customer[0].output.id, null))
+  secops_sa_types              = ["ADMIN", "BACKSTORY_API", "BIGQUERY_API", "FORWARDER_API", "INGESTION_API"]
+  secops_service_accounts = try({
+    for credential in restful_resource.customer[0].output.credentials : credential.credentialType => credential.credential
+  }, null)
 }
 
 module "organization" {
@@ -91,26 +93,7 @@ module "project" {
       "alertcenter.googleapis.com"
     ] : [],
   )
-  custom_roles = {
-    "secopsDashboardViewer" = [
-      "chronicle.dashboardCharts.get",
-      "chronicle.dashboardCharts.list",
-      "chronicle.dashboardQueries.execute",
-      "chronicle.dashboardQueries.get",
-      "chronicle.dashboardQueries.list",
-      "chronicle.dashboards.get",
-      "chronicle.dashboards.list",
-      "chronicle.dashboards.schedule",
-      "chronicle.nativeDashboards.get",
-      "chronicle.nativeDashboards.list"
-    ]
-    "secopsDataViewer" = [
-      "chronicle.legacies.legacyFindRawLogs",
-      "chronicle.legacies.legacySearchRawLogs",
-      "chronicle.referenceLists.get",
-      "chronicle.referenceLists.update"
-    ]
-  }
+  custom_roles = {}
   iam = merge(
     {
       "roles/pubsub.publisher" = concat(
@@ -128,24 +111,49 @@ module "project" {
     } : {}
   )
   iam_bindings_additive = merge(
-    { for group in var.secops_group_principals.admins :
-    "${group}-admins" => { member = "group:${group}", role = "roles/chronicle.admin" } },
-    { for group in var.secops_group_principals.editors :
-    "${group}-editors" => { member = "group:${group}", role = "roles/chronicle.editor" } },
-    { for group in var.secops_group_principals.editors :
-    "${group}-viewers" => { member = "group:${group}", role = "roles/chronicle.viewer" } },
-    { for k, v in var.secops_iam :
-      k => {
-        member = k
-        role   = "roles/chronicle.restrictedDataAccess"
-        condition = {
-          expression  = join(" || ", [for scope in v.scopes : "resource.name.endsWith('/${scope}')"])
-          title       = "datarbac"
-          description = "datarbac"
-        }
-      }
-  })
-  iam_by_principals_additive = { for k, v in var.secops_iam : k => v.roles }
+    {
+      for group in var.secops_group_principals.admins :
+      "${group}-admins" => { member = "group:${group}", role = "roles/chronicle.admin" }
+    },
+    {
+      for group in var.secops_group_principals.editors :
+      "${group}-editors" => { member = "group:${group}", role = "roles/chronicle.editor" }
+    },
+    {
+      for group in var.secops_group_principals.editors :
+      "${group}-viewers" => { member = "group:${group}", role = "roles/chronicle.viewer" }
+    }
+  )
+}
+
+resource "restful_resource" "customer" {
+  count           = local.bootstrap_secops_tenant ? 1 : 0
+  provider        = restful.customer
+  path            = "/createcustomer"
+  create_method   = "POST"
+  check_existance = false
+  read_path       = "getcustomer?customer_code=${var.secops_tenant_config.tenant_code}"
+  poll_delete = {
+    status_locator = "code"
+    status = {
+      success = "404"
+      pending = ["202", "200"]
+    }
+  }
+  body = {
+    customer_name : var.secops_tenant_config.tenant_code,
+    customer_code : var.secops_tenant_config.tenant_code,
+    customer_subdomains : var.secops_tenant_config.tenant_subdomains,
+    retention_duration : var.secops_tenant_config.retention_duration,
+    auth_version : "AUTH_VERSION_4",
+    gcp_project : "projects/${module.project.project_id}",
+  }
+  write_only_attrs = ["customer_name", "customer_code", "customer_subdomains", "retention_duration", "gcp_project", "auth_version"]
+  lifecycle {
+    ignore_changes = [
+      body
+    ]
+  }
 }
 
 module "vpc" {

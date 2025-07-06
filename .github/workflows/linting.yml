@@ -98,4 +98,5 @@ jobs:
             --recursive \
             --exclude "**/.terraform/" \
             --exclude "tools/" \
-            --exclude "tests/"
+            --exclude "tests/" \
+            --exclude "**/*.yaml"

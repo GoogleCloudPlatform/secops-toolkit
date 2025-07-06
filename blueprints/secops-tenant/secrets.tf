@@ -15,33 +15,16 @@
  */
 
 module "secops-tenant-secrets" {
+  count      = local.bootstrap_secops_tenant ? 1 : 0
   source     = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/secret-manager"
   project_id = module.project.project_id
-  secrets = merge({
-    (local.secops_api_key_secret_key) = {
-      locations = [var.regions.primary]
-    }
-    }, var.secops_ingestion_config.ingest_workspace_data ? {
-    (local.secops_workspace_int_sa_key) = {
-      locations = [var.regions.primary]
-    } } : {}
-  )
-  versions = merge({
-    (local.secops_api_key_secret_key) = {
+  secrets    = { for k in local.secops_sa_types : k => { locations = [var.regions.primary] } }
+  versions = {
+    for k in local.secops_sa_types : k => {
       latest = {
-        enabled = true, data = google_apikeys_key.feed_api_key.key_string
+        enabled = true,
+        data    = base64decode(local.secops_service_accounts[k])
       }
     }
-    }, var.secops_ingestion_config.ingest_workspace_data ? {
-    (local.secops_workspace_int_sa_key) = {
-      latest = {
-        enabled = true, data = google_service_account_key.workspace_integration_key[0].private_key
-      }
-    }
-  } : {})
-  labels = merge({
-    (local.secops_api_key_secret_key) = { scope = "tenant" }
-    }, var.secops_ingestion_config.ingest_workspace_data ? {
-    (local.secops_workspace_int_sa_key) = { scope = "tenant" }
-  } : {})
+  }
 }

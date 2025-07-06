@@ -13,3 +13,15 @@ The recommended approach to working with SecOps modules is the following:
     - Evolve the existing modules.
     - Create your own modules.
     - Sync from the upstream repository to get all the updates.
+
+### SecOps Data RBAC
+
+<a href="./secops-data-rbac/" title="SecOps Data RBAC"><img src="./secops-data-rbac/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px"> <p style="margin-left: 340px">This [module](./secops-data-rbac) allows configuration of Data RBAC in Google SecOps.</p>
+
+<br clear="left">
+
+### SecOps Rules and Reference lists
+
+<a href="./secops-rules/" title="SecOps Rules"><img src="./secops-rules/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [module](./secops-rules) allows creation and management of custom rules as well as reference lists in Google SecOps.</p>
+
+<br clear="left">

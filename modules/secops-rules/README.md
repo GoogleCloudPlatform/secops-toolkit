@@ -5,6 +5,10 @@ This module allows creation and management of [custom rules](https://cloud.googl
 - rule definition (yaral code) and reference list entries are managed as files in data folder as per the `factories_config` variable and sample code
 - rule and reference list deployments can leverage both `rules_config` and `reference_lists_config` variables or YAML file still specified in the `factories_config` variable.
 
+<p align="center">
+  <img src="images/diagram.png" alt="SecOPs Tenant">
+</p>
+
 <!-- BEGIN TOC -->
 - [Examples](#examples)
   - [Sample SecOps Rules and reference list deployment](#sample-secops-rules-and-reference-list-deployment)

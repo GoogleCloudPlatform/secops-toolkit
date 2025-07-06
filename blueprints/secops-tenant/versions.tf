@@ -19,6 +19,8 @@ terraform {
     restful = {
       source  = "magodo/restful"
       version = "= 0.21.0"
+      # TODO uncomment this in case you plan to use SecOps tenant factory blueprint
+      # configuration_aliases = [restful.feeds, restful.customer]
     }
   }
 }
