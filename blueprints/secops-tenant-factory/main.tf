@@ -22,7 +22,7 @@ locals {
   _factory_path = try(pathexpand(var.factories_config.tenants_folder), null)
   tenants = {
     for k, v in local._factory_data :
-      (try(v.name, k)) => {
+    (try(v.name, k)) => {
       secops_group_principals = try(v.secops_group_principals, {})
       secops_ingestion_config = try(v.secops_ingestion_config, {})
       secops_tenant_config = can(v.secops_tenant_config) ? {
