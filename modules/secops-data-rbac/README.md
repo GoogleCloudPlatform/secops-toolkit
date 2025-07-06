@@ -4,6 +4,10 @@ This module allows configuration of [Data RBAC](https://cloud.google.com/chronic
 
 - Data RBAC labels and scopes defintion and combinations supported via corresponding variables.
 
+<p align="center">
+  <img src="images/diagram.png" alt="SecOPs Tenant">
+</p>
+
 <!-- BEGIN TOC -->
 - [Examples](#examples)
   - [Sample SecOps Data RBAC configuration](#sample-secops-data-rbac-configuration)
