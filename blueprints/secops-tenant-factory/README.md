@@ -88,7 +88,6 @@ secops_group_principals:
 | name | description | modules |
 |---|---|---|
 | [main.tf](./main.tf) | Module-level locals and resources. | <code>secops-tenant</code> |
-| [outputs.tf](./outputs.tf) | Module outputs. |  |
 | [secops-providers.tf](./secops-providers.tf) | None |  |
 | [variables.tf](./variables.tf) | Module variables. |  |
 | [versions.tf](./versions.tf) | Version pins. |  |
