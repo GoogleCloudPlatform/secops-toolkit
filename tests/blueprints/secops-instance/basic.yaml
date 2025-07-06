@@ -13,9 +13,9 @@
 # limitations under the License.
 
 values:
-  google_apikeys_key.feed_api_key:
+  google_apikeys_key.feed_api_key[0]:
     display_name: SecOps Feeds API Key
-    name: secops-feed-key
+    name: secops-feeds-key
     project: test-project
     restrictions:
       - android_key_restrictions: []
@@ -141,11 +141,11 @@ values:
       severity: warning
   google_monitoring_notification_channel.email_notification["user@example.com"]:
     description: null
-    display_name: SecOps Ingestion Alert
+    display_name: SecOps Notification email
     enabled: true
     force_delete: false
     labels:
-      email_address: bruzzechesse@google.com
+      email_address: user@example.com
     project: test-project
     sensitive_labels: []
     timeouts: null
@@ -158,6 +158,21 @@ values:
     public_key_data: null
     public_key_type: TYPE_X509_PEM_FILE
     service_account_id: workspace-integration@test-project.iam.gserviceaccount.com
+  module.project.google_org_policy_policy.default["iam.disableServiceAccountKeyCreation"]:
+    dry_run_spec: []
+    name: projects/test-project/policies/iam.disableServiceAccountKeyCreation
+    parent: projects/test-project
+    spec:
+      - inherit_from_parent: null
+        reset: null
+        rules:
+          - allow_all: null
+            condition: []
+            deny_all: null
+            enforce: 'FALSE'
+            parameters: null
+            values: []
+    timeouts: null
   module.project.google_project.project[0]:
     auto_create_network: false
     billing_account: 12345-ABCDEF-12345
@@ -179,39 +194,6 @@ values:
       - group:gcp-secops-admins@example.com
     project: test-project
     role: roles/chronicle.viewer
-  module.project.google_project_iam_binding.authoritative["roles/pubsub.publisher"]:
-    condition: []
-    members: null
-    project: test-project
-    role: roles/pubsub.publisher
-  module.project.google_project_iam_custom_role.roles["secopsDashboardViewer"]:
-    description: Terraform-managed.
-    permissions:
-      - chronicle.dashboardCharts.get
-      - chronicle.dashboardCharts.list
-      - chronicle.dashboardQueries.execute
-      - chronicle.dashboardQueries.get
-      - chronicle.dashboardQueries.list
-      - chronicle.dashboards.get
-      - chronicle.dashboards.list
-      - chronicle.dashboards.schedule
-      - chronicle.nativeDashboards.get
-      - chronicle.nativeDashboards.list
-    project: test-project
-    role_id: secopsDashboardViewer
-    stage: GA
-    title: Custom role secopsDashboardViewer
-  module.project.google_project_iam_custom_role.roles["secopsDataViewer"]:
-    description: Terraform-managed.
-    permissions:
-      - chronicle.legacies.legacyFindRawLogs
-      - chronicle.legacies.legacySearchRawLogs
-      - chronicle.referenceLists.get
-      - chronicle.referenceLists.update
-    project: test-project
-    role_id: secopsDataViewer
-    stage: GA
-    title: Custom role secopsDataViewer
   module.project.google_project_iam_member.bindings["iam-bpa:user:bruzzechesse@google.com-roles/chronicle.editor"]:
     condition: []
     member: user:bruzzechesse@google.com
@@ -237,6 +219,18 @@ values:
     condition: []
     project: test-project
     role: roles/pubsub.serviceAgent
+  module.project.google_project_service.project_services["admin.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: test-project
+    service: admin.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["alertcenter.googleapis.com"]:
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: test-project
+    service: alertcenter.googleapis.com
+    timeouts: null
   module.project.google_project_service.project_services["apikeys.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
@@ -385,9 +379,7 @@ values:
     annotations: null
     effective_labels:
       goog-terraform-provisioned: 'true'
-      scope: tenant
-    labels:
-      scope: tenant
+    labels: null
     project: test-project
     replication:
       - auto: []
@@ -399,13 +391,40 @@ values:
     secret_id: secops-feeds-api-key
     terraform_labels:
       goog-terraform-provisioned: 'true'
-      scope: tenant
+    timeouts: null
+    topics: []
+    ttl: null
+    version_aliases: null
+    version_destroy_ttl: null
+  module.secops-tenant-secrets.google_secret_manager_secret.default["secops-workspace-ing-sa-key"]:
+    annotations: null
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    labels: null
+    project: test-project
+    replication:
+      - auto: []
+        user_managed:
+          - replicas:
+              - customer_managed_encryption: []
+                location: europe-west8
+    rotation: []
+    secret_id: secops-workspace-ing-sa-key
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
     timeouts: null
     topics: []
     ttl: null
     version_aliases: null
     version_destroy_ttl: null
   module.secops-tenant-secrets.google_secret_manager_secret_version.default["secops-feeds-api-key:latest"]:
+    deletion_policy: DELETE
+    enabled: true
+    is_secret_data_base64: false
+    secret_data_wo: null
+    secret_data_wo_version: 0
+    timeouts: null
+  module.secops-tenant-secrets.google_secret_manager_secret_version.default["secops-workspace-ing-sa-key:latest"]:
     deletion_policy: DELETE
     enabled: true
     is_secret_data_base64: false
@@ -1076,3 +1095,30 @@ values:
     update_query: null
     write_only_attrs:
       - details
+
+counts:
+  google_apikeys_key: 1
+  google_chronicle_data_access_label: 1
+  google_chronicle_data_access_scope: 1
+  google_chronicle_reference_list: 1
+  google_chronicle_rule: 1
+  google_chronicle_rule_deployment: 1
+  google_monitoring_alert_policy: 3
+  google_monitoring_notification_channel: 1
+  google_org_policy_policy: 1
+  google_project: 1
+  google_project_iam_binding: 1
+  google_project_iam_member: 5
+  google_project_service: 9
+  google_project_service_identity: 5
+  google_secret_manager_secret: 2
+  google_secret_manager_secret_version: 2
+  google_service_account: 1
+  google_service_account_key: 1
+  modules: 5
+  resources: 51
+  restful_operation: 1
+  restful_resource: 12
+
+outputs:
+  project_id: test-project
