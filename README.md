@@ -51,7 +51,7 @@ This section details the available Terraform blueprints for deploying and managi
 
 ## SecOps Tenant Factory
 
-<a href="./blueprints/secops-tenant-factory/" title="SecOps Tenant Factory"><img src="./blueprints/secops-tenant-factory/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/secops-tenant-factory/) implements end-to-end configuration of new projects and SecOps SIEM tenants via YAML data configurations and [secops-tenant](./secops-tenant) blueprint code. </p>
+<a href="./blueprints/secops-tenant-factory/" title="SecOps Tenant Factory"><img src="./blueprints/secops-tenant-factory/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/secops-tenant-factory/) implements end-to-end configuration of new projects and SecOps SIEM tenants via YAML data configurations and [secops-tenant](./blueprints/secops-tenant) blueprint code. </p>
 
 <br clear="left">
 
