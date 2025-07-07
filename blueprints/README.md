@@ -26,6 +26,12 @@ This repository provides a collection of Terraform blueprints designed to automa
 
 <br clear="left">
 
+## SecOps Instance
+
+<a href="./secops-instance/" title="SecOps Instance"><img src="./secops-instance/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./secops-instance/) allows automated configuration of SecOps instance at both infrastructure and application level.</p>
+
+<br clear="left">
+
 ## SecOps Tenant
 
 <a href="./secops-tenant/" title="SecOps Tenant"><img src="./secops-tenant/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./secops-tenant/) allows automated configuration of SecOps instance at both infrastructure and application level with out of the box Feeds integration, automated deployment of SecOps rules and reference lists as well as Data RBAC scopes.</p>
