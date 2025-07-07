@@ -37,9 +37,21 @@ This section details the available Terraform blueprints for deploying and managi
 
 <br clear="left">
 
+## SecOps Instance
+
+<a href="./blueprints/secops-instance/" title="SecOps Instance"><img src="./blueprints/secops-instance/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/secops-instance/) allows automated configuration of SecOps instance at both infrastructure and application level.</p>
+
+<br clear="left">
+
 ### SecOps Tenant
 
 <a href="./blueprints/secops-tenant/" title="SecOps Tenant"><img src="./blueprints/secops-tenant/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/secops-tenant/) allows automated configuration of a SecOps instance at both infrastructure and application level with out-of-the-box Feeds integration, automated deployment of SecOps rules and reference lists, as well as Data RBAC scopes.</p>
+
+<br clear="left">
+
+## SecOps Tenant Factory
+
+<a href="./blueprints/secops-tenant-factory/" title="SecOps Tenant Factory"><img src="./blueprints/secops-tenant-factory/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/secops-tenant-factory/) implements end-to-end configuration of new projects and SecOps SIEM tenants via YAML data configurations and [secops-tenant](./blueprints/secops-tenant) blueprint code. </p>
 
 <br clear="left">
 
@@ -67,7 +79,7 @@ This repository provides a collection of sample repositories for automating Goog
 
 ### Detection As Code
 
-<a href="./pipelines/detection-as-code/" title="Detection As Code pipeline"><img src="./pipelines/detection-as-code/images/diagram.png" align="left" width="300px"></a> This [sample repository](./pipelines/detection-as-code/) contains ready-to-use code for automated deployment of detection rules and reference lists in Google SecOps via CICD (currently with sample pipelines for GitLab and GitHub).
+<a href="./pipelines/detection-as-code/" title="Detection As Code pipeline"><img src="./pipelines/detection-as-code/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [sample repository](./pipelines/detection-as-code/) contains ready-to-use code for automated deployment of detection rules and reference lists in Google SecOps via CICD (currently with sample pipelines for GitLab and GitHub).</p>
 
 <br clear="left">
 
