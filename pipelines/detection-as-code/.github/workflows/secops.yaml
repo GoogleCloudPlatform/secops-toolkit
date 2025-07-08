@@ -19,160 +19,112 @@ on:
     branches:
       - main
     types:
-      - closed
       - opened
       - synchronize
-
+      - closed # Required for the merge/apply trigger
 env:
   TF_VAR_secops_customer_id: # TODO replace with SecOps Customer ID
   TF_VAR_secops_project_id: # TODO replace with SecOps Project ID
   TF_VAR_secops_region: # TODO replace with SecOps Region
   SERVICE_ACCOUNT: # TODO replace with WIF SA
   WIF_PROVIDER: projects/XXXXXXXXX/locations/global/workloadIdentityPools/xxxxxxxx/providers/xxxxxx #TODO replace with wif provider
-  SSH_AUTH_SOCK: /tmp/ssh_agent.sock
   TF_VERSION: 1.6.5
+  TF_WORKING_DIR: ./pipelines/detection-as-code
 
 jobs:
-  secops-pr:
+  plan:
+    name: 'Terraform Plan'
+    # Plan runs for opened and updated PRs, but not for closed PRs.
+    if: github.event.action != 'closed'
     permissions:
       contents: read
       id-token: write
-      issues: write
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - id: checkout
-        name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # set up SSH key authentication to the other repositories
-
-#      - id: ssh-config
-#        name: Configure SSH authentication
-#        run: |
-#          ssh-agent -a "$SSH_AUTH_SOCK" > /dev/null
-#          ssh-add - <<< "${{ secrets.CICD_MODULES_KEY }}"
-
-      # set up step variables for plan / apply
-
-      - id: vars-plan
-        if: github.event.pull_request.merged != true && success()
-        name: Set up plan variables
-        run: |
-          echo "plan_opts=-lock=false" >> "$GITHUB_ENV"
-          echo "service_account=${{env.SERVICE_ACCOUNT}}" >> "$GITHUB_ENV"
-
-      - id: vars-apply
-        if: github.event.pull_request.merged == true && success()
-        name: Set up apply variables
-        run: |
-          echo "service_account=${{env.SERVICE_ACCOUNT}}" >> "$GITHUB_ENV"
-
-      # set up authentication via Workload identity Federation and gcloud
-
-      - id: gcp-auth
-        name: Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{env.WIF_PROVIDER}}
           service_account: ${{env.SERVICE_ACCOUNT}}
           access_token_lifetime: 900s
 
-      - id: gcp-sdk
-        name: Set up Cloud SDK
+      - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
-        with:
-          install_components: alpha
 
-      - id: install-python
-        if: github.event.pull_request.merged != true && success()
-        name: Install Python
+      - name: Install Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - id: install-dependencies
-        if: github.event.pull_request.merged != true && success()
-        name: Install Dependencies
-        run: |
-          pip install -r ./scripts/requirements.txt
-        shell: bash
+      - name: Install Dependencies
+        working-directory: ${{ env.TF_WORKING_DIR }}/scripts
+        run: pip install -r requirements.txt
 
-      - id: verify-rules
-        if: github.event.pull_request.merged != true && success()
-        name: verify-rules
-        run: cd scripts && python main.py verify-rules
-        shell: bash
+      - name: Verify Rules
+        working-directory: ${{ env.TF_WORKING_DIR }}/scripts
+        run: python main.py verify-rules
 
-      - id: tf-setup
-        name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2.0.3
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{env.TF_VERSION}}
 
-      # run Terraform init/validate/plan
+      - name: Terraform Init
+        id: init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init -no-color
 
-      - id: tf-init
-        name: Terraform init
-        continue-on-error: true
-        run: |
-          terraform init -no-color
-
-      - id: tf-validate
-        continue-on-error: true
-        name: Terraform validate
+      - name: Terraform Validate
+        id: validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform validate -no-color
 
-      - id: tf-plan
-        name: Terraform plan
-        continue-on-error: true
-        run: |
-          terraform plan -input=false -out ../plan.out -no-color ${{env.plan_opts}}
+      - name: Terraform Plan
+        id: plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform plan -input=false -out=plan.out -no-color -lock=false
+        # The -lock=false flag is used for planning in CI.
+        # Ensure that no other concurrent workflows are running to avoid state corruption.
 
-      - id: tf-apply
-        if: github.event.pull_request.merged == true && success()
-        name: Terraform apply
-        continue-on-error: true
-        run: |
-          terraform apply -input=false -auto-approve -no-color ../plan.out
-
-      # PR comment with Terraform result from previous steps
-      # length is checked and trimmed for length so as to stay within the limit
-
-      - id: pr-comment
-        name: Post comment to Pull Request
-        continue-on-error: true
-        uses: actions/github-script@v6
-        if: github.event_name == 'pull_request'
-        env:
-          PLAN: ${{steps.tf-plan.outputs.stdout}}\n${{steps.tf-plan.outputs.stderr}}
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            const output = `### Terraform Initialization \`${{steps.tf-init.outcome}}\`
+          name: terraform-plan
+          path: ${{ env.TF_WORKING_DIR }}/plan.out
+          retention-days: 1
 
-            ### Terraform Validation \`${{steps.tf-validate.outcome}}\`
+      - name: Post comment to Pull Request
+        uses: actions/github-script@v7
+        if: always() # Run even if previous steps fail to report the status
+        env:
+          PLAN: ${{ steps.plan.outputs.stdout }}
+          PLAN_ERROR: ${{ steps.plan.outputs.stderr }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
 
             <details><summary>Validation Output</summary>
 
-            \`\`\`\n
-            ${{steps.tf-validate.outputs.stdout}}
-            \`\`\`
+            *   **Init:** \`${{ steps.init.outcome }}\`
+            *   **Validate:** \`${{ steps.validate.outcome }}\`
 
             </details>
-
-            ### Terraform Plan \`${{steps.tf-plan.outcome}}\`
 
             <details><summary>Show Plan</summary>
 
-            \`\`\`\n
-            ${process.env.PLAN.split('\n').filter(l => l.match(/^([A-Z\s].*|)$/)).join('\n')}
+            \`\`\`terraform
+            ${process.env.PLAN}
+            ${process.env.PLAN_ERROR}
             \`\`\`
 
             </details>
 
-            ### Terraform Apply \`${{steps.tf-apply.outcome}}\`
-
-            *Pusher: @${{github.actor}}, Action: \`${{github.event_name}}\`, Working Directory: \`${{env.tf_actions_working_dir}}\`, Workflow: \`${{github.workflow}}\`*`;
+            *Pusher: @${{github.actor}}, Action: \`${{github.event_name}}\`*`;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -180,55 +132,40 @@ jobs:
               repo: context.repo.repo,
               body: output
             })
+  apply:
+    name: 'Terraform Apply'
+    # Apply runs only when a PR is merged into the main branch.
+    if: github.event.action == 'closed' && github.event.pull_request.merged == true
+    needs: plan
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - id: pr-short-comment
-        name: Post comment to Pull Request (abbreviated)
-        uses: actions/github-script@v6
-        if: github.event_name == 'pull_request' && steps.pr-comment.outcome != 'success'
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          script: |
-            const output = `### Terraform Initialization \`${{steps.tf-init.outcome}}\`
+          workload_identity_provider: ${{env.WIF_PROVIDER}}
+          service_account: ${{env.SERVICE_ACCOUNT}}
 
-            ### Terraform Validation \`${{steps.tf-validate.outcome}}\`
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{env.TF_VERSION}}
 
-            ### Terraform Plan \`${{steps.tf-plan.outcome}}\`
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan
+          path: ${{ env.TF_WORKING_DIR }}
 
-            Plan output is in the action log.
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init -no-color
 
-            ### Terraform Apply \`${{steps.tf-apply.outcome}}\`
-
-            *Pusher: @${{github.actor}}, Action: \`${{github.event_name}}\`, Working Directory: \`${{env.tf_actions_working_dir}}\`, Workflow: \`${{github.workflow}}\`*`;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
-
-      # exit on error from previous steps
-
-      - id: check-init
-        name: Check init failure
-        if: steps.tf-init.outcome != 'success'
-        run: exit 1
-
-      - id: check-validate
-        name: Check validate failure
-        if: steps.tf-validate.outcome != 'success'
-        run: exit 1
-
-      - id: check-verify-rules
-        name: Check verify rules failure
-        if: github.event.pull_request.merged != true && steps.verify-rules.outcome != 'success'
-        run: exit 1
-
-      - id: check-plan
-        name: Check plan failure
-        if: steps.tf-plan.outcome != 'success'
-        run: exit 1
-
-      - id: check-apply
-        name: Check apply failure
-        if: github.event.pull_request.merged == true && steps.tf-apply.outcome != 'success'
-        run: exit 1
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -input=false -no-color plan.out
