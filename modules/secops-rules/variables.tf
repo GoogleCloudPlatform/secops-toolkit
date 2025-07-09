@@ -17,45 +17,13 @@
 variable "factories_config" {
   description = "Paths to  YAML config expected in 'rules' and 'reference_lists'. Path to folders containing rules definitions (yaral files) and reference lists content (txt files) for the corresponding _defs keys."
   type = object({
-    rules                = optional(string)
+    #rules                = optional(string)
     rules_defs           = optional(string, "data/rules")
-    reference_lists      = optional(string)
+    #reference_lists      = optional(string)
     reference_lists_defs = optional(string, "data/reference_lists")
   })
   nullable = false
   default  = {}
-}
-
-variable "reference_lists_config" {
-  description = "SecOps Reference lists configuration."
-  type = map(object({
-    description = string
-    type        = string
-  }))
-  default = {}
-  validation {
-    condition = alltrue([
-      for config in var.reference_lists_config : contains(["CIDR", "STRING", "REGEX"], config.type)
-    ])
-    error_message = "The 'type' attribute for each reference list must be one of: CIDR, STRING, REGEX."
-  }
-}
-
-variable "rules_config" {
-  description = "SecOps Detection rules configuration."
-  type = map(object({
-    enabled  = optional(bool, true)
-    alerting = optional(bool, false)
-    archived = optional(bool, false)
-    run_frequency : optional(string)
-  }))
-  default = {}
-  validation {
-    condition = alltrue([
-      for config in var.rules_config : contains(["LIVE", "HOURLY", "DAILY"], config.run_frequency)
-    ])
-    error_message = "The 'type' attribute for each reference list must be one of: CIDR, STRING, REGEX."
-  }
 }
 
 variable "secops_config" {
@@ -65,4 +33,8 @@ variable "secops_config" {
     project     = string
     region      = string
   })
+  validation {
+    condition     = contains(["us", "europe", "europe-west2", "asia-southeast1"], var.secops_config.region)
+    error_message = "The provided region for secops_config must be a valid Chronicle API region: 'us', 'europe', 'europe-west2', or 'asia-southeast1'."
+  }
 }

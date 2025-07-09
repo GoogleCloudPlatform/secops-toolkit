@@ -33,9 +33,9 @@ module "secops-rules" {
     region      = var.secops_tenant_config.region
   }
   factories_config = {
-    rules                = "./data/secops_rules.yaml"
+    #rules                = "./data/secops_rules.yaml"
     rules_defs           = "./data/rules"
-    reference_lists      = "./data/secops_reference_lists.yaml"
+    #reference_lists      = "./data/secops_reference_lists.yaml"
     reference_lists_defs = "./data/reference_lists"
   }
 }

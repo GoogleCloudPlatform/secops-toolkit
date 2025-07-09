@@ -14,30 +14,23 @@
  * limitations under the License.
  */
 
-variable "secops_content_config" {
-  description = "Path to SecOps rules and reference lists deployment YAML config files."
+variable "factories_config" {
+  description = "Paths to  YAML config expected in 'rules' and 'reference_lists'. Path to folders containing rules definitions (yaral files) and reference lists content (txt files) for the corresponding _defs keys."
   type = object({
-    reference_lists = string
-    rules           = string
+    #rules                = optional(string)
+    rules_defs           = optional(string, "data/rules")
+    #reference_lists      = optional(string)
+    reference_lists_defs = optional(string, "data/reference_lists")
   })
-  default = {
-    reference_lists = "secops_reference_lists.yaml"
-    rules           = "secops_rules.yaml"
-  }
+  nullable = false
+  default  = {}
 }
 
-variable "secops_customer_id" {
-  description = "SecOps customer ID."
-  type        = string
-}
-
-variable "secops_project_id" {
-  description = "SecOps GCP Project ID."
-  type        = string
-}
-
-variable "secops_region" {
-  description = "SecOps region."
-  type        = string
-  default     = "eu"
+variable "secops_config" {
+  description = "SecOps configuration."
+  type = object({
+    customer_id = string
+    project     = string
+    region      = string
+  })
 }

@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-test_2:
+public_ip_ranges:
   description: "Private CIDR ranges"
   type: CIDR # either CIDR, STRING, REGEX
