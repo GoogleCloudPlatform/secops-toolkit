@@ -99,7 +99,7 @@ variable "organization_id" {
 }
 
 variable "project_create_config" {
-  description = "Create project instead of using an existing one."
+  description = "If null, use an existing project. Otherwise, create a project with the passed parameters."
   type = object({
     billing_account = string
     parent          = optional(string)

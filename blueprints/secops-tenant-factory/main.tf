@@ -32,7 +32,7 @@ locals {
         master_tenant     = try(v.secops_tenant_config.master_tenant, false)
       } : null
       project_id      = try(v.project_id, true)
-      project_create  = try(v.project_create, null)
+      project_create  = try(v.project_create, true)
       organization_id = try(v.organization_id, var.organization_id)
       tenant_nodes = {
         include_org = try(v.tenant_nodes.include_org, false)
@@ -53,10 +53,10 @@ module "tenants" {
     alpha_apis_region  = var.secops_config.alpha_apis_region
   })
   project_id = each.value.project_id
-  project_create_config = coalesce(each.value.project_create, {
+  project_create_config = each.value.project_create ? {
     parent          = var.tenant_folder
     billing_account = var.billing_account
-  })
+  } : null
   organization_id = each.value.organization_id
   tenant_nodes    = each.value.tenant_nodes
   providers = {
