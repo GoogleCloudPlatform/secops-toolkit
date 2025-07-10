@@ -54,7 +54,7 @@ variable "rules_config" {
     condition = alltrue([
       for config in var.rules_config : contains(["LIVE", "HOURLY", "DAILY"], config.run_frequency)
     ])
-    error_message = "The 'type' attribute for each reference list must be one of: CIDR, STRING, REGEX."
+    error_message = "The 'run_frequency' attribute for each rule must be one of: LIVE, HOURLY, DAILY."
   }
 }
 

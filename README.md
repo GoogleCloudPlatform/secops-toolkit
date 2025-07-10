@@ -1,7 +1,6 @@
-<p align="center">
+<p align="center" width="100%">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo.png">
-    <img src="./assets/logo.png" alt="SecOps Toolkit">
+    <img src="./assets/logo.png" alt="SecOps Toolkit" style="align-content: center;" width="33%">
   </picture>
 </p>
 
