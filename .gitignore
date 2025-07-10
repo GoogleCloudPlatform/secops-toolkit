@@ -10,3 +10,4 @@
 /blueprints/secops-tenant/terraform.tfvars
 **/terraform.tfvars
 **/__pycache__
+/secops-toolkit.iml

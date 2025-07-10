@@ -1,6 +1,6 @@
-<p align="center">
+<p align="center" width="100%">
   <picture>
-    <img src="./assets/logo.png" alt="SecOps Toolkit" style="align-content: center; max-width: 400px">
+    <img src="./assets/logo.png" alt="SecOps Toolkit" style="align-content: center;" width="33%">
   </picture>
 </p>
 
