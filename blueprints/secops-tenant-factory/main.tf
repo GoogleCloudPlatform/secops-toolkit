@@ -31,7 +31,7 @@ locals {
         tenant_subdomains = try(v.secops_tenant_config.tenant_subdomains, null)
         master_tenant     = try(v.secops_tenant_config.master_tenant, false)
       } : null
-      project_id      = try(v.project_id, true)
+      project_id      = v.project_id
       project_create  = try(v.project_create, true)
       organization_id = try(v.organization_id, var.organization_id)
       tenant_nodes = {

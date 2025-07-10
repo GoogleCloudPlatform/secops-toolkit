@@ -108,7 +108,7 @@ variable "project_create_config" {
 }
 
 variable "project_id" {
-  description = "Project id that references existing project."
+  description = "Project ID that either references an existing project or that will be used to create a new one (see var.project_create_config)."
   type        = string
 }
 
