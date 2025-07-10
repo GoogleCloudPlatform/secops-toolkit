@@ -45,16 +45,12 @@
           "items": {
             "type": "string"
           }
-        },
-        "master_tenant": {
-          "type": "boolean"
         }
       },
       "required": [
         "tenant_id",
         "tenant_code",
-        "tenant_subdomains",
-        "master_tenant"
+        "tenant_subdomains"
       ]
     },
     "project_id": {
