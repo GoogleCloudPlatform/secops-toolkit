@@ -179,7 +179,7 @@ variable "secops_ingestion_config" {
   default = {}
   validation {
     condition     = contains(["HTTPS_PUSH_WEBHOOK", "HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB"], var.secops_ingestion_config.ingest_feed_type)
-    error_message = "Allowed values for ingest_feed_type are \"WEBHOOK\", \"HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB\"."
+    error_message = "Allowed values for ingest_feed_type are \"HTTPS_PUSH_WEBHOOK\", \"HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB\"."
   }
 }
 
