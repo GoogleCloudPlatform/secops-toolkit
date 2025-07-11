@@ -65,7 +65,6 @@ secops_tenant_config:
   tenant_code: "tenant-1"
   tenant_subdomains:
     - "tenant-1-europe"
-  master_tenant: false
 project_id: "prod-cs-tenant-1"
 organization_id: "XXXXXXXXXXX"
 tenant_nodes:

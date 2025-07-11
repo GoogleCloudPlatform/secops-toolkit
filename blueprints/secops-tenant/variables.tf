@@ -99,7 +99,7 @@ variable "organization_id" {
 }
 
 variable "project_create_config" {
-  description = "Create project instead of using an existing one."
+  description = "If null, use an existing project. Otherwise, create a project with the passed parameters."
   type = object({
     billing_account = string
     parent          = optional(string)
@@ -108,7 +108,7 @@ variable "project_create_config" {
 }
 
 variable "project_id" {
-  description = "Project id that references existing project."
+  description = "Project ID that either references an existing project or that will be used to create a new one (see var.project_create_config)."
   type        = string
 }
 
@@ -179,7 +179,7 @@ variable "secops_ingestion_config" {
   default = {}
   validation {
     condition     = contains(["HTTPS_PUSH_WEBHOOK", "HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB"], var.secops_ingestion_config.ingest_feed_type)
-    error_message = "Allowed values for ingest_feed_type are \"WEBHOOK\", \"HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB\"."
+    error_message = "Allowed values for ingest_feed_type are \"HTTPS_PUSH_WEBHOOK\", \"HTTPS_PUSH_GOOGLE_CLOUD_PUBSUB\"."
   }
 }
 
