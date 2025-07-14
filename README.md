@@ -14,7 +14,7 @@ This section details the available Terraform blueprints for deploying and managi
 
 ### BindPlane OP Management container running on cos-based GCE instance
 
-<a href="./blueprints/bindplane-gce/" title="BindPlane OP Management console on GCE"><img src="./blueprints/bindplane-gce/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/bindplane-gke/) is a simple script for running BindPlane OP Management Console container on Google Compute Engine instance with COS.</p>
+<a href="./blueprints/bindplane-gce/" title="BindPlane OP Management console on GCE"><img src="./blueprints/bindplane-gce/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/bindplane-gce/) is a simple script for running BindPlane OP Management Console container on Google Compute Engine instance with COS.</p>
 
 <br clear="left">
 
@@ -26,7 +26,7 @@ This section details the available Terraform blueprints for deploying and managi
 
 ### SecOps Anonymization Pipeline
 
-<a href="./blueprints/secops-anonymization-pipeline/" title="SecOps Anonymization Pipeline"><img src="./blueprints/secops-anonymization-pipeline/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/secops-gke-forwarder/) is a comprehensive and adaptable solution for constructing a SecOps pipeline for exporting raw data from a SecOps tenant, optionally anonymize this data and then import data back in a different SecOps tenant.</p>
+<a href="./blueprints/secops-anonymization-pipeline/" title="SecOps Anonymization Pipeline"><img src="./blueprints/secops-anonymization-pipeline/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/secops-anonymization-pipeline/) is a comprehensive and adaptable solution for constructing a SecOps pipeline for exporting raw data from a SecOps tenant, optionally anonymize this data and then import data back in a different SecOps tenant.</p>
 
 <br clear="left">
 
