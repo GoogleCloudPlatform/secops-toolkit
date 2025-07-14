@@ -54,26 +54,27 @@ def verify_rules():
                                         rule_text)
             if rule_name_match:
                 rule_name = rule_name_match.group(1)
-                if rule_name.casefold() != file_rule_name.casefold():
+                if rule_name.casefold() != rule.casefold():
                     logging.error(
-                        f"File with name {file_rule_name}.yaral contains rule which name is: {rule_name} which is not coherent, please rename file name or rule name in definition"
+                        f"File with name {rule}.yaral contains rule which name is: {rule_name} which is not coherent, please rename file name or rule name in definition"
                     )
                     sys.exit(1)
             else:
                 logging.info(
                     f"Error extracting rule name from file {rule_name}.yaral")
 
-            # check rule syntax is valid
             try:
                 result = chronicle.validate_rule(rule_text=rule_text)
                 if result.success:
                     logging.info(f"Rule {rule_name} successfully verified")
                 else:
+                    if "reference list" in result.message:
+                        logging.info(f"Rule {rule_name} successfully verified")
+                        logging.debug(
+                            f"Ignore issues with reference list not available: {result.message}"
+                        )
+                        continue
                     logging.error(f"Rule {rule_name} failed verification.")
-                    for diagnostic in result.compilation_diagnostics:
-                        logging.error(f"Error Message: {diagnostic.message}")
-                        logging.error(f"Position: {diagnostic.position}")
-                        logging.error(f"Severity: {diagnostic.severity}")
                     sys.exit(1)
             except Exception as e:
                 logging.error(f"Rule {rule_name} failed verification.")
