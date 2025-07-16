@@ -8,6 +8,8 @@ requests before deploying changes.
 
 ![GitHub CICD Pipeline](./images/diagram.png)
 
+"Icon made by Freepik from www.flaticon.com"
+
 A brief workflow description:
 
 1. **Develop and Commit:** A SOC engineer develops or modifies a parser within the Google SecOps tenant. After testing,

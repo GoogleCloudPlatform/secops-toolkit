@@ -1,0 +1,53 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: "Response As Code: Sync Playbooks"
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+      - opened
+      - synchronize
+      - merged
+
+env:
+  LOCAL_SYNC_PATH: ${{ vars.LOCAL_SYNC_PATH }}
+  TARGET_SOAR_API_URL: ${{ vars.TARGET_SOAR_API_URL }}
+  TARGET_SOAR_API_KEY: ${{ secrets.TARGET_SOAR_API_KEY }}
+  SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
+jobs:
+  sync-playbooks:
+    runs-on: ubuntu-latest
+    container: python:3.11
+    # Condition to run only on push to the default branch
+    if: github.event.pull_request.merged == true
+
+    env:
+      COMMAND: apply # Set COMMAND for this job based on the GitLab rule
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Python script
+        run: |
+          python main.py sync-playbooks

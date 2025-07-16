@@ -1,0 +1,58 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: "Response As Code: Pull Playbooks"
+
+# This action is triggered manually from the "Actions" tab in your GitHub repository.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  LOCAL_SYNC_PATH: ${{ vars.LOCAL_SYNC_PATH }}
+  SOURCE_SOAR_API_URL: ${{ secrets.SOURCE_SOAR_API_URL }}
+  SOURCE_SOAR_API_KEY: ${{ secrets.SOURCE_SOAR_API_KEY }}
+  SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
+jobs:
+  pull-playbooks:
+    runs-on: ubuntu-latest
+    container: python:3.11
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Python script
+        run: |
+          python main.py pull-playbooks
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .
+          # Check for changes and only commit if there are any
+          if ! git diff --staged --quiet; then
+            git commit -m "Github Action: Pull Playbooks"
+            git push
+          else
+            echo "No changes to commit."
+          fi

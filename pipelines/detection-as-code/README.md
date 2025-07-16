@@ -7,11 +7,11 @@ these articles:
 - [Detection as Code in Google SecOps with Terraform — Part 1](https://medium.com/p/646de8967278)
 - [Detection as Code in Google SecOps with Terraform — Part 2](https://medium.com/p/907a5cffe3d8)
 
-
-
 ### GitLab / GitHub CICD Pipeline design
 
 ![GitLab / GitHub CICD Pipeline](./images/diagram.png)
+
+"Icon made by Freepik from www.flaticon.com"
 
 A brief workflow description:
 
