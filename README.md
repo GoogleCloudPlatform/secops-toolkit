@@ -87,3 +87,9 @@ This repository provides a collection of sample repositories for automating Goog
 <a href="./pipelines/parsers-as-code/" title="Parsers As Code pipeline"><img src="./pipelines/parsers-as-code/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [sample repository](./pipelines/parsers-as-code/) provides a framework for managing SecOps parsers as code.</p>
 
 <br clear="left">
+
+## Response As Code
+
+<a href="./pipelines/response-as-code/" title="Response As Code pipeline"><img src="./pipelines/response-as-code/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [sample repository](./pipelines/response-as-code/) provides a framework to manage and deploy SOAR playbooks using a "Response as Code" methodology.</p>
+
+<br clear="left">
