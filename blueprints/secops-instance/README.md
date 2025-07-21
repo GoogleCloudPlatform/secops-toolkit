@@ -44,86 +44,92 @@ Instead of relying on broad, predefined roles, you can apply the principle of le
 
 Please find below the predefined set of custom roles available in the blueprint in the folder [custom_roles](./data/custom_roles) as YAML files. Those YAML files are consumed by the project factory to generate the corresponding custom roles on the GCP project. If you are not using such a blueprint please feel free to leverage the permissions in the YAML file to set up your own custom roles.
 
-| Resource | Global Admin | SecOps Sub-Org Admin | SecOps Sub-Org Onboarding & Feed Management | SecOps Sub-Org Detection Engineering | Custom IAM Roles (SecOps Scoped Detection Engineering) | SecOps Scoped Detection Viewer | SecOps Scoped Onboarding |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Global Scope** | | | | | | | |
-| GlobalDataAccessScopes | view | view | view | view | view | view | view |
-| Basic Information | view | view | view | view | view | view | view |
-| Projects | view | view | view | view | view | view | view |
-| errorNotificationConfigs | view | view | view | x | x | x | view |
-| userNotificationConfigs | view | view | view | view | view | view | view |
-| **Data Ingestion** | | | | | | | |
-| DataAccessLatest | view | view | view | view | view | view | view |
-| DataAccessScopes | view | view | view | view | view | view | view |
-| **Data Export** | | | | | | | |
-| DataExports | admin | admin | x | x | x | x | x |
-| dataTap | admin | admin | x | x | x | x | x |
-| **Forwarder management** | | | | | | | |
-| Forwarders | admin | admin | admin | x | x | x | admin |
-| **Feed management** | | | | | | | |
-| Feeds | admin | admin | admin | x | x | x | admin |
-| FeedPivots | admin | admin | admin | x | x | x | admin |
-| FeedSourceAccounts | admin | admin | admin | x | x | x | admin |
-| FeedSourceTypeSchemas | admin | admin | admin | x | x | x | admin |
-| GCTI | admin | admin | x | admin | admin | view | x |
-| LogTypes | admin | admin | admin | x | x | x | admin |
-| LogTypeSchemas | admin | admin | admin | x | x | x | admin |
-| LogTypeVerifiers | admin | admin | admin | x | x | x | admin |
-| IngestionLabels | admin | admin | admin | x | x | x | admin |
-| IngestionLogNameRegexes | admin | admin | admin | x | x | x | admin |
-| **Parser management** | | | | | | | |
-| Parsers | admin | admin | admin | x | x | x | admin |
-| ParserExtensions | admin | admin | admin | x | x | x | admin |
-| ValidationReports | admin | admin | admin | x | x | x | admin |
-| ExtensionValidationReports | admin | admin | admin | x | x | x | admin |
-| ParsingErrors | admin | admin | admin | x | x | x | admin |
-| ValidationErrors | admin | admin | admin | x | x | x | admin |
-| **Curated Detections** | | | | | | | |
-| CuratedRuleSets | admin | admin | view | admin | admin | view | view |
-| CuratedRuleSetDeployments | admin | admin | x | admin | admin | x | x |
-| CuratedRuleSetCategories | admin | admin | view | admin | admin | view | view |
-| FindingRefinements | admin | admin | x | admin | admin | view | x |
-| FindingRefinementDeployments | admin | admin | x | admin | admin | x | x |
-| **Risk Analytics** | | | | | | | |
-| RiskConfigs | view | view | view | view | x | x | view |
-| RiskEnrich | view | view | view | view | x | x | view |
-| EnrichmentControls | view | view | view | view | x | x | view |
-| FindingsGraphs | view | view | view | view | x | x | view |
-| **Rules** | | | | | | | |
-| Rules | admin | admin | view | admin | admin | view | view |
-| RuleDeployments | admin | admin | x | admin | admin | x | x |
-| RuleExecutionErrors | admin | admin | view | admin | admin | view | view |
-| RuleErrors | admin | admin | view | admin | admin | view | view |
-| IocMatches | admin | admin | x | admin | admin | x | x |
-| IocStats | admin | admin | x | admin | admin | x | x |
-| Iocs | admin | admin | x | admin | admin | x | x |
-| RetrohuntCollections | admin | admin | x | admin | admin | x | x |
-| **Reference List resources** | | | | | | | |
-| ReferenceLists | admin | admin | view | admin | admin | view | view |
-| **Data Tables resources** | | | | | | | |
-| DataTables | admin | admin | view | admin | admin | view | view |
-| DataTableRows | admin | admin | view | admin | admin | view | view |
-| DataTableOperationErrors | admin | admin | view | admin | admin | view | view |
-| **Dashboards and UDMs** | | | | | | | |
-| Dashboards | admin | admin | view | admin | admin | view | view |
-| DashboardReports | admin | admin | x | admin | admin | view | x |
-| DashboardQueries | admin | admin | x | admin | admin | view | x |
-| **Search** | | | | | | | |
-| Events | admin | admin | view | admin | admin | view | view |
-| Entities | admin | admin | view | admin | admin | view | view |
-| **Operating resources** | | | | | | | |
-| Operations | view | view | view | view | view | view | view |
-| **User data resources** | | | | | | | |
-| SearchQueries | view | view | view | view | view | view | view |
-| PreferenceData | view | view | view | view | view | view | view |
-| **Gemini** | | | | | | | |
-| AI | view | view | view | view | view | view | view |
-| Conversations | view | view | view | view | view | view | view |
-| Messages | view | view | view | view | view | view | view |
-| **Multi-tenancy** | | | | | | | |
-| MySiemclDirectories | view | view | view | view | view | view | view |
-| **Legacy resources** | | | | | | | |
-| Detections | admin | admin | x | admin | admin | view | x |
+| Feature                  | Permissions                   | SecOps Onboarding Engineer        | SecOps Scoped Onboarding Engineer | SecOps Detection Engineer | SecOps Scoped Detection Engineer | SecOps Analyst | SecOps Scoped Analyst   |
+|--------------------------|-------------------------------| --------------------------------- |  --------------------------------- | --------------------------------- | --------------------------------- | --------------------------------- |-------------------------| 
+| Global Scope             |                               |  |  |  |  |  |                         |
+|                          | GlobalDataAccessScopes        | view | x | view | x | view | x                       |
+| Basic Instances          |                               |  |  |  |  |  |
+|                          | Projects                      | view | view | view | view | view | view                    |
+|                          | Instances                     | view | view | view | view | view | view                    |
+|                          | ErrorNotificationConfigs      | x | x | x | x | x | x                       |
+|                          | PreferenceSets                | view | view | view | view | view | view                    |
+| Data RBAC                |                               |  |  |  |  |  |
+|                          | DataAccessLabels              | view | view | view | view | view | view                    |
+|                          | DataAccessScopes              | view | view | view | view | view | view                    |
+| Data Export              |                               |  |  |  |  |  |
+|                          | DataExports                   | x | x | x | x | x | x                       |
+|                          | DataTaps                      | x | x | x | x | x | x                       |
+| Forwarder management     |                               |  |  |  |  |  |
+|                          | Collectors                    | admin | admin | x | x | x | x                       |
+|                          | Forwarders                    | admin | admin | x | x | x | x                       |
+| Feed management          |                               |  |  |  |  |  |
+|                          | Feeds                         | admin | admin | x | x | x | x                       |
+|                          | FeedPacks                     | admin | admin | x | x | x | x                       |
+|                          | FeedServiceAccounts           | admin | admin | x | x | x | x                       |
+|                          | FeedSourceTypeSchemas         | admin | admin | x | x | x | x                       |
+|                          | Logs                          | view | view | x | x | x | x                       |
+|                          | LogTypes                      | admin | admin | x | x | x | x                       |
+|                          | LogTypeSchemas                | admin | admin | x | x | x | x                       |
+|                          | LogTypeSettings               | admin | admin | x | x | x | x                       |
+|                          | IngestionLogLabels            | admin | admin | x | x | x | x                       |
+|                          | IngestionLogNamespaces        | admin | admin | x | x | x | x                       |
+| Parser management        |                               |  |  |  |  |  |
+|                          | Parsers                       | admin | admin | x | x | x | x                       |
+|                          | ParserExtensions              | admin | admin | x | x | x | x                       |
+|                          | ValidationReports             | admin | admin | x | x | x | x                       |
+|                          | ExtensionValidationReports    | admin | admin | x | x | x | x                       |
+|                          | ParsingErrors                 | admin | admin | x | x | x | x                       |
+|                          | ValidationErrors              | admin | admin | x | x | x | x                       |
+|                          | ValidationReports             | admin | admin | x | x | x | x                       |
+| Curated detections       |                               |  |  |  |  |  |
+|                          | CuratedRules                  | x | x | admin | admin | view | view                    |
+|                          | CuratedRuleSets               | x | x | admin | admin | view | view                    |
+|                          | CuratedRuleSetDeployments     | x | x | admin | admin | view | view                    |
+|                          | CuratedRuleSetCategories      | x | x | admin | admin | view | view                    |
+|                          | FeaturedContentRules          | x | x | admin | admin | view | view                    |
+|                          | FindingsRefinementDeployments | x | x | admin | admin | view | view                    |
+|                          | FindingsRefinements           | x | x | admin | admin | view | view                    |
+| Risk Analytics           |                               |  |  |  |  |  |
+|                          | Entities                      | view | view | admin | admin | view | view                    |
+|                          | RiskConfigs                   | view | view | admin | admin | view | view                    |
+|                          | Watchlists                    | view | view | admin | admin | view | view                    |
+|                          | EnrichmentControls            | view | view | admin | admin | view | view                    |
+|                          | FindingsGraphs                | view | view | admin | admin | view | view                    |
+| Rules                    |                               |  |  |  |  |  |
+|                          | Rules                         | x | x | admin | admin | view | view                    |
+|                          | RuleDeployments               | x | x | admin | admin | view | view                    |
+|                          | RuleExecutionErrors           | x | x | admin | admin | view | view                    |
+|                          | Retrohunts                    | x | x | admin | admin | view | view                    |
+|                          | IocMatches                    | x | x | admin | admin | view | view                    |
+|                          | IocState                      | x | x | admin | admin | view | view                    |
+|                          | Iocs                          | x | x | admin | admin | view | view                    |
+|                          | ThreatCollections             | x | x | admin | admin | view | view                    |
+| Reference list resources |                               |  |  |  |  |  |
+|                          | ReferenceLists                | x | x | admin | admin | view | view                    |
+| Data Tables resources    |                               |  |  |  |  |  |
+|                          | DataTables                    | x | x | admin | admin | view | view                    |
+|                          | DataTableRows                 | x | x | admin | admin | view | view                    |
+|                          | DataTableOperationErrors      | x | x | admin | admin | view | view                    |
+| Dashboards resources     |                               |  |  |  |  |  |
+|                          | Dashboards                    | admin | admin | admin | admin | view | view                    |
+|                          | DashboardCharts               | admin | admin | admin | admin | view | view                    |
+|                          | DashboardQueries              | admin | admin | admin | admin | view | view                    |
+|                          | NativeDashboards              | admin | admin | admin | admin | view | view                    |
+| Search                   |                               |  |  |  |  |  |
+|                          | Events                        | view | view | view | view | view | view                    |
+|                          | Entities                      | view | view | view | view | view | view                    |
+| Operations resources     |                               |  |  |  |  |  |
+|                          | Operations                    | admin | admin | admin | admin | view | view                    |
+| User data                |                               |  |  |  |  |  |
+|                          | SearchQueries                 | view | view | view | view | view | view                    |
+|                          | PreferenceSets                | view | view | view | view | view | view                    |
+| Gemini                   |                               |  |  |  |  |  |
+|                          | AIS                           | view | view | view | view | view | view                    |
+|                          | Conversations                 | view | view | view | view | view | view                    |
+|                          | Messages                      | view | view | view | view | view | view                    |
+| Multitenant              |                               |  |  |  |  |  |                         |
+|                          | MultitenantDirectories        | x | x | x | x | x | x                       |
+| Legacy resources         |                               |  |  |  |  |  |
 
 ### Provider and Terraform variables
 
