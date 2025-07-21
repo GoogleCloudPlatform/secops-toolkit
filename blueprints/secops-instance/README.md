@@ -10,6 +10,7 @@ The following diagram illustrates the high-level design of SecOps instance confi
 
 <!-- BEGIN TOC -->
 - [Design overview and choices](#design-overview-and-choices)
+  - [Custom Roles](#custom-roles)
   - [Provider and Terraform variables](#provider-and-terraform-variables)
   - [Impersonating the automation service account](#impersonating-the-automation-service-account)
   - [Variable configuration](#variable-configuration)
@@ -35,6 +36,94 @@ Some high level features of the current version of the stage are:
 - Detection Rules and reference lists management via terraform (leveraging [secops-rules](../../modules/secops-rules) module)
 - API Key setup for Webhook feeds
 - Integration with Workspace for alerts and logs ingestion via SecOps Feeds
+
+### Custom Roles
+
+This blueprint offer a set of custom roles for Google SecOps, those roles are tailor-made permission sets that allow you to grant granular access to security features. 
+Instead of relying on broad, predefined roles, you can apply the principle of least-privilege, giving users access to only the tools and data they need to perform their specific duties.
+
+Please find below the predefined set of custom roles available in the blueprint in the folder [custom_roles](./data/custom_roles) as YAML files. Those YAML files are consumed by the project factory to generate the corresponding custom roles on the GCP project. If you are not using such a blueprint please feel free to leverage the permissions in the YAML file to set up your own custom roles.
+
+| Resource | Global Admin | SecOps Sub-Org Admin | SecOps Sub-Org Onboarding & Feed Management | SecOps Sub-Org Detection Engineering | Custom IAM Roles (SecOps Scoped Detection Engineering) | SecOps Scoped Detection Viewer | SecOps Scoped Onboarding |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Global Scope** | | | | | | | |
+| GlobalDataAccessScopes | view | view | view | view | view | view | view |
+| Basic Information | view | view | view | view | view | view | view |
+| Projects | view | view | view | view | view | view | view |
+| errorNotificationConfigs | view | view | view | x | x | x | view |
+| userNotificationConfigs | view | view | view | view | view | view | view |
+| **Data Ingestion** | | | | | | | |
+| DataAccessLatest | view | view | view | view | view | view | view |
+| DataAccessScopes | view | view | view | view | view | view | view |
+| **Data Export** | | | | | | | |
+| DataExports | admin | admin | x | x | x | x | x |
+| dataTap | admin | admin | x | x | x | x | x |
+| **Forwarder management** | | | | | | | |
+| Forwarders | admin | admin | admin | x | x | x | admin |
+| **Feed management** | | | | | | | |
+| Feeds | admin | admin | admin | x | x | x | admin |
+| FeedPivots | admin | admin | admin | x | x | x | admin |
+| FeedSourceAccounts | admin | admin | admin | x | x | x | admin |
+| FeedSourceTypeSchemas | admin | admin | admin | x | x | x | admin |
+| GCTI | admin | admin | x | admin | admin | view | x |
+| LogTypes | admin | admin | admin | x | x | x | admin |
+| LogTypeSchemas | admin | admin | admin | x | x | x | admin |
+| LogTypeVerifiers | admin | admin | admin | x | x | x | admin |
+| IngestionLabels | admin | admin | admin | x | x | x | admin |
+| IngestionLogNameRegexes | admin | admin | admin | x | x | x | admin |
+| **Parser management** | | | | | | | |
+| Parsers | admin | admin | admin | x | x | x | admin |
+| ParserExtensions | admin | admin | admin | x | x | x | admin |
+| ValidationReports | admin | admin | admin | x | x | x | admin |
+| ExtensionValidationReports | admin | admin | admin | x | x | x | admin |
+| ParsingErrors | admin | admin | admin | x | x | x | admin |
+| ValidationErrors | admin | admin | admin | x | x | x | admin |
+| **Curated Detections** | | | | | | | |
+| CuratedRuleSets | admin | admin | view | admin | admin | view | view |
+| CuratedRuleSetDeployments | admin | admin | x | admin | admin | x | x |
+| CuratedRuleSetCategories | admin | admin | view | admin | admin | view | view |
+| FindingRefinements | admin | admin | x | admin | admin | view | x |
+| FindingRefinementDeployments | admin | admin | x | admin | admin | x | x |
+| **Risk Analytics** | | | | | | | |
+| RiskConfigs | view | view | view | view | x | x | view |
+| RiskEnrich | view | view | view | view | x | x | view |
+| EnrichmentControls | view | view | view | view | x | x | view |
+| FindingsGraphs | view | view | view | view | x | x | view |
+| **Rules** | | | | | | | |
+| Rules | admin | admin | view | admin | admin | view | view |
+| RuleDeployments | admin | admin | x | admin | admin | x | x |
+| RuleExecutionErrors | admin | admin | view | admin | admin | view | view |
+| RuleErrors | admin | admin | view | admin | admin | view | view |
+| IocMatches | admin | admin | x | admin | admin | x | x |
+| IocStats | admin | admin | x | admin | admin | x | x |
+| Iocs | admin | admin | x | admin | admin | x | x |
+| RetrohuntCollections | admin | admin | x | admin | admin | x | x |
+| **Reference List resources** | | | | | | | |
+| ReferenceLists | admin | admin | view | admin | admin | view | view |
+| **Data Tables resources** | | | | | | | |
+| DataTables | admin | admin | view | admin | admin | view | view |
+| DataTableRows | admin | admin | view | admin | admin | view | view |
+| DataTableOperationErrors | admin | admin | view | admin | admin | view | view |
+| **Dashboards and UDMs** | | | | | | | |
+| Dashboards | admin | admin | view | admin | admin | view | view |
+| DashboardReports | admin | admin | x | admin | admin | view | x |
+| DashboardQueries | admin | admin | x | admin | admin | view | x |
+| **Search** | | | | | | | |
+| Events | admin | admin | view | admin | admin | view | view |
+| Entities | admin | admin | view | admin | admin | view | view |
+| **Operating resources** | | | | | | | |
+| Operations | view | view | view | view | view | view | view |
+| **User data resources** | | | | | | | |
+| SearchQueries | view | view | view | view | view | view | view |
+| PreferenceData | view | view | view | view | view | view | view |
+| **Gemini** | | | | | | | |
+| AI | view | view | view | view | view | view | view |
+| Conversations | view | view | view | view | view | view | view |
+| Messages | view | view | view | view | view | view | view |
+| **Multi-tenancy** | | | | | | | |
+| MySiemclDirectories | view | view | view | view | view | view | view |
+| **Legacy resources** | | | | | | | |
+| Detections | admin | admin | x | admin | admin | view | x |
 
 ### Provider and Terraform variables
 
@@ -91,12 +180,15 @@ secops_data_rbac_config = {
 }
 secops_iam = {
   "user:bruzzechesse@google.com" = {
-    roles  = ["roles/chronicle.editor"]
+    roles  = ["SecOpsScopedOnboaardingEngineer"]
     scopes = ["gscope"]
   }
 }
 # tftest skip
 ```
+
+Such a variable supports assigning principals custom roles defined via the project factory by simply referencing the role name as per the previous example.
+Be aware that just "Scoped" roles are supported for Data RBAC configuration.
 
 ### SecOps rules and reference list management
 
