@@ -18,6 +18,7 @@
 
 locals {
   secops_api_key_secret_key   = "secops-feeds-api-key"
+  secops_iam                  = { for k, v in var.secops_iam : k => { roles = [for role in v.roles : (contains(keys(module.project.custom_role_id), role) ? module.project.custom_role_id[role] : role)], scopes = v.scopes } }
   secops_workspace_int_sa_key = "secops-workspace-ing-sa-key"
   secops_feeds_api_path       = "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/feeds"
 }
@@ -71,7 +72,10 @@ module "project" {
         }
       }
   })
-  iam_by_principals_additive = { for k, v in var.secops_iam : k => v.roles }
+  iam_by_principals_additive = { for k, v in local.secops_iam : k => v.roles }
+  factories_config = {
+    custom_roles = "data/custom_roles"
+  }
 }
 
 resource "google_apikeys_key" "feed_api_key" {

@@ -1,0 +1,5 @@
+name: SecOpsIngestionAPI
+includedPermissions:
+  - chronicle.logs.import
+  - chronicle.entities.import
+  - chronicle.events.import
