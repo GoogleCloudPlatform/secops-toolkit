@@ -33,16 +33,18 @@ logging.basicConfig(
 )
 LOGGER = logging.getLogger(__name__)
 
-def generate_pr_comment_output(plan: dict, submitted_info: list, has_errors: bool):
+
+def generate_pr_comment_output(plan: dict, submitted_info: list,
+                               has_errors: bool):
     """Generates a structured JSON output for a GitHub PR comment."""
     LOGGER.info("\n--- Generating output for PR comment ---")
     submitted_map = {info['log_type']: info for info in submitted_info}
     report_lines = []
 
     for log_type, details in sorted(plan.items()):
-        if (details['parser_operation'] == Operation.NONE and
-                details['parser_ext_operation'] == Operation.NONE and
-                not details.get("validation_failed")):
+        if (details['parser_operation'] == Operation.NONE
+                and details['parser_ext_operation'] == Operation.NONE
+                and not details.get("validation_failed")):
             continue
 
         line_parts = [f"- **Log Type**: `{log_type}`"]
@@ -59,20 +61,21 @@ def generate_pr_comment_output(plan: dict, submitted_info: list, has_errors: boo
                 status = details.get("parser_validation_status", "PENDING")
                 icon = "✅" if status == ParserValidationStatus.PASSED.value else "❌" if status == ParserValidationStatus.FAILED.value else "⏳"
                 status_text = f"{status} {icon}"
-                parser_id = submitted_map.get(log_type, {}).get('parser_id', 'N/A')
+                parser_id = submitted_map.get(log_type,
+                                              {}).get('parser_id', 'N/A')
                 details_text = f"Submitted for deployment. Parser ID: `{parser_id}`"
-            else: # Operation is NONE, but we're here because something else happened (e.g., ext change)
+            else:  # Operation is NONE, but we're here because something else happened (e.g., ext change)
                 status_text = "NO_CHANGE"
                 details_text = "No changes detected for the parser."
 
             line_parts.append(f"  - **Validation Status**: {status_text}")
             line_parts.append(f"  - **Details**: {details_text}")
 
-
         # --- Parser Extension Details ---
         if details['config'].parser_ext:
             action = details['parser_ext_operation']
-            line_parts.append(f"  - **Parser Extension Action**: `{action.value}`")
+            line_parts.append(
+                f"  - **Parser Extension Action**: `{action.value}`")
 
             if details.get("validation_failed"):
                 status_text, icon = "EVENT_VALIDATION_FAILED", "❌"
@@ -81,9 +84,10 @@ def generate_pr_comment_output(plan: dict, submitted_info: list, has_errors: boo
                 status = details.get("parser_ext_validation_status", "PENDING")
                 icon = "✅" if status == ParserExtensionState.VALIDATED.value else "❌" if status == ParserExtensionState.REJECTED.value else "⏳"
                 status_text = f"{status} {icon}"
-                ext_id = submitted_map.get(log_type, {}).get('parser_ext_id', 'N/A')
+                ext_id = submitted_map.get(log_type,
+                                           {}).get('parser_ext_id', 'N/A')
                 details_text = f"Submitted for deployment. Extension ID: `{ext_id}`"
-            else: # Operation is NONE
+            else:  # Operation is NONE
                 status_text = "NO_CHANGE"
                 details_text = "No changes detected for the parser extension."
 
@@ -115,9 +119,13 @@ def generate_pr_comment_output(plan: dict, submitted_info: list, has_errors: boo
                 f.write(f"pr_comment_data<<EOF\n{json_output}\nEOF\n")
         except IOError as e:
             LOGGER.error(f"Failed to write to GITHUB_OUTPUT file: {e}")
-            LOGGER.info(f"PR Comment Data (fallback):\n{json.dumps(comment_data, indent=2)}")
+            LOGGER.info(
+                f"PR Comment Data (fallback):\n{json.dumps(comment_data, indent=2)}"
+            )
     else:
-        LOGGER.info(f"PR Comment Data (simulation - GITHUB_OUTPUT not set):\n{json.dumps(comment_data, indent=2)}")
+        LOGGER.info(
+            f"PR Comment Data (simulation - GITHUB_OUTPUT not set):\n{json.dumps(comment_data, indent=2)}"
+        )
 
 
 @click.group()
@@ -143,23 +151,23 @@ def verify_and_deploy(manager: ParserManager):
         LOGGER.info("--- Phase 1: Planning and Local Validation ---")
         plan = manager.plan_deployment()
 
-        ops_to_run = any(
-            d["parser_operation"] != Operation.NONE or d["parser_ext_operation"] != Operation.NONE
-            for d in plan.values()
-        )
+        ops_to_run = any(d["parser_operation"] != Operation.NONE
+                         or d["parser_ext_operation"] != Operation.NONE
+                         for d in plan.values())
         if not ops_to_run:
-            LOGGER.info("No parsers or extensions need to be created or updated.")
+            LOGGER.info(
+                "No parsers or extensions need to be created or updated.")
             generate_pr_comment_output(plan, [], False)
             return
 
         LOGGER.info("\n--- Phase 2: Submitting to Chronicle API ---")
         submitted = manager.execute_deployment(plan)
         if submitted:
-            LOGGER.info(f"\n--- Pausing 60s for Chronicle validation to begin ---")
+            LOGGER.info(
+                f"\n--- Pausing 60s for Chronicle validation to begin ---")
             time.sleep(60)
         else:
             LOGGER.info("No valid changes to submit.")
-
 
         LOGGER.info("\n--- Phase 3: Verifying Submission Status ---")
         plan = manager.verify_submissions(submitted, plan)
@@ -172,23 +180,30 @@ def verify_and_deploy(manager: ParserManager):
         if has_errors:
             sys.exit(1)
 
+
 @cli.command()
 @click.pass_obj
 def activate_parsers(manager: ParserManager):
     """Finds and activates parsers that have passed validation."""
     try:
-        LOGGER.info("Checking for parsers and extensions ready for activation...")
+        LOGGER.info(
+            "Checking for parsers and extensions ready for activation...")
         count = manager.activate_all_passed()
         if count > 0:
             LOGGER.info(f"Successfully activated {count} item(s).")
         else:
             LOGGER.info("No new items were ready for activation.")
     except ParserError as e:
-        LOGGER.error(f"An error occurred during activation: {e}", exc_info=True)
+        LOGGER.error(f"An error occurred during activation: {e}",
+                     exc_info=True)
         sys.exit(1)
 
+
 @cli.command()
-@click.option('--parser', 'target_parser_name', type=str, help="Generate for a specific parser (log type).")
+@click.option('--parser',
+              'target_parser_name',
+              type=str,
+              help="Generate for a specific parser (log type).")
 @click.pass_obj
 def generate_events(manager: ParserManager, target_parser_name: str):
     """Generates UDM event YAML files from raw log files."""
@@ -199,6 +214,7 @@ def generate_events(manager: ParserManager, target_parser_name: str):
     except ParserError as e:
         LOGGER.error(f"Failed to generate events: {e}", exc_info=True)
         sys.exit(1)
+
 
 if __name__ == "__main__":
     cli()
