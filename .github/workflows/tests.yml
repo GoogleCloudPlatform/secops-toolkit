@@ -134,7 +134,7 @@ jobs:
       - name: Run tests modules
         env:
           TERRAFORM: ${{ matrix.flavour }}
-        run: pytest -vv -n4 --tb=line --junit-xml=test-results-raw.xml tests
+        run: pytest -vv -n 0 --tb=line --junit-xml=test-results-raw.xml tests
 
       - name: Create report
         uses: ./.github/actions/secops-test-report
