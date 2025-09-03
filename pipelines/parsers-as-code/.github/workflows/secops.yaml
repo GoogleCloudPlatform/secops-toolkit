@@ -80,7 +80,7 @@ jobs:
           # Set PYTHONPATH for this specific step
           PYTHONPATH: ${{ github.workspace }}
         continue-on-error: true
-        run: python main.py verify-deploy-parsers
+        run: python script/main.py verify-deploy-parsers
         shell: bash
 
       - id: activate-parsers
@@ -90,7 +90,7 @@ jobs:
           # Set PYTHONPATH for this specific step
           PYTHONPATH: ${{ github.workspace }}
         continue-on-error: true
-        run: python main.py activate-parsers
+        run: python script/main.py activate-parsers
         shell: bash
 
       # PR comment with parsers deployment result from previous steps

@@ -55,7 +55,7 @@ values:
     values:
       - null
     verify: false
-    version: 1.29.5
+    version: 1.31.0
     wait: true
     wait_for_jobs: false
   module.addresses.google_compute_address.internal["ingress"]:
@@ -408,7 +408,6 @@ values:
     type: A
   module.fleet.google_gke_hub_membership.default["bindplane"]:
     authority: []
-    description: null
     effective_labels:
       goog-terraform-provisioned: 'true'
     endpoint:
