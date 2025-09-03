@@ -408,7 +408,6 @@ values:
     type: A
   module.fleet.google_gke_hub_membership.default["bindplane"]:
     authority: []
-    description: null
     effective_labels:
       goog-terraform-provisioned: 'true'
     endpoint:
