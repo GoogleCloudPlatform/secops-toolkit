@@ -122,6 +122,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # STEP 1: Download the lockfile generated in the setup job.
+      # This is crucial for the cache key to match.
+      - name: Download lockfile
+        uses: actions/download-artifact@v4
+        with:
+          name: lockfile-${{ runner.os }}-${{ matrix.flavour }}-${{ matrix.version }}
+          path: tools/lockfile/
+
+      # STEP 2: Restore the provider cache using the downloaded lockfile to find the correct key.
+      - name: Restore Terraform provider cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TF_PLUGIN_CACHE_DIR }}
+          key: ${{ runner.os }}-${{ matrix.flavour }}-${{ matrix.version }}-${{ hashFiles('tools/lockfile/.terraform.lock.hcl') }}
+
       - name: Call composite action tests-setup
         uses: ./.github/actions/tests-setup
         env:
@@ -134,7 +149,7 @@ jobs:
       - name: Run tests modules
         env:
           TERRAFORM: ${{ matrix.flavour }}
-        run: pytest -vv -n 0 --tb=line --junit-xml=test-results-raw.xml tests
+        run: pytest -vv -n4 --tb=line --junit-xml=test-results-raw.xml tests
 
       - name: Create report
         uses: ./.github/actions/secops-test-report
