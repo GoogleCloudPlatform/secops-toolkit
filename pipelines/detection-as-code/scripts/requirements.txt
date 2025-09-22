@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-google-api-python-client==2.125
-PyYAML==6.0
-click==8.1
-tabulate==0.9
-secops==0.19
-ruamel.yaml==0.18
-pydantic==2.8
-python-dotenv==1.0
+google-api-python-client
+PyYAML
+click
+tabulate
+secops
+ruamel.yaml
+pydantic
+python-dotenv

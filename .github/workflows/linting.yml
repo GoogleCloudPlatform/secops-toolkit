@@ -99,4 +99,5 @@ jobs:
             --exclude "**/.terraform/" \
             --exclude "tools/" \
             --exclude "tests/" \
-            --exclude "**/*.yaml"
+            --exclude "**/*.yaml" \
+            --exclude "**/requirements.txt"
