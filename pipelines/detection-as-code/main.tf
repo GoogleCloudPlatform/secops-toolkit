@@ -25,7 +25,7 @@ locals {
     for file_name in fileset("${path.module}/rules", "*.yaral") : replace(file_name, ".yaral", "") => file("${path.module}/rules/${file_name}")
   }
   secops_rule_deployment = yamldecode(file("${path.module}/${var.secops_content_config.rules}"))
-  secops_parent = "projects/${var.secops_project_id}/locations/${var.secops_region}/instances/${var.secops_customer_id}"
+  secops_parent          = "projects/${var.secops_project_id}/locations/${var.secops_region}/instances/${var.secops_customer_id}"
 }
 
 resource "google_chronicle_reference_list" "reference_list" {
@@ -39,7 +39,7 @@ resource "google_chronicle_reference_list" "reference_list" {
     for_each = length(try(each.value.scopes, [])) > 0 ? [""] : []
     content {
       reference_list_scope {
-        scope_names = [for scope in each.value.scopes: "${local.secops_parent}/dataAccessScopes/${scope}"]
+        scope_names = [for scope in each.value.scopes : "${local.secops_parent}/dataAccessScopes/${scope}"]
       }
     }
   }

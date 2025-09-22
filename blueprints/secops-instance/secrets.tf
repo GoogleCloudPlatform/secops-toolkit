@@ -21,23 +21,19 @@ module "secops-tenant-secrets" {
     length(var.webhook_feeds_config) == 0 ? {} : {
       (local.secops_api_key_secret_key) = {
         locations = [var.regions.primary]
-      }
-      }, var.third_party_integration_config.workspace == null ? {} : {
-      (local.secops_workspace_int_sa_key) = {
-        locations = [var.regions.primary]
-      }
-  })
-  versions = merge(
-    length(var.webhook_feeds_config) == 0 ? {} : {
-      (local.secops_api_key_secret_key) = {
-        latest = {
-          enabled = true, data = google_apikeys_key.feed_api_key[0].key_string
+        versions = {
+          latest = {
+            enabled = true, data = google_apikeys_key.feed_api_key[0].key_string
+          }
         }
       }
       }, var.third_party_integration_config.workspace == null ? {} : {
       (local.secops_workspace_int_sa_key) = {
-        latest = {
-          enabled = true, data = google_service_account_key.workspace_integration_key[0].private_key
+        locations = [var.regions.primary]
+        versions = {
+          latest = {
+            enabled = true, data = google_service_account_key.workspace_integration_key[0].private_key
+          }
         }
       }
   })
