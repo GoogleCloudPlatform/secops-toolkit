@@ -12,9 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-private_ip_ranges:
-  description: "Private CIDR ranges"
-  type: CIDR # either CIDR, STRING, REGEX
-  # OPTIONAL scope configuration
+sample_data_table_domains:
+  columns:
+    - column_index: 0
+      column_type: STRING
+      key_column: null
+      mapped_column_path: null
+      original_column: rank
+    - column_index: 1
+      column_type: STRING
+      key_column: null
+      mapped_column_path: null
+      original_column: domain
+  description: Sample Data Table for domains
   scopes:
     - tenant-1
