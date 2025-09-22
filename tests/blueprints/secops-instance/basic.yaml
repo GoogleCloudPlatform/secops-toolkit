@@ -24,6 +24,7 @@ values:
         browser_key_restrictions: []
         ios_key_restrictions: []
         server_key_restrictions: []
+    service_account_email: null
     timeouts: null
   google_monitoring_alert_policy.chronicle_ingestion_alert[0]:
     alert_strategy: []
@@ -1434,6 +1435,7 @@ values:
     location: europe
     project: test-project
     reference_list_id: test_2
+    scope_info: []
     syntax_type: REFERENCE_LIST_SYNTAX_TYPE_CIDR
     timeouts: null
   module.secops-rules.google_chronicle_rule.default["network_traffic_to_specific_country"]:
@@ -1488,13 +1490,12 @@ values:
     labels: null
     project: test-project
     replication:
-      - auto: []
-        user_managed:
-          - replicas:
-              - customer_managed_encryption: []
-                location: europe-west8
+      - auto:
+          - customer_managed_encryption: []
+        user_managed: []
     rotation: []
     secret_id: secops-feeds-api-key
+    tags: null
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
@@ -1510,13 +1511,12 @@ values:
     labels: null
     project: test-project
     replication:
-      - auto: []
-        user_managed:
-          - replicas:
-              - customer_managed_encryption: []
-                location: europe-west8
+      - auto:
+          - customer_managed_encryption: []
+        user_managed: []
     rotation: []
     secret_id: secops-workspace-ing-sa-key
+    tags: null
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
@@ -1524,14 +1524,14 @@ values:
     ttl: null
     version_aliases: null
     version_destroy_ttl: null
-  module.secops-tenant-secrets.google_secret_manager_secret_version.default["secops-feeds-api-key:latest"]:
+  module.secops-tenant-secrets.google_secret_manager_secret_version.default["secops-feeds-api-key/latest"]:
     deletion_policy: DELETE
     enabled: true
     is_secret_data_base64: false
     secret_data_wo: null
     secret_data_wo_version: 0
     timeouts: null
-  module.secops-tenant-secrets.google_secret_manager_secret_version.default["secops-workspace-ing-sa-key:latest"]:
+  module.secops-tenant-secrets.google_secret_manager_secret_version.default["secops-workspace-ing-sa-key/latest"]:
     deletion_policy: DELETE
     enabled: true
     is_secret_data_base64: false
