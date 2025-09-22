@@ -40,6 +40,56 @@ A brief workflow description:
 6. **Report Results**: The pipeline might then optionally reports the results of the deployment (success or failure) to
    the SOC engineers team, where the SOC team might just have to do some operations in case of a failure.
 
+
+## Prerequisites
+
+- Python 3.8 or higher
+- `pip` for installing packages
+
+## Installation
+
+1.  **Clone the repository:**
+    ```bash
+    git clone <repository-url>
+    cd <repository-directory>
+    ```
+
+2.  **Create and activate a virtual environment:**
+   -   **macOS/Linux:**
+       ```bash
+       python3 -m venv venv
+       source venv/bin/activate
+       ```
+   -   **Windows:**
+       ```bash
+       python -m venv venv
+       .\venv\Scripts\activate
+       ```
+
+3.  **Install the required dependencies:**
+    ```bash
+    pip install -r scripts/requirements.txt
+    ```
+
+
+## Configuration
+
+The script uses environment variables for configuration. You can set them in your shell or create a `.env` file in the project's root directory.
+
+**Required Environment Variables:**
+
+-   `SECOPS_CUSTOMER_ID`: Your Chronicle SecOps customer ID.
+-   `SECOPS_PROJECT_ID`: Your Google Cloud project ID.
+-   `SECOPS_REGION`: The region where your Chronicle instance is hosted (e.g., `us`).
+
+**Example `.env` file:**
+
+```
+SECOPS_CUSTOMER_ID="your-customer-id"
+SECOPS_PROJECT_ID="your-gcp-project-id"
+SECOPS_REGION="your-chronicle-region"
+```
+
 ### Deployment
 
 #### Step 0: Cloning the repository

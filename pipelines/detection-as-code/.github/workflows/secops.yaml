@@ -24,9 +24,9 @@ on:
       - synchronize
 
 env:
-  TF_VAR_secops_customer_id: # TODO replace with SecOps Customer ID
-  TF_VAR_secops_project_id: # TODO replace with SecOps Project ID
-  TF_VAR_secops_region: # TODO replace with SecOps Region
+  SECOPS_CUSTOMER_ID: # TODO replace with SecOps Customer ID
+  SECOPS_PROJECT_ID: # TODO replace with SecOps Project ID
+  SECOPS_REGION: # TODO replace with SecOps Region
   SERVICE_ACCOUNT: # TODO replace with WIF SA
   WIF_PROVIDER: projects/XXXXXXXXX/locations/global/workloadIdentityPools/xxxxxxxx/providers/xxxxxx #TODO replace with wif provider
   SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -44,16 +44,6 @@ jobs:
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@v3
-
-      # set up SSH key authentication to the other repositories
-
-#      - id: ssh-config
-#        name: Configure SSH authentication
-#        run: |
-#          ssh-agent -a "$SSH_AUTH_SOCK" > /dev/null
-#          ssh-add - <<< "${{ secrets.CICD_MODULES_KEY }}"
-
-      # set up step variables for plan / apply
 
       - id: vars-plan
         if: github.event.pull_request.merged != true && success()
@@ -85,14 +75,12 @@ jobs:
           install_components: alpha
 
       - id: install-python
-        if: github.event.pull_request.merged != true && success()
         name: Install Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
       - id: install-dependencies
-        if: github.event.pull_request.merged != true && success()
         name: Install Dependencies
         run: |
           pip install -r ./scripts/requirements.txt
@@ -128,6 +116,12 @@ jobs:
         continue-on-error: true
         run: |
           terraform plan -input=false -out ../plan.out -no-color ${{env.plan_opts}}
+
+      - id: update-data-tables
+        if: github.event.pull_request.merged == true && success()
+        name: update-data-tables
+        run: cd scripts && python main.py update-data-tables
+        shell: bash
 
       - id: tf-apply
         if: github.event.pull_request.merged == true && success()

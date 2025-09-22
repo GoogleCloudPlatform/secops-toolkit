@@ -25,6 +25,7 @@ locals {
     for file_name in fileset("${path.module}/rules", "*.yaral") : replace(file_name, ".yaral", "") => file("${path.module}/rules/${file_name}")
   }
   secops_rule_deployment = yamldecode(file("${path.module}/${var.secops_content_config.rules}"))
+  secops_parent = "projects/${var.secops_project_id}/locations/${var.secops_region}/instances/${var.secops_customer_id}"
 }
 
 resource "google_chronicle_reference_list" "reference_list" {
@@ -34,6 +35,14 @@ resource "google_chronicle_reference_list" "reference_list" {
   instance          = var.secops_customer_id
   reference_list_id = each.key
   description       = each.value.description
+  dynamic "scope_info" {
+    for_each = length(try(each.value.scopes, [])) > 0 ? [""] : []
+    content {
+      reference_list_scope {
+        scope_names = [for scope in each.value.scopes: "${local.secops_parent}/dataAccessScopes/${scope}"]
+      }
+    }
+  }
   dynamic "entries" {
     for_each = toset(split("\n", file("${path.module}/reference_lists/${each.key}.txt")))
     content {
@@ -50,6 +59,7 @@ resource "google_chronicle_rule" "rule" {
   instance        = var.secops_customer_id
   deletion_policy = "FORCE"
   text            = local.secops_rules[each.key]
+  scope           = try("${local.secops_parent}/dataAccessScopes/${each.value.scope}", null)
   depends_on = [
     google_chronicle_reference_list.reference_list
   ]

@@ -1,4 +1,4 @@
-cisco_umbrella_top_1k_domains:
+sample_data_table_domains:
   columns:
     - column_index: 0
       column_type: STRING
@@ -10,6 +10,6 @@ cisco_umbrella_top_1k_domains:
       key_column: null
       mapped_column_path: null
       original_column: domain
-  description: Cisco Umbrella top 1,000 domains
+  description: Sample Data Table for domains
   scopes:
-  - tenant-1
+    - tenant-1

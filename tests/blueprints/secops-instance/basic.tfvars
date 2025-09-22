@@ -21,9 +21,6 @@ secops_tenant_config = {
   customer_id = "xxxxxxx-xxxxx-xxxxxx-xxxxxxx"
   region      = "europe"
 }
-secops_ingestion_config = {
-  ingest_workspace_data = false
-}
 secops_group_principals = {
   viewers = ["gcp-secops-admins@example.com"]
 }

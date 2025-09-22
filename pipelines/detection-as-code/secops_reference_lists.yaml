@@ -15,3 +15,6 @@
 private_ip_ranges:
   description: "Private CIDR ranges"
   type: CIDR # either CIDR, STRING, REGEX
+  # OPTIONAL scope configuration
+  scopes:
+    - tenant-1
