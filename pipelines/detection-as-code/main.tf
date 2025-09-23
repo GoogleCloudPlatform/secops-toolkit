@@ -15,7 +15,7 @@
  */
 
 locals {
-  reference_lists = yamldecode(file("${path.module}/${var.secops_content_config.reference_lists}"))
+  reference_lists = try(yamldecode(file("${path.module}/${var.secops_content_config.reference_lists}")), toset([]))
   reference_list_type_mapping = {
     STRING = "REFERENCE_LIST_SYNTAX_TYPE_PLAIN_TEXT_STRING"
     REGEX  = "REFERENCE_LIST_SYNTAX_TYPE_REGEX"
