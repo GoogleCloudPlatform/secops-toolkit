@@ -13,23 +13,23 @@
 # limitations under the License.
 
 values:
-  ? module.test.module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/artifactregistry.writer"]
-    : condition: []
-      project: gcp-project-id
-      role: roles/artifactregistry.writer
-  module.test.module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/logging.logWriter"]:
+  module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/artifactregistry.writer"]:
+    condition: []
+    project: gcp-project-id
+    role: roles/artifactregistry.writer
+  module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/logging.logWriter"]:
     condition: []
     project: gcp-project-id
     role: roles/logging.logWriter
-  ? module.test.module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/monitoring.metricWriter"]
-    : condition: []
-      project: gcp-project-id
-      role: roles/monitoring.metricWriter
-  module.test.module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/storage.objectAdmin"]:
+  module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/monitoring.metricWriter"]:
+    condition: []
+    project: gcp-project-id
+    role: roles/monitoring.metricWriter
+  module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/storage.objectAdmin"]:
     condition: []
     project: gcp-project-id
     role: roles/storage.objectAdmin
-  module.test.module.cloudbuild-sa[0].google_service_account.service_account[0]:
+  module.cloudbuild-sa[0].google_service_account.service_account[0]:
     account_id: cloudbuild
     create_ignore_already_exists: null
     description: null
@@ -39,7 +39,7 @@ values:
     member: serviceAccount:cloudbuild@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     timeouts: null
-  module.test.module.export-bucket.google_storage_bucket.bucket[0]:
+  module.export-bucket.google_storage_bucket.bucket[0]:
     autoclass: []
     cors: []
     custom_placement_config: []
@@ -66,7 +66,7 @@ values:
     uniform_bucket_level_access: true
     versioning:
       - enabled: true
-  module.test.module.export-bucket.google_storage_bucket_iam_binding.authoritative["roles/storage.legacyBucketReader"]:
+  module.export-bucket.google_storage_bucket_iam_binding.authoritative["roles/storage.legacyBucketReader"]:
     bucket: pre-secops-data-archiver
     condition: []
     members:
@@ -74,7 +74,7 @@ values:
       - user:malachite-data-export-batch@prod.google.com
     role: roles/storage.legacyBucketReader
     timeouts: null
-  module.test.module.export-bucket.google_storage_bucket_iam_binding.authoritative["roles/storage.objectAdmin"]:
+  module.export-bucket.google_storage_bucket_iam_binding.authoritative["roles/storage.objectAdmin"]:
     bucket: pre-secops-data-archiver
     condition: []
     members:
@@ -82,14 +82,14 @@ values:
       - user:malachite-data-export-batch@prod.google.com
     role: roles/storage.objectAdmin
     timeouts: null
-  module.test.module.export-bucket.google_storage_bucket_iam_binding.authoritative["roles/storage.objectViewer"]:
+  module.export-bucket.google_storage_bucket_iam_binding.authoritative["roles/storage.objectViewer"]:
     bucket: pre-secops-data-archiver
     condition: []
     members:
       - serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
     role: roles/storage.objectViewer
     timeouts: null
-  module.test.module.function.google_cloud_run_service_iam_binding.invoker[0]:
+  module.function.google_cloud_run_service_iam_binding.invoker[0]:
     condition: []
     location: europe-west1
     members:
@@ -97,7 +97,7 @@ values:
     project: gcp-project-id
     role: roles/run.invoker
     service: pre-secops-archiver
-  module.test.module.function.google_cloudfunctions2_function.function:
+  module.function.google_cloudfunctions2_function.function:
     build_config:
       - entry_point: main
         on_deploy_update_policy: []
@@ -107,7 +107,7 @@ values:
           - repo_source: []
             storage_source:
               - bucket: pre-gcp-project-id-archiver
-                object: bundle-2829cb7c36fa9549e3256449d39c2f7d.zip
+                object: bundle-1df874424deb8e1d8dbe56d8d713ab79.zip
         worker_pool: null
     description: Terraform managed.
     effective_labels:
@@ -126,9 +126,9 @@ values:
         environment_variables:
           GCP_PROJECT: gcp-project-id
           GCS_BUCKET: pre-secops-data-archiver
-          SECOPS_CUSTOMER_ID: xxx-xxxxxx-xxxxx
-          SECOPS_PROJECT_ID: SOURCE_PROJECT_ID
-          SECOPS_REGION: europe
+          SECOPS_CUSTOMER_ID: xxxxxxxxxxxxxxxxxxxxxxx
+          SECOPS_PROJECT_ID: xxxxxxxxxxxx
+          SECOPS_REGION: eu
         ingress_settings: ALLOW_INTERNAL_AND_GCLB
         max_instance_count: 1
         min_instance_count: 0
@@ -141,7 +141,7 @@ values:
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
-  module.test.module.function.google_service_account.service_account[0]:
+  module.function.google_service_account.service_account[0]:
     account_id: tf-cf-secops-archiver
     create_ignore_already_exists: null
     description: null
@@ -151,7 +151,7 @@ values:
     member: serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     timeouts: null
-  module.test.module.function.google_storage_bucket.bucket[0]:
+  module.function.google_storage_bucket.bucket[0]:
     autoclass: []
     cors: []
     custom_placement_config: []
@@ -197,7 +197,7 @@ values:
     uniform_bucket_level_access: true
     versioning:
       - enabled: true
-  module.test.module.function.google_storage_bucket_object.bundle[0]:
+  module.function.google_storage_bucket_object.bundle[0]:
     bucket: pre-gcp-project-id-archiver
     cache_control: null
     content_disposition: null
@@ -209,13 +209,13 @@ values:
     event_based_hold: null
     force_empty_content_type: null
     metadata: null
-    name: bundle-2829cb7c36fa9549e3256449d39c2f7d.zip
+    name: bundle-1df874424deb8e1d8dbe56d8d713ab79.zip
     retention: []
     source: /tmp/bundle-gcp-project-id-secops-archiver.zip
     source_md5hash: null
     temporary_hold: null
     timeouts: null
-  module.test.module.project.google_project.project[0]:
+  module.project.google_project.project[0]:
     auto_create_network: false
     billing_account: 12345-ABCDE-12345
     deletion_policy: DELETE
@@ -230,144 +230,144 @@ values:
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
-  module.test.module.project.google_project_iam_binding.authoritative["roles/chronicle.editor"]:
+  module.project.google_project_iam_binding.authoritative["roles/chronicle.editor"]:
     condition: []
     members:
       - serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     role: roles/chronicle.editor
-  module.test.module.project.google_project_iam_binding.authoritative["roles/dlp.jobsEditor"]:
+  module.project.google_project_iam_binding.authoritative["roles/dlp.jobsEditor"]:
     condition: []
     members:
       - serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     role: roles/dlp.jobsEditor
-  module.test.module.project.google_project_iam_binding.authoritative["roles/dlp.reader"]:
+  module.project.google_project_iam_binding.authoritative["roles/dlp.reader"]:
     condition: []
     members:
       - serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     role: roles/dlp.reader
-  module.test.module.project.google_project_iam_binding.authoritative["roles/serviceusage.serviceUsageConsumer"]:
+  module.project.google_project_iam_binding.authoritative["roles/serviceusage.serviceUsageConsumer"]:
     condition: []
     members:
       - serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     role: roles/serviceusage.serviceUsageConsumer
-  module.test.module.project.google_project_iam_member.bindings["function-artifact-reader"]:
+  module.project.google_project_iam_member.bindings["function-artifact-reader"]:
     condition: []
     project: gcp-project-id
     role: roles/artifactregistry.reader
-  module.test.module.project.google_project_iam_member.bindings["function-log-writer"]:
+  module.project.google_project_iam_member.bindings["function-log-writer"]:
     condition: []
     member: serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     role: roles/logging.logWriter
-  module.test.module.project.google_project_iam_member.bindings["function-storage-admin"]:
+  module.project.google_project_iam_member.bindings["function-storage-admin"]:
     condition: []
     project: gcp-project-id
     role: roles/storage.admin
-  module.test.module.project.google_project_iam_member.service_agents["cloudbuild"]:
+  module.project.google_project_iam_member.service_agents["cloudbuild"]:
     condition: []
     project: gcp-project-id
     role: roles/cloudbuild.serviceAgent
-  module.test.module.project.google_project_iam_member.service_agents["cloudbuild-sa"]:
+  module.project.google_project_iam_member.service_agents["cloudbuild-sa"]:
     condition: []
     project: gcp-project-id
     role: roles/cloudbuild.builds.builder
-  module.test.module.project.google_project_iam_member.service_agents["cloudscheduler"]:
+  module.project.google_project_iam_member.service_agents["cloudscheduler"]:
     condition: []
     project: gcp-project-id
     role: roles/cloudscheduler.serviceAgent
-  module.test.module.project.google_project_iam_member.service_agents["dlp-api"]:
+  module.project.google_project_iam_member.service_agents["dlp-api"]:
     condition: []
     project: gcp-project-id
     role: roles/dlp.serviceAgent
-  module.test.module.project.google_project_iam_member.service_agents["gcf-admin-robot"]:
+  module.project.google_project_iam_member.service_agents["gcf-admin-robot"]:
     condition: []
     project: gcp-project-id
     role: roles/cloudfunctions.serviceAgent
-  module.test.module.project.google_project_iam_member.service_agents["serverless-robot-prod"]:
+  module.project.google_project_iam_member.service_agents["serverless-robot-prod"]:
     condition: []
     project: gcp-project-id
     role: roles/run.serviceAgent
-  module.test.module.project.google_project_iam_member.service_agents["vpcaccess"]:
+  module.project.google_project_iam_member.service_agents["vpcaccess"]:
     condition: []
     project: gcp-project-id
     role: roles/vpcaccess.serviceAgent
-  module.test.module.project.google_project_service.project_services["cloudbuild.googleapis.com"]:
+  module.project.google_project_service.project_services["cloudbuild.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: cloudbuild.googleapis.com
     timeouts: null
-  module.test.module.project.google_project_service.project_services["cloudfunctions.googleapis.com"]:
+  module.project.google_project_service.project_services["cloudfunctions.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: cloudfunctions.googleapis.com
     timeouts: null
-  module.test.module.project.google_project_service.project_services["cloudresourcemanager.googleapis.com"]:
+  module.project.google_project_service.project_services["cloudresourcemanager.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: cloudresourcemanager.googleapis.com
     timeouts: null
-  module.test.module.project.google_project_service.project_services["cloudscheduler.googleapis.com"]:
+  module.project.google_project_service.project_services["cloudscheduler.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: cloudscheduler.googleapis.com
     timeouts: null
-  module.test.module.project.google_project_service.project_services["dlp.googleapis.com"]:
+  module.project.google_project_service.project_services["dlp.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: dlp.googleapis.com
     timeouts: null
-  module.test.module.project.google_project_service.project_services["run.googleapis.com"]:
+  module.project.google_project_service.project_services["run.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: run.googleapis.com
     timeouts: null
-  module.test.module.project.google_project_service.project_services["secretmanager.googleapis.com"]:
+  module.project.google_project_service.project_services["secretmanager.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: secretmanager.googleapis.com
     timeouts: null
-  module.test.module.project.google_project_service.project_services["vpcaccess.googleapis.com"]:
+  module.project.google_project_service.project_services["vpcaccess.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: vpcaccess.googleapis.com
     timeouts: null
-  module.test.module.project.google_project_service_identity.default["cloudfunctions.googleapis.com"]:
+  module.project.google_project_service_identity.default["cloudfunctions.googleapis.com"]:
     project: gcp-project-id
     service: cloudfunctions.googleapis.com
     timeouts: null
-  module.test.module.project.google_project_service_identity.default["cloudscheduler.googleapis.com"]:
+  module.project.google_project_service_identity.default["cloudscheduler.googleapis.com"]:
     project: gcp-project-id
     service: cloudscheduler.googleapis.com
     timeouts: null
-  module.test.module.project.google_project_service_identity.default["dlp.googleapis.com"]:
+  module.project.google_project_service_identity.default["dlp.googleapis.com"]:
     project: gcp-project-id
     service: dlp.googleapis.com
     timeouts: null
-  module.test.module.project.google_project_service_identity.default["run.googleapis.com"]:
+  module.project.google_project_service_identity.default["run.googleapis.com"]:
     project: gcp-project-id
     service: run.googleapis.com
     timeouts: null
-  module.test.module.project.google_project_service_identity.default["secretmanager.googleapis.com"]:
+  module.project.google_project_service_identity.default["secretmanager.googleapis.com"]:
     project: gcp-project-id
     service: secretmanager.googleapis.com
     timeouts: null
-  module.test.module.project.google_project_service_identity.default["vpcaccess.googleapis.com"]:
+  module.project.google_project_service_identity.default["vpcaccess.googleapis.com"]:
     project: gcp-project-id
     service: vpcaccess.googleapis.com
     timeouts: null
-  module.test.module.scheduler-sa.google_service_account.service_account[0]:
+  module.scheduler-sa.google_service_account.service_account[0]:
     account_id: secops-scheduler
     create_ignore_already_exists: null
     description: null
@@ -390,5 +390,8 @@ counts:
   google_storage_bucket: 2
   google_storage_bucket_iam_binding: 3
   google_storage_bucket_object: 1
-  modules: 6
+  modules: 5
   resources: 44
+
+outputs:
+  function_sa: tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
