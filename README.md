@@ -26,6 +26,12 @@ This section details the available Terraform blueprints for deploying and managi
 
 <br clear="left">
 
+## SecOps Archiver
+
+<a href="./blueprints/secops-archiver/" title="SecOps Archiver"><img src="./blueprints/secops-archiver/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/secops-archiver/) offers a comprehensive and adaptable solution for constructing an automation for exporting raw data from a SecOps tenant to Google Cloud Storage for longer retention. The pipeline is built on top of various Google Cloud products.</p>
+
+<br clear="left">
+
 ### SecOps Anonymization Pipeline
 
 <a href="./blueprints/secops-anonymization-pipeline/" title="SecOps Anonymization Pipeline"><img src="./blueprints/secops-anonymization-pipeline/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/secops-anonymization-pipeline/) is a comprehensive and adaptable solution for constructing a SecOps pipeline for exporting raw data from a SecOps tenant, optionally anonymize this data and then import data back in a different SecOps tenant.</p>
