@@ -14,16 +14,6 @@
  * limitations under the License.
  */
 
-variable "schedule_config" {
-  description = "Schedule for triggering export, anonymization and import of data."
-  type = map(object({
-    action    = string
-    schedule  = string
-    log_types = string
-  }))
-  default = {}
-}
-
 variable "cloud_function_config" {
   description = "Optional Cloud Function configuration."
   type = object({
@@ -76,6 +66,16 @@ variable "regions" {
     primary   = "europe-west1"
     secondary = "europe-west1"
   }
+}
+
+variable "schedule_config" {
+  description = "Schedule for triggering export, anonymization and import of data."
+  type = map(object({
+    action    = string
+    schedule  = string
+    log_types = string
+  }))
+  default = {}
 }
 
 variable "secops_config" {
