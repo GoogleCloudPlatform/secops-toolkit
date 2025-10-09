@@ -107,7 +107,7 @@ values:
           - repo_source: []
             storage_source:
               - bucket: pre-gcp-project-id-archiver
-                object: bundle-1df874424deb8e1d8dbe56d8d713ab79.zip
+                object: bundle-4c4c6d539c77bc4631d46cbaa35c32e9.zip
         worker_pool: null
     description: Terraform managed.
     effective_labels:
@@ -209,7 +209,7 @@ values:
     event_based_hold: null
     force_empty_content_type: null
     metadata: null
-    name: bundle-1df874424deb8e1d8dbe56d8d713ab79.zip
+    name: bundle-4c4c6d539c77bc4631d46cbaa35c32e9.zip
     retention: []
     source: /tmp/bundle-gcp-project-id-secops-archiver.zip
     source_md5hash: null
