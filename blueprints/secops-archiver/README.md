@@ -34,8 +34,8 @@ The solution is based on a custom Python script responsible for implementing the
 ### Limitations
 
 - The pipeline can be schedule to run on a monthly basis or on-demand, being all asynchronous tasks the check for the export should be triggered after the export is completed successfully
-- This pipeline is built for exporting logs, lack of multi-threading and limitations on the Cloud Function memory result in the function being able to process at most order of MB of raw logs data (no GB)
 - Currently, SecOps export API supports 3 concurrent export requests for each tenant, due to each export request being associated to either all log types or a specific log type this result in no more than 3 log types exported within the same export request.
+- Each Export request via SecOps API can process and export up to 100TB of data 
 
 ### Deployment
 
@@ -95,13 +95,13 @@ Test the solution triggering an export from the Cloud Scheduler page, after few 
 | [cloud_function_config](variables.tf#L17) | Optional Cloud Function configuration. | <code title="object&#40;&#123;&#10;  build_worker_pool_id &#61; optional&#40;string&#41;&#10;  build_sa             &#61; optional&#40;string&#41;&#10;  debug                &#61; optional&#40;bool, false&#41;&#10;  cpu                  &#61; optional&#40;number, 1&#41;&#10;  memory_mb            &#61; optional&#40;number, 2048&#41;&#10;  timeout_seconds      &#61; optional&#40;number, 3600&#41;&#10;  vpc_connector &#61; optional&#40;object&#40;&#123;&#10;    name            &#61; string&#10;    egress_settings &#61; optional&#40;string, &#34;ALL_TRAFFIC&#34;&#41;&#10;  &#125;&#41;&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>&#123;&#125;</code> |
 | [project_create_config](variables.tf#L45) | Create project instead of using an existing one. | <code title="object&#40;&#123;&#10;  billing_account &#61; string&#10;  parent          &#61; optional&#40;string&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>null</code> |
 | [regions](variables.tf#L59) | Regions: primary for all resources and secondary for clouds scheduler since the latter is available in few regions. | <code title="object&#40;&#123;&#10;  primary   &#61; string&#10;  secondary &#61; string&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code title="&#123;&#10;  primary   &#61; &#34;europe-west1&#34;&#10;  secondary &#61; &#34;europe-west1&#34;&#10;&#125;">&#123;&#8230;&#125;</code> |
-| [schedule_config](variables.tf#L71) | Schedule for triggering export, anonymization and import of data. | <code title="map&#40;object&#40;&#123;&#10;  action    &#61; string&#10;  schedule  &#61; string&#10;  log_types &#61; string&#10;&#125;&#41;&#41;">map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
+| [schedule_config](variables.tf#L71) | Schedule for triggering data exports and job for checking previous exports results. | <code title="map&#40;object&#40;&#123;&#10;  action    &#61; string&#10;  schedule  &#61; string&#10;  log_types &#61; string&#10;&#125;&#41;&#41;">map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
 
 ## Outputs
 
 | name | description | sensitive |
 |---|---|:---:|
-| [function_sa](outputs.tf#L17) | Chronicle Anonymization function service account. |  |
+| [function_sa](outputs.tf#L17) | SecOps Archiver function service account. |  |
 <!-- END TFDOC -->
 ## Test
 
