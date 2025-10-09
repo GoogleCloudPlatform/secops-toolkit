@@ -69,7 +69,7 @@ variable "regions" {
 }
 
 variable "schedule_config" {
-  description = "Schedule for triggering export, anonymization and import of data."
+  description = "Schedule for triggering data exports and job for checking previous exports results."
   type = map(object({
     action    = string
     schedule  = string

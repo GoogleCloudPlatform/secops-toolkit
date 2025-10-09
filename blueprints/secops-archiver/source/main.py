@@ -42,7 +42,7 @@ SECOPS_CUSTOMER_ID = os.environ.get("SECOPS_CUSTOMER_ID")
 SECOPS_PROJECT_ID = os.environ.get("SECOPS_PROJECT_ID")
 MONTHS_TO_LOOK_BACK = os.environ.get("MONTHS_TO_LOOK_BACK", 11)
 
-HUNDRED_TERABYTES = 100000000000000
+HUNDRED_TERABYTES = 99000000000000
 
 
 def trigger_export(export_start_datetime: str, export_end_datetime: str,

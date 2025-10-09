@@ -15,6 +15,6 @@
  */
 
 output "function_sa" {
-  description = "Chronicle Anonymization function service account."
+  description = "SecOps Archiver function service account."
   value       = try(module.function.service_account_email, null)
 }
