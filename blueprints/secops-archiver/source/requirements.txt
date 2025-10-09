@@ -25,3 +25,4 @@ google-cloud-dlp
 google-cloud-logging
 dotenv
 python-dateutil
+secops
