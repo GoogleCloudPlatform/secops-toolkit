@@ -59,7 +59,7 @@ values:
     project: gcp-project-id
     requester_pays: null
     retention_policy: []
-    storage_class: REGIONAL
+    storage_class: ARCHIVE
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null

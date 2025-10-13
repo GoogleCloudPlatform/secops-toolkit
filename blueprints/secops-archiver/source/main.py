@@ -82,7 +82,8 @@ def trigger_export(export_start_datetime: str, export_end_datetime: str,
                 export_all_logs=True)
             LOGGER.info(export_response)
             export_id = export_response["name"].split("/")[-1]
-            if int(export_response["estimatedVolume"]) > HUNDRED_TERABYTES:
+            LOGGER.info(f"Export request response: {export_response}")
+            if "estimatedVolume" in export_response and int(export_response["estimatedVolume"]) > HUNDRED_TERABYTES:
                 raise SystemExit(
                     f'Export with ID: {export_id} might result in more than 100TB of data. This might result in data loss, please check this.'
                 )
@@ -95,7 +96,8 @@ def trigger_export(export_start_datetime: str, export_end_datetime: str,
                 gcs_bucket=gcs_bucket,
                 log_types=log_types.split(","))
             export_id = export_response["name"].split("/")[-1]
-            if int(export_response["estimatedVolume"]) > HUNDRED_TERABYTES:
+            LOGGER.info(f"Export request response: {export_response}")
+            if "estimatedVolume" in export_response and int(export_response["estimatedVolume"]) > HUNDRED_TERABYTES:
                 raise SystemExit(
                     f'Export with ID: {export_id} might result in more than 100TB of data. This might result in data loss, please check this.'
                 )
@@ -128,7 +130,7 @@ def check_monthly_export(export_month: str, log_types: str):
                            0, 0, 0)
     create_time_str = create_time.strftime("%Y-%m-%dT%H:%M:%SZ")
     data_export_response = chronicle.list_data_export(
-        filter=f"(createTime >= \"{create_time_str}\")", page_size=1000)
+        filters=f"(createTime >= \"{create_time_str}\")", page_size=1000)
 
     failed_jobs = False
     in_progress_jobs = False
