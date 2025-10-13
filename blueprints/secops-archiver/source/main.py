@@ -83,7 +83,8 @@ def trigger_export(export_start_datetime: str, export_end_datetime: str,
             LOGGER.info(export_response)
             export_id = export_response["name"].split("/")[-1]
             LOGGER.info(f"Export request response: {export_response}")
-            if "estimatedVolume" in export_response and int(export_response["estimatedVolume"]) > HUNDRED_TERABYTES:
+            if "estimatedVolume" in export_response and int(
+                    export_response["estimatedVolume"]) > HUNDRED_TERABYTES:
                 raise SystemExit(
                     f'Export with ID: {export_id} might result in more than 100TB of data. This might result in data loss, please check this.'
                 )
@@ -97,7 +98,8 @@ def trigger_export(export_start_datetime: str, export_end_datetime: str,
                 log_types=log_types.split(","))
             export_id = export_response["name"].split("/")[-1]
             LOGGER.info(f"Export request response: {export_response}")
-            if "estimatedVolume" in export_response and int(export_response["estimatedVolume"]) > HUNDRED_TERABYTES:
+            if "estimatedVolume" in export_response and int(
+                    export_response["estimatedVolume"]) > HUNDRED_TERABYTES:
                 raise SystemExit(
                     f'Export with ID: {export_id} might result in more than 100TB of data. This might result in data loss, please check this.'
                 )
