@@ -15,7 +15,7 @@
 # Fabric release: v39.1.0
 
 terraform {
-  required_version = ">= 1.11.4"
+  required_version = ">= 1.12.2"
   required_providers {
     google = {
       source  = "hashicorp/google"
