@@ -55,7 +55,13 @@ module "fleet" {
   source     = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gke-hub"
   project_id = module.project.project_id
   clusters = {
-    "bindplane" = module.bindplane-cluster.id
+    "bindplane" = {
+      id                = module.bindplane-cluster.id
+      configmanagement  = "default"
+      policycontroller  = "default"
+      servicemesh       = null
+      workload_identity = false
+    }
   }
 }
 
