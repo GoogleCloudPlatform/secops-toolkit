@@ -59,7 +59,7 @@ module "export-bucket" {
   name          = "secops-data-archiver"
   prefix        = var.prefix
   location      = var.regions.primary
-  storage_class = "REGIONAL"
+  storage_class = "ARCHIVE"
   versioning    = true
   iam = {
     "roles/storage.legacyBucketReader" = [

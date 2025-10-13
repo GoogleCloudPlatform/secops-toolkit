@@ -59,7 +59,7 @@ values:
     project: gcp-project-id
     requester_pays: null
     retention_policy: []
-    storage_class: REGIONAL
+    storage_class: ARCHIVE
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
@@ -107,7 +107,7 @@ values:
           - repo_source: []
             storage_source:
               - bucket: pre-gcp-project-id-archiver
-                object: bundle-4c4c6d539c77bc4631d46cbaa35c32e9.zip
+                object: bundle-0eaf961b1ef04aa3d734ea74729e01df.zip
         worker_pool: null
     description: Terraform managed.
     effective_labels:
@@ -209,7 +209,7 @@ values:
     event_based_hold: null
     force_empty_content_type: null
     metadata: null
-    name: bundle-4c4c6d539c77bc4631d46cbaa35c32e9.zip
+    name: bundle-0eaf961b1ef04aa3d734ea74729e01df.zip
     retention: []
     source: /tmp/bundle-gcp-project-id-secops-archiver.zip
     source_md5hash: null

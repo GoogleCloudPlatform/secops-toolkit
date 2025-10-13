@@ -52,7 +52,13 @@ module "fleet" {
   source     = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gke-hub"
   project_id = var.project_id
   clusters = {
-    "chronicle-log-ingestion" = module.chronicle-forwarder.id
+    "chronicle-log-ingestion" = {
+      id                = module.chronicle-forwarder.id
+      configmanagement  = "default"
+      policycontroller  = "default"
+      servicemesh       = null
+      workload_identity = false
+    }
   }
 }
 
