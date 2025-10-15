@@ -66,22 +66,6 @@ values:
     uniform_bucket_level_access: true
     versioning:
       - enabled: true
-  module.export-bucket.google_storage_bucket_iam_binding.authoritative["roles/storage.legacyBucketReader"]:
-    bucket: pre-secops-data-archiver
-    condition: []
-    members:
-      - serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
-      - user:malachite-data-export-batch@prod.google.com
-    role: roles/storage.legacyBucketReader
-    timeouts: null
-  module.export-bucket.google_storage_bucket_iam_binding.authoritative["roles/storage.objectAdmin"]:
-    bucket: pre-secops-data-archiver
-    condition: []
-    members:
-      - serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
-      - user:malachite-data-export-batch@prod.google.com
-    role: roles/storage.objectAdmin
-    timeouts: null
   module.export-bucket.google_storage_bucket_iam_binding.authoritative["roles/storage.objectViewer"]:
     bucket: pre-secops-data-archiver
     condition: []
@@ -388,10 +372,10 @@ counts:
   google_project_service_identity: 6
   google_service_account: 3
   google_storage_bucket: 2
-  google_storage_bucket_iam_binding: 3
+  google_storage_bucket_iam_binding: 1
   google_storage_bucket_object: 1
   modules: 5
-  resources: 44
+  resources: 42
 
 outputs:
   function_sa: tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
