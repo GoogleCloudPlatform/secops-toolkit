@@ -62,14 +62,6 @@ module "export-bucket" {
   storage_class = "ARCHIVE"
   versioning    = true
   iam = {
-    "roles/storage.legacyBucketReader" = [
-      "user:malachite-data-export-batch@prod.google.com",
-      module.function.service_account_iam_email
-    ]
-    "roles/storage.objectAdmin" = [
-      "user:malachite-data-export-batch@prod.google.com",
-      module.function.service_account_iam_email
-    ]
     "roles/storage.objectViewer" = [module.function.service_account_iam_email]
   }
 }

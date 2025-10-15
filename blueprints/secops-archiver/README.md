@@ -123,5 +123,5 @@ module "test" {
     secondary = "europe-west1"
   }
 }
-# tftest modules=6 resources=44
+# tftest modules=6 resources=42
 ```
