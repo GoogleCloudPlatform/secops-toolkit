@@ -73,7 +73,9 @@ module "function" {
   prefix                 = var.prefix
   name                   = "secops-archiver"
   bucket_name            = "${var.project_id}-archiver"
-  service_account_create = true
+  service_account_config = {
+    create = true
+  }
   ingress_settings       = "ALLOW_INTERNAL_AND_GCLB"
   build_worker_pool      = var.cloud_function_config.build_worker_pool_id
   build_service_account  = var.cloud_function_config.build_sa != null ? var.cloud_function_config.build_sa : module.cloudbuild-sa[0].id
