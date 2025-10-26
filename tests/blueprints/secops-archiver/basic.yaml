@@ -70,7 +70,7 @@ values:
     bucket: pre-secops-data-archiver
     condition: []
     members:
-      - serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
+      - serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
     role: roles/storage.objectViewer
     timeouts: null
   module.function.google_cloud_run_service_iam_binding.invoker[0]:
@@ -118,21 +118,31 @@ values:
         min_instance_count: 0
         secret_environment_variables: []
         secret_volumes: []
-        service_account_email: tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
+        service_account_email: secops-archiver@gcp-project-id.iam.gserviceaccount.com
         timeout_seconds: 3600
         vpc_connector: null
         vpc_connector_egress_settings: null
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
+  module.function.google_project_iam_member.default["roles/logging.logWriter"]:
+    condition: []
+    member: serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
+    project: gcp-project-id
+    role: roles/logging.logWriter
+  module.function.google_project_iam_member.default["roles/monitoring.metricWriter"]:
+    condition: []
+    member: serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
+    project: gcp-project-id
+    role: roles/monitoring.metricWriter
   module.function.google_service_account.service_account[0]:
-    account_id: tf-cf-secops-archiver
+    account_id: secops-archiver
     create_ignore_already_exists: null
     description: null
     disabled: false
-    display_name: Terraform Cloud Function secops-archiver.
-    email: tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
-    member: serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
+    display_name: secops-archiver
+    email: secops-archiver@gcp-project-id.iam.gserviceaccount.com
+    member: serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     timeouts: null
   module.function.google_storage_bucket.bucket[0]:
@@ -189,14 +199,14 @@ values:
     content_language: null
     customer_encryption: []
     deletion_policy: null
-    detect_md5hash: different hash
+    detect_md5hash: null
     event_based_hold: null
     force_empty_content_type: null
     metadata: null
     name: bundle-0eaf961b1ef04aa3d734ea74729e01df.zip
     retention: []
     source: /tmp/bundle-gcp-project-id-secops-archiver.zip
-    source_md5hash: null
+    source_md5hash: 0eaf961b1ef04aa3d734ea74729e01df
     temporary_hold: null
     timeouts: null
   module.project.google_project.project[0]:
@@ -217,25 +227,25 @@ values:
   module.project.google_project_iam_binding.authoritative["roles/chronicle.editor"]:
     condition: []
     members:
-      - serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
+      - serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     role: roles/chronicle.editor
   module.project.google_project_iam_binding.authoritative["roles/dlp.jobsEditor"]:
     condition: []
     members:
-      - serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
+      - serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     role: roles/dlp.jobsEditor
   module.project.google_project_iam_binding.authoritative["roles/dlp.reader"]:
     condition: []
     members:
-      - serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
+      - serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     role: roles/dlp.reader
   module.project.google_project_iam_binding.authoritative["roles/serviceusage.serviceUsageConsumer"]:
     condition: []
     members:
-      - serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
+      - serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     role: roles/serviceusage.serviceUsageConsumer
   module.project.google_project_iam_member.bindings["function-artifact-reader"]:
@@ -244,7 +254,7 @@ values:
     role: roles/artifactregistry.reader
   module.project.google_project_iam_member.bindings["function-log-writer"]:
     condition: []
-    member: serviceAccount:tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
+    member: serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     role: roles/logging.logWriter
   module.project.google_project_iam_member.bindings["function-storage-admin"]:
@@ -367,7 +377,7 @@ counts:
   google_cloudfunctions2_function: 1
   google_project: 1
   google_project_iam_binding: 4
-  google_project_iam_member: 14
+  google_project_iam_member: 16
   google_project_service: 8
   google_project_service_identity: 6
   google_service_account: 3
@@ -375,7 +385,7 @@ counts:
   google_storage_bucket_iam_binding: 1
   google_storage_bucket_object: 1
   modules: 5
-  resources: 42
+  resources: 44
 
 outputs:
-  function_sa: tf-cf-secops-archiver@gcp-project-id.iam.gserviceaccount.com
+  function_sa: secops-archiver@gcp-project-id.iam.gserviceaccount.com

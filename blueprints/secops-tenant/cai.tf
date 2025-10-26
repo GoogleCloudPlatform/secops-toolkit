@@ -219,16 +219,18 @@ resource "restful_operation" "cai_feeds_secret" {
 }
 
 module "cai-to-secops" {
-  count                  = var.secops_ingestion_config.ingest_assets_data ? 1 : 0
-  source                 = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-function-v2"
-  project_id             = module.project.project_id
-  region                 = var.regions.primary
-  name                   = "cai-to-secops"
-  bucket_name            = "${module.project.project_id}-cai-cf-source"
-  service_account_create = true
-  ingress_settings       = "ALLOW_INTERNAL_AND_GCLB"
-  build_worker_pool      = google_cloudbuild_worker_pool.dev_private_pool[0].id
-  build_service_account  = module.cloudbuild-sa[0].id
+  count       = var.secops_ingestion_config.ingest_assets_data ? 1 : 0
+  source      = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-function-v2"
+  project_id  = module.project.project_id
+  region      = var.regions.primary
+  name        = "cai-to-secops"
+  bucket_name = "${module.project.project_id}-cai-cf-source"
+  service_account_config = {
+    create = true
+  }
+  ingress_settings      = "ALLOW_INTERNAL_AND_GCLB"
+  build_worker_pool     = google_cloudbuild_worker_pool.dev_private_pool[0].id
+  build_service_account = module.cloudbuild-sa[0].id
   bucket_config = {
     lifecycle_delete_age_days = 1
   }

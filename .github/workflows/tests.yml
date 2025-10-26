@@ -39,7 +39,7 @@ env:
   TF_VAR__tests: "true"
   DEFAULT_TERRAFORM_FLAVOUR: terraform
   DEFAULT_TERRAFORM_VERSION: ${{ inputs.terraform_version || '1.12.2' }}
-  DEFAULT_TOFU_VERSION: "1.10.6"
+  DEFAULT_TOFU_VERSION: "v1.11.0-beta1"
 
 jobs:
   compute-matrix:
