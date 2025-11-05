@@ -25,5 +25,3 @@ sample_data_table_domains:
       mapped_column_path: null
       original_column: domain
   description: Sample Data Table for domains
-  scopes:
-    - tenant-1
