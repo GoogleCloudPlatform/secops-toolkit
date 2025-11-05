@@ -19,7 +19,7 @@ import json
 import logging
 import pathlib
 from typing import Any, Literal, Mapping, Sequence
-
+import sys
 import pydantic
 import ruamel.yaml
 from secops.chronicle import ChronicleClient
@@ -35,7 +35,14 @@ from config import (
 
 DATA_TABLE_COLUMN_TYPES = Literal["CIDR", "STRING", "REGEX"]
 
-LOGGER = logging.getLogger(__name__)
+# --- Global Logger Setup ---
+_LOGGER = logging.getLogger(__name__)
+handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+_LOGGER.addHandler(handler)
+_LOGGER.setLevel(logging.INFO)
 
 # Use ruamel.yaml to raise an exception if a YAML file contains duplicate keys
 ruamel_yaml = ruamel.yaml.YAML(typ="safe")
