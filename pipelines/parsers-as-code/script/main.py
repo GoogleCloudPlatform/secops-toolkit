@@ -59,7 +59,9 @@ def generate_pr_comment_output(plan: dict, submitted_info: list,
 
             # For PREBUILT parsers, skip parser action reporting (no operations allowed)
             if parser_type == PARSER_TYPE_PREBUILT:
-                line_parts.append(f"  - **Parser**: Using PREBUILT parser from SecOps (read-only)")
+                line_parts.append(
+                    f"  - **Parser**: Using PREBUILT parser from SecOps (read-only)"
+                )
             else:
                 # For CUSTOM parsers, show action
                 line_parts.append(f"  - **Parser Action**: `{action.value}`")
