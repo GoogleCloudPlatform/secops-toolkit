@@ -37,6 +37,7 @@ EVENTS_FOLDER_NAME = "events"
 
 # SecOps API constants
 PARSER_TYPE_CUSTOM = "CUSTOM"
+PARSER_TYPE_PREBUILT = "PREBUILT"
 
 # Environment variable to get the path to the GitHub Actions output file
 GITHUB_OUTPUT_FILE = os.getenv('GITHUB_OUTPUT')
