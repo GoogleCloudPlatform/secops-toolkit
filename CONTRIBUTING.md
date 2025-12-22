@@ -42,6 +42,11 @@ Generate tfdoc (example for `secops-tenant`)
 ./tools/tfdoc.py blueprints/secops-tenant
 ```
 
+#### Python Code formatting
+
+```shell
+yapf -i .     --parallel    --recursive     --exclude "**/.terraform/"     --exclude "tools/"     --exclude "tests/" --exclude "**/__pycache__" --exclude "venv/" --exclude "**/data/"
+```
 
 ### Code reviews
 

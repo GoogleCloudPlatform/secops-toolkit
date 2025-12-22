@@ -39,7 +39,7 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.11.4
+          terraform_version: 1.12.2
 
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@v4
@@ -99,4 +99,5 @@ jobs:
             --exclude "**/.terraform/" \
             --exclude "tools/" \
             --exclude "tests/" \
-            --exclude "**/*.yaml"
+            --exclude "**/*.yaml" \
+            --exclude "**/requirements.txt"

@@ -1,0 +1,50 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+default:
+  before_script:
+    - echo "${CI_JOB_JWT_V2}" > token.txt
+  image:
+    name: hashicorp/terraform
+    entrypoint:
+      - "/usr/bin/env"
+      - "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+workflow:
+  rules:
+    # merge / apply
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      variables:
+        COMMAND: apply
+
+variables:
+  LOCAL_SYNC_PATH: $CI_LOCAL_SYNC_PATH
+  TARGET_SOAR_API_URL: $CI_TARGET_SOAR_API_URL
+  TARGET_SOAR_API_KEY: $CI_TARGET_SOAR_API_KEY
+  SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+  PLAN: plan.cache
+  PLAN_JSON: plan.json
+
+stages:
+  - sync-playbooks
+
+sync-playbooks:
+  stage: sync-playbooks
+  image: python:3.11
+  before_script:
+    - echo "Installing dependencies..."
+    - pip install -r requirements.txt
+  script:
+    - echo "Running Python script..."
+    - python main.py sync-playbooks

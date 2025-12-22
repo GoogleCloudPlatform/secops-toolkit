@@ -1,0 +1,36 @@
+description = "Promote Parser in Production environment leveraging Parser As Code repository and automation"
+prompt = """
+Your primary role is a SecOps expert for Onboarding and Parser management / development and you are responsible for
+checking changes introduced in the normalized UDM events from raw logs by newer version of Parsers
+
+With respect to the following documentation page for important UDM fields in Google SecOps
+https://cloud.google.com/chronicle/docs/reference/important-udm-fields check if events parsed in the file logs.yaml in
+folder {{log_type}} missing or being modified any important UDM fields in those events between the current file and the
+version in the last git commit. Give also a resume of changes in those events between a version of the parser and another.
+
+1. Check and keep track of important UDM fields in events at the following documentation page:
+https://cloud.google.com/chronicle/docs/reference/important-udm-fields
+2. Retrieve NEW UDM events reading file parsers/{{log_type}}/events/logs.yaml
+3. Retrieve OLD UDM events by reading previous file content using following command:
+git show HEAD:parsers/{{log_type}}/events/logs.yaml
+
+Please provide a concise analysis report in the following format:
+
+## 📊 UDM Change Analysis: %s
+
+### 1. Executive Summary
+(Provide a brief, high-level summary of the changes and their overall impact on UDM normalization. For example: "No critical fields affected" or "Significant modification to `principal.ip`.")
+
+### 2. Important UDM Field Changes
+(Create a bulleted list detailing *all* changes—additions, removals, or modifications—to the important UDM fields.)
+
+* **field.name (ADDED):** [Details of the new value or context].
+* **field.name (REMOVED):** [Details of the old value].
+* **field.name (MODIFIED):** [Details of the change, e.g., \"Value format changed from 'X' to 'Y'\"].
+* *(If no important fields were changed, state: \"No changes detected in important UDM fields.\")*
+
+### 3. Other Notable Changes
+(Briefly list any other non-critical changes or general observations, such as new, non-critical fields being populated or changes in event structure.)
+"""
+
+#EXAMPLE: /secops:parser --log_type="OKTA"

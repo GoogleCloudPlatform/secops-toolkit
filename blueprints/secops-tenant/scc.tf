@@ -76,16 +76,18 @@ resource "google_scc_notification_config" "scc_notification_configs" {
 }
 
 module "scc-to-secops" {
-  count                  = var.secops_ingestion_config.ingest_scc_findings ? 1 : 0
-  source                 = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-function-v2"
-  project_id             = module.project.project_id
-  region                 = var.regions.primary
-  name                   = "scc-to-secops"
-  bucket_name            = "${var.project_id}-cf-source"
-  service_account_create = true
-  ingress_settings       = "ALLOW_INTERNAL_AND_GCLB"
-  build_worker_pool      = google_cloudbuild_worker_pool.dev_private_pool[0].id
-  build_service_account  = module.cloudbuild-sa[0].id
+  count       = var.secops_ingestion_config.ingest_scc_findings ? 1 : 0
+  source      = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-function-v2"
+  project_id  = module.project.project_id
+  region      = var.regions.primary
+  name        = "scc-to-secops"
+  bucket_name = "${var.project_id}-cf-source"
+  service_account_config = {
+    create = true
+  }
+  ingress_settings      = "ALLOW_INTERNAL_AND_GCLB"
+  build_worker_pool     = google_cloudbuild_worker_pool.dev_private_pool[0].id
+  build_service_account = module.cloudbuild-sa[0].id
   bucket_config = {
     lifecycle_delete_age_days = 1
   }

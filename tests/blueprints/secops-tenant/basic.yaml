@@ -25,6 +25,7 @@ values:
         browser_key_restrictions: []
         ios_key_restrictions: []
         server_key_restrictions: []
+    service_account_email: null
     timeouts: null
   module.project.google_project.project[0]:
     auto_create_network: false

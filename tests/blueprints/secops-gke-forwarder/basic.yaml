@@ -854,7 +854,6 @@ values:
     user_managed_keys_config: []
   module.fleet.google_gke_hub_membership.default["chronicle-log-ingestion"]:
     authority: []
-    description: null
     effective_labels:
       goog-terraform-provisioned: 'true'
     endpoint:

@@ -1,6 +1,8 @@
 <p align="center" width="100%">
   <picture>
-    <img src="./assets/logo.png" alt="SecOps Toolkit" style="align-content: center;" width="33%">
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="./assets/logo-light.png">
+    <img src="./assets/logo-light.png" alt="SecOps Toolkit" style="align-content: center; width: 33%; max-width: 928px">
   </picture>
 </p>
 
@@ -14,7 +16,7 @@ This section details the available Terraform blueprints for deploying and managi
 
 ### BindPlane OP Management container running on cos-based GCE instance
 
-<a href="./blueprints/bindplane-gce/" title="BindPlane OP Management console on GCE"><img src="./blueprints/bindplane-gce/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/bindplane-gke/) is a simple script for running BindPlane OP Management Console container on Google Compute Engine instance with COS.</p>
+<a href="./blueprints/bindplane-gce/" title="BindPlane OP Management console on GCE"><img src="./blueprints/bindplane-gce/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/bindplane-gce/) is a simple script for running BindPlane OP Management Console container on Google Compute Engine instance with COS.</p>
 
 <br clear="left">
 
@@ -24,9 +26,15 @@ This section details the available Terraform blueprints for deploying and managi
 
 <br clear="left">
 
+## SecOps Archiver
+
+<a href="./blueprints/secops-archiver/" title="SecOps Archiver"><img src="./blueprints/secops-archiver/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/secops-archiver/) offers a comprehensive and adaptable solution for constructing an automation for exporting raw data from a SecOps tenant to Google Cloud Storage for longer retention. The pipeline is built on top of various Google Cloud products.</p>
+
+<br clear="left">
+
 ### SecOps Anonymization Pipeline
 
-<a href="./blueprints/secops-anonymization-pipeline/" title="SecOps Anonymization Pipeline"><img src="./blueprints/secops-anonymization-pipeline/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/secops-gke-forwarder/) is a comprehensive and adaptable solution for constructing a SecOps pipeline for exporting raw data from a SecOps tenant, optionally anonymize this data and then import data back in a different SecOps tenant.</p>
+<a href="./blueprints/secops-anonymization-pipeline/" title="SecOps Anonymization Pipeline"><img src="./blueprints/secops-anonymization-pipeline/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/secops-anonymization-pipeline/) is a comprehensive and adaptable solution for constructing a SecOps pipeline for exporting raw data from a SecOps tenant, optionally anonymize this data and then import data back in a different SecOps tenant.</p>
 
 <br clear="left">
 
@@ -85,5 +93,11 @@ This repository provides a collection of sample repositories for automating Goog
 ## Parsers As Code
 
 <a href="./pipelines/parsers-as-code/" title="Parsers As Code pipeline"><img src="./pipelines/parsers-as-code/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [sample repository](./pipelines/parsers-as-code/) provides a framework for managing SecOps parsers as code.</p>
+
+<br clear="left">
+
+## Response As Code
+
+<a href="./pipelines/response-as-code/" title="Response As Code pipeline"><img src="./pipelines/response-as-code/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [sample repository](./pipelines/response-as-code/) provides a framework to manage and deploy SOAR playbooks using a "Response as Code" methodology.</p>
 
 <br clear="left">
