@@ -102,6 +102,7 @@ values:
                         name: cfps-secret-config-tenant-1
                         read_only: true
                         sub_path: null
+                        sub_path_expr: null
                     working_dir: null
                 dns_config: []
                 dns_policy: ClusterFirst
@@ -246,6 +247,7 @@ values:
                         name: cfps-secret-config-tenant-2
                         read_only: true
                         sub_path: null
+                        sub_path_expr: null
                     working_dir: null
                 dns_config: []
                 dns_policy: ClusterFirst
@@ -754,10 +756,13 @@ values:
             service_account: default
             shielded_instance_config: []
         autoscaling_profile: null
+        default_compute_class_enabled: null
         resource_limits: []
     control_plane_endpoints_config:
       - dns_endpoint_config:
           - allow_external_traffic: true
+            enable_k8s_certs_via_dns: null
+            enable_k8s_tokens_via_dns: null
         ip_endpoints_config:
           - enabled: true
     cost_management_config:
@@ -785,7 +790,8 @@ values:
     in_transit_encryption_config: null
     initial_node_count: 1
     ip_allocation_policy:
-      - additional_pod_ranges_config: []
+      - additional_ip_ranges_config: []
+        additional_pod_ranges_config: []
         cluster_secondary_range_name: pods
         services_secondary_range_name: services
         stack_type: IPV4
@@ -833,7 +839,7 @@ values:
       - linux_node_config: []
         network_tags: []
         node_kubelet_config:
-          - insecure_kubelet_readonly_port_enabled: 'TRUE'
+          - {}
         resource_manager_tags: null
     pod_security_policy_config: []
     private_cluster_config:
@@ -847,6 +853,7 @@ values:
     resource_labels: null
     resource_usage_export_config: []
     secret_manager_config: []
+    secret_sync_config: []
     subnetwork: https://www.googleapis.com/compute/v1/projects/prod-net-landing-0/regions/europe-west1/subnetworks/gke
     terraform_labels:
       goog-terraform-provisioned: 'true'
@@ -987,3 +994,21 @@ values:
     project: tmp-test
     service: monitoring.googleapis.com
     timeouts: null
+
+counts:
+  google_container_cluster: 1
+  google_gke_hub_membership: 1
+  google_project: 1
+  google_project_iam_member: 7
+  google_project_service: 9
+  google_project_service_identity: 6
+  kubernetes_deployment: 2
+  kubernetes_horizontal_pod_autoscaler_v2: 2
+  kubernetes_namespace: 2
+  kubernetes_secret: 2
+  kubernetes_service: 4
+  modules: 4
+  resources: 37
+
+outputs:
+  fleet_host: __missing__

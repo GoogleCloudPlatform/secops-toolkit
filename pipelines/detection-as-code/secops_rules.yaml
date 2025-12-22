@@ -17,7 +17,6 @@ network_traffic_to_specific_country:
   alerting: true
   archived: false
   run_frequency: "DAILY"
-  scope: tenant-1
 remote_desktop_from_internet_via_audit:
   enabled: true
   alerting: true
