@@ -43,6 +43,7 @@ values:
     repository_password: null
     repository_username: null
     reset_values: false
+    resources: null
     reuse_values: false
     set: null
     set_list: null
@@ -51,7 +52,10 @@ values:
     set_wo_revision: null
     skip_crds: false
     status: deployed
+    take_ownership: false
     timeout: 300
+    timeouts: null
+    upgrade_install: false
     values:
       - null
     verify: false
@@ -138,10 +142,13 @@ values:
             service_account: default
             shielded_instance_config: []
         autoscaling_profile: null
+        default_compute_class_enabled: null
         resource_limits: []
     control_plane_endpoints_config:
       - dns_endpoint_config:
           - allow_external_traffic: false
+            enable_k8s_certs_via_dns: null
+            enable_k8s_tokens_via_dns: null
         ip_endpoints_config:
           - enabled: true
     cost_management_config:
@@ -169,7 +176,8 @@ values:
     in_transit_encryption_config: null
     initial_node_count: 1
     ip_allocation_policy:
-      - additional_pod_ranges_config: []
+      - additional_ip_ranges_config: []
+        additional_pod_ranges_config: []
         cluster_secondary_range_name: pods
         services_secondary_range_name: services
         stack_type: IPV4
@@ -217,7 +225,7 @@ values:
       - linux_node_config: []
         network_tags: []
         node_kubelet_config:
-          - insecure_kubelet_readonly_port_enabled: 'TRUE'
+          - {}
         resource_manager_tags: null
     pod_security_policy_config: []
     private_cluster_config:
@@ -233,6 +241,7 @@ values:
     resource_labels: null
     resource_usage_export_config: []
     secret_manager_config: []
+    secret_sync_config: []
     subnetwork: https://www.googleapis.com/compute/v1/projects/prod-net-landing-0/regions/europe-west1/subnetworks/gke
     terraform_labels:
       goog-terraform-provisioned: 'true'
@@ -309,14 +318,19 @@ values:
     project: tmp-test
     timeouts: null
   module.db.google_sql_database_instance.primary:
+    backupdr_backup: null
     clone: []
     database_version: POSTGRES_13
     deletion_protection: false
+    final_backup_description: null
     name: tmp-bindplane
+    point_in_time_restore_context: []
     project: tmp-test
     region: europe-west8
     restore_backup_context: []
     root_password: null
+    root_password_wo: null
+    root_password_wo_version: null
     settings:
       - activation_policy: ALWAYS
         active_directory_config: []
@@ -332,6 +346,7 @@ values:
         edition: ENTERPRISE
         enable_dataplex_integration: null
         enable_google_ml_integration: null
+        final_backup_config: []
         ip_configuration:
           - allocated_ip_range: null
             authorized_networks: []
@@ -342,6 +357,7 @@ values:
             psc_config:
               - allowed_consumer_projects:
                   - tmp-test
+                network_attachment_uri: ''
                 psc_auto_connections: []
                 psc_enabled: true
             server_ca_pool: null
@@ -556,6 +572,7 @@ values:
     name: bindplane
     project: tmp-test
     schema_settings: []
+    tags: null
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
@@ -619,3 +636,39 @@ values:
         street_address: null
     uris: null
     validity_period_hours: 87600
+
+counts:
+  google_compute_address: 2
+  google_compute_forwarding_rule: 1
+  google_container_cluster: 1
+  google_dns_managed_zone: 1
+  google_dns_record_set: 1
+  google_gke_hub_membership: 1
+  google_project: 1
+  google_project_iam_binding: 1
+  google_project_iam_member: 8
+  google_project_service: 9
+  google_project_service_identity: 6
+  google_pubsub_topic: 1
+  google_service_account: 1
+  google_service_account_iam_binding: 1
+  google_sql_database: 1
+  google_sql_database_instance: 1
+  google_sql_user: 1
+  helm_release: 1
+  kubernetes_namespace: 1
+  kubernetes_secret: 2
+  modules: 9
+  random_password: 1
+  resources: 48
+  tls_cert_request: 1
+  tls_locally_signed_cert: 1
+  tls_private_key: 2
+  tls_self_signed_cert: 1
+
+outputs:
+  bindplane_hostname: https://bindplane.example.com
+  ca_cert: __missing__
+  cluster_ca_certificate: __missing__
+  fleet_host: __missing__
+  lb_ip_address: __missing__

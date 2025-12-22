@@ -12,9 +12,3 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-private_ip_ranges:
-  description: "Private CIDR ranges"
-  type: CIDR # either CIDR, STRING, REGEX
-  # OPTIONAL scope configuration
-  scopes:
-    - tenant-1

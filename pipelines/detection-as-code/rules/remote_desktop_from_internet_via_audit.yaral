@@ -11,7 +11,6 @@ rule remote_desktop_from_internet_via_audit {
 
   events:
     ($selection1.metadata.product_event_type = "4624" and $selection1.extensions.auth.mechanism  = 10)
-    not $selection1.principal.ip in cidr %private_ip_ranges
 
   condition:
     $selection1
