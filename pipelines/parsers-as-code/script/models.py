@@ -24,6 +24,7 @@ class LogTypeConfig:
     dir_path: str
     parser: str | None = None
     parser_ext: str | None = None
+    parser_type: str = "CUSTOM"  # "CUSTOM" or "PREBUILT"
 
 
 class ParserState(Enum):

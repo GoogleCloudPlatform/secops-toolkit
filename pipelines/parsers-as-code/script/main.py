@@ -20,7 +20,7 @@ import time
 import click
 from parser_manager import ParserManager
 from models import ParserError, Operation, ParserValidationStatus, ParserExtensionState
-from config import GITHUB_OUTPUT_FILE
+from config import GITHUB_OUTPUT_FILE, PARSER_TYPE_CUSTOM, PARSER_TYPE_PREBUILT
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -47,29 +47,42 @@ def generate_pr_comment_output(plan: dict, submitted_info: list,
                 and not details.get("validation_failed")):
             continue
 
-        line_parts = [f"- **Log Type**: `{log_type}`"]
+        parser_type = details['config'].parser_type
+        line_parts = [
+            f"- **Log Type**: `{log_type}`",
+            f"  - **Parser Type**: `{parser_type}`"
+        ]
 
         # --- Parser Details ---
         if details['config'].parser:
             action = details['parser_operation']
-            line_parts.append(f"  - **Parser Action**: `{action.value}`")
 
-            if details.get("validation_failed"):
-                status_text, icon = "EVENT_VALIDATION_FAILED", "❌"
-                details_text = "Not submitted due to local event validation failure."
-            elif action in [Operation.CREATE, Operation.UPDATE]:
-                status = details.get("parser_validation_status", "PENDING")
-                icon = "✅" if status == ParserValidationStatus.PASSED.value else "❌" if status == ParserValidationStatus.FAILED.value else "⏳"
-                status_text = f"{status} {icon}"
-                parser_id = submitted_map.get(log_type,
-                                              {}).get('parser_id', 'N/A')
-                details_text = f"Submitted for deployment. Parser ID: `{parser_id}`"
-            else:  # Operation is NONE, but we're here because something else happened (e.g., ext change)
-                status_text = "NO_CHANGE"
-                details_text = "No changes detected for the parser."
+            # For PREBUILT parsers, skip parser action reporting (no operations allowed)
+            if parser_type == PARSER_TYPE_PREBUILT:
+                line_parts.append(
+                    f"  - **Parser**: Using PREBUILT parser from SecOps (read-only)"
+                )
+            else:
+                # For CUSTOM parsers, show action
+                line_parts.append(f"  - **Parser Action**: `{action.value}`")
 
-            line_parts.append(f"  - **Validation Status**: {status_text}")
-            line_parts.append(f"  - **Details**: {details_text}")
+                if details.get("validation_failed"):
+                    status_text, icon = "EVENT_VALIDATION_FAILED", "❌"
+                    details_text = "Not submitted due to local event validation failure."
+                elif action in [Operation.CREATE, Operation.UPDATE]:
+                    status = details.get("parser_validation_status", "PENDING")
+                    icon = "✅" if status == ParserValidationStatus.PASSED.value else "❌" if status == ParserValidationStatus.FAILED.value else "⏳"
+                    status_text = f"{status} {icon}"
+                    parser_id = submitted_map.get(log_type,
+                                                  {}).get('parser_id', 'N/A')
+                    action_verb = "Created" if action == Operation.CREATE else "Updated"
+                    details_text = f"{action_verb} CUSTOM parser. Parser ID: `{parser_id}`"
+                else:  # Operation is NONE, but we're here because something else happened (e.g., ext change)
+                    status_text = "NO_CHANGE"
+                    details_text = "No changes detected for the CUSTOM parser."
+
+                line_parts.append(f"  - **Validation Status**: {status_text}")
+                line_parts.append(f"  - **Details**: {details_text}")
 
         # --- Parser Extension Details ---
         if details['config'].parser_ext:
@@ -86,7 +99,9 @@ def generate_pr_comment_output(plan: dict, submitted_info: list,
                 status_text = f"{status} {icon}"
                 ext_id = submitted_map.get(log_type,
                                            {}).get('parser_ext_id', 'N/A')
-                details_text = f"Submitted for deployment. Extension ID: `{ext_id}`"
+                action_verb = "Attached" if action == Operation.CREATE else "Updated"
+                parser_context = "PREBUILT parser" if parser_type == PARSER_TYPE_PREBUILT else "CUSTOM parser"
+                details_text = f"{action_verb} extension to {parser_context}. Extension ID: `{ext_id}`"
             else:  # Operation is NONE
                 status_text = "NO_CHANGE"
                 details_text = "No changes detected for the parser extension."

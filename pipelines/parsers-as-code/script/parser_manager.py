@@ -26,7 +26,8 @@ from models import (LogTypeConfig, Operation, ParserState,
                     ValidationError, ParserError, APIError)
 from config import (PARSERS_ROOT_DIR, PARSER_CONFIG_FILENAME,
                     PARSER_EXT_CONFIG_FILENAME, LOGS_FOLDER_NAME,
-                    EVENTS_FOLDER_NAME, PARSER_TYPE_CUSTOM)
+                    EVENTS_FOLDER_NAME, PARSER_TYPE_CUSTOM,
+                    PARSER_TYPE_PREBUILT)
 from utils import compare_yaml_files, process_data_for_dump
 
 LOGGER = logging.getLogger(__name__)
@@ -65,20 +66,79 @@ class ParserManager:
 
             parser_conf_path = os.path.join(parser_dir_path,
                                             PARSER_CONFIG_FILENAME)
-            if os.path.isfile(parser_conf_path):
-                with open(parser_conf_path, 'r', encoding='utf-8') as f:
-                    config.parser = f.read()
-
             parser_ext_conf_path = os.path.join(parser_dir_path,
                                                 PARSER_EXT_CONFIG_FILENAME)
-            if os.path.isfile(parser_ext_conf_path):
+
+            # Check if parser.conf exists
+            has_parser_conf = os.path.isfile(parser_conf_path)
+            has_parser_ext_conf = os.path.isfile(parser_ext_conf_path)
+
+            if has_parser_conf:
+                with open(parser_conf_path, 'r', encoding='utf-8') as f:
+                    config.parser = f.read()
+                config.parser_type = PARSER_TYPE_CUSTOM
+
+            if has_parser_ext_conf:
                 with open(parser_ext_conf_path, 'r', encoding='utf-8') as f:
                     config.parser_ext = f.read()
+
+            # If only parser_extension.conf exists, it's a PREBUILT parser
+            if not has_parser_conf and has_parser_ext_conf:
+                config.parser_type = PARSER_TYPE_PREBUILT
+                # Fetch the active prebuilt parser content from SecOps
+                try:
+                    prebuilt_content = self._get_active_prebuilt_parser(
+                        config.log_type)
+                    if prebuilt_content:
+                        config.parser = prebuilt_content
+                        LOGGER.info(
+                            f"[{config.log_type}] Using PREBUILT parser from SecOps."
+                        )
+                    else:
+                        LOGGER.warning(
+                            f"[{config.log_type}] No active PREBUILT parser found in SecOps. "
+                            "Parser extension will be managed, but parser content unavailable for validation."
+                        )
+                except Exception as e:
+                    LOGGER.warning(
+                        f"[{config.log_type}] Could not fetch PREBUILT parser: {e}. "
+                        "Parser extension will be managed, but validation may be limited."
+                    )
 
             if config.parser or config.parser_ext:
                 log_type_configs.append(config)
 
         return log_type_configs
+
+    def _get_active_prebuilt_parser(self, log_type: str) -> str | None:
+        """Fetches the content of an active PREBUILT parser."""
+        try:
+            parsers = self.client.list_parsers(log_type)
+            for parser in parsers:
+                if (parser.get("type") == PARSER_TYPE_PREBUILT
+                        and parser.get("state") == ParserState.ACTIVE.value
+                        and "cbn" in parser):
+                    return base64.b64decode(parser["cbn"]).decode('utf-8')
+        except Exception as e:
+            LOGGER.debug(f"Error fetching PREBUILT parser for {log_type}: {e}")
+        return None
+
+    def _get_any_prebuilt_parser(self, log_type: str) -> str | None:
+        """Fetches any PREBUILT parser (active or inactive) for the log type.
+
+        This is used for event generation where we need the parser content
+        regardless of its activation status.
+        """
+        try:
+            parsers = self.client.list_parsers(log_type)
+            for parser in parsers:
+                if parser.get(
+                        "type") == PARSER_TYPE_PREBUILT and "cbn" in parser:
+                    return base64.b64decode(parser["cbn"]).decode('utf-8')
+        except Exception as e:
+            LOGGER.debug(
+                f"Error fetching any PREBUILT parser for {log_type}: {e}")
+        return None
 
     def _get_active_content(self, log_type: str,
                             is_extension: bool) -> str | None:
@@ -114,8 +174,8 @@ class ParserManager:
                 "validation_failed": False
             }
 
-            # Plan parser operation
-            if config.parser:
+            # Plan parser operation (skip for PREBUILT parsers)
+            if config.parser and config.parser_type == PARSER_TYPE_CUSTOM:
                 active_parser = self._get_active_content(config.log_type,
                                                          is_extension=False)
                 if not active_parser:
@@ -131,6 +191,23 @@ class ParserManager:
                     op_details["parser_ext_operation"] = Operation.CREATE
                 elif active_ext.strip() != config.parser_ext.strip():
                     op_details["parser_ext_operation"] = Operation.UPDATE
+
+            # Log the planned operations
+            if op_details["parser_operation"] != Operation.NONE or op_details[
+                    "parser_ext_operation"] != Operation.NONE:
+                LOGGER.info(f"[{config.log_type}] Planned operations:")
+                if config.parser_type == PARSER_TYPE_PREBUILT:
+                    LOGGER.info(
+                        f"  - Parser: PREBUILT (read-only, no operations)")
+                elif op_details["parser_operation"] != Operation.NONE:
+                    LOGGER.info(
+                        f"  - Parser: {op_details['parser_operation'].value} CUSTOM parser"
+                    )
+                if op_details["parser_ext_operation"] != Operation.NONE:
+                    parser_context = "PREBUILT parser" if config.parser_type == PARSER_TYPE_PREBUILT else "CUSTOM parser"
+                    LOGGER.info(
+                        f"  - Extension: {op_details['parser_ext_operation'].value} extension to {parser_context}"
+                    )
 
             # Validate if any change is planned
             if (op_details["parser_operation"] != Operation.NONE
@@ -157,11 +234,15 @@ class ParserManager:
                 continue
 
             info = {"log_type": log_type}
-            # Submit parser
+            parser_type = details["config"].parser_type
+
+            # Submit parser (only for CUSTOM parsers)
             if details["parser_operation"] in [
                     Operation.CREATE, Operation.UPDATE
             ]:
-                LOGGER.info(f"[{log_type}] Submitting parser...")
+                action_verb = "Creating" if details[
+                    "parser_operation"] == Operation.CREATE else "Updating"
+                LOGGER.info(f"[{log_type}] {action_verb} CUSTOM parser...")
                 meta = self.client.create_parser(log_type,
                                                  details["config"].parser,
                                                  validated_on_empty_logs=True)
@@ -177,7 +258,12 @@ class ParserManager:
             if details["parser_ext_operation"] in [
                     Operation.CREATE, Operation.UPDATE
             ]:
-                LOGGER.info(f"[{log_type}] Submitting parser extension...")
+                action_verb = "Attaching" if details[
+                    "parser_ext_operation"] == Operation.CREATE else "Updating"
+                parser_context = "PREBUILT parser" if parser_type == PARSER_TYPE_PREBUILT else "CUSTOM parser"
+                LOGGER.info(
+                    f"[{log_type}] {action_verb} extension to {parser_context}..."
+                )
                 meta = self.client.create_parser_extension(
                     log_type, parser_config=details["config"].parser_ext)
                 name = meta.get("name")
@@ -217,43 +303,55 @@ class ParserManager:
         configs = self.discover_local_configs()
         activated_count = 0
         for config in configs:
-            # Activate Parser
-            parsers = self.client.list_parsers(config.log_type)
-            for p in parsers:
-                if (p.get("type") == PARSER_TYPE_CUSTOM
-                        and p.get("state") != ParserState.ACTIVE.value
-                        and p.get("validationStage")
-                        == ParserValidationStatus.PASSED.value):
+            # Activate Parser (only for CUSTOM parsers, not PREBUILT)
+            if config.parser_type == PARSER_TYPE_CUSTOM and config.parser:
+                parsers = self.client.list_parsers(config.log_type)
+                for p in parsers:
+                    if (p.get("type") == PARSER_TYPE_CUSTOM
+                            and p.get("state") != ParserState.ACTIVE.value
+                            and p.get("validationStage")
+                            == ParserValidationStatus.PASSED.value):
 
-                    p_content = base64.b64decode(p["cbn"]).decode('utf-8')
-                    if p_content.strip() == config.parser.strip():
-                        parser_id = p["name"].split("/")[-1]
-                        self.client.activate_parser(config.log_type, parser_id)
-                        activated_count += 1
-                    else:
-                        LOGGER.warning(
-                            f"[{config.log_type}] Passed parser content mismatch. Skipping activation."
-                        )
-                    break  # Assume only one valid release candidate
-
-            # Activate Parser Extension
-            exts_response = self.client.list_parser_extensions(config.log_type)
-            if "parserExtensions" in exts_response:
-                for ext in exts_response["parserExtensions"]:
-                    if (ext.get("state") ==
-                            ParserExtensionState.VALIDATED.value):
-                        ext_content = base64.b64decode(
-                            ext["cbnSnippet"]).decode('utf-8')
-                        if ext_content.strip() == config.parser_ext.strip():
-                            ext_id = ext["name"].split("/")[-1]
-                            self.client.activate_parser_extension(
-                                config.log_type, ext_id)
+                        p_content = base64.b64decode(p["cbn"]).decode('utf-8')
+                        if p_content.strip() == config.parser.strip():
+                            parser_id = p["name"].split("/")[-1]
+                            self.client.activate_parser(
+                                config.log_type, parser_id)
                             activated_count += 1
+                            LOGGER.info(
+                                f"[{config.log_type}] Activated CUSTOM parser."
+                            )
                         else:
                             LOGGER.warning(
-                                f"[{config.log_type}] Validated extension content mismatch. Skipping."
+                                f"[{config.log_type}] Passed parser content mismatch. Skipping activation."
                             )
                         break  # Assume only one valid release candidate
+
+            # Activate Parser Extension
+            if config.parser_ext:
+                exts_response = self.client.list_parser_extensions(
+                    config.log_type)
+                if "parserExtensions" in exts_response:
+                    for ext in exts_response["parserExtensions"]:
+                        if (ext.get("state") ==
+                                ParserExtensionState.VALIDATED.value):
+                            ext_content = base64.b64decode(
+                                ext["cbnSnippet"]).decode('utf-8')
+                            if ext_content.strip() == config.parser_ext.strip(
+                            ):
+                                ext_id = ext["name"].split("/")[-1]
+                                self.client.activate_parser_extension(
+                                    config.log_type, ext_id)
+                                activated_count += 1
+                                parser_type_info = f"({config.parser_type} parser)"
+                                LOGGER.info(
+                                    f"[{config.log_type}] Activated parser extension {parser_type_info}."
+                                )
+                            else:
+                                LOGGER.warning(
+                                    f"[{config.log_type}] Validated extension content mismatch. Skipping."
+                                )
+                            break  # Assume only one valid release candidate
         return activated_count
 
     def generate_events(self, target_log_type: str = None):
@@ -274,6 +372,19 @@ class ParserManager:
                 )
                 continue
 
+            # For PREBUILT parsers, ensure we have the parser content
+            parser_code = config.parser
+            if config.parser_type == PARSER_TYPE_PREBUILT and not parser_code:
+                LOGGER.info(
+                    f"[{config.log_type}] Fetching PREBUILT parser for event generation..."
+                )
+                parser_code = self._get_any_prebuilt_parser(config.log_type)
+                if not parser_code:
+                    LOGGER.error(
+                        f"[{config.log_type}] Cannot generate events: No PREBUILT parser found in SecOps."
+                    )
+                    continue
+
             os.makedirs(events_path, exist_ok=True)
             for log_filename in sorted(os.listdir(logs_path)):
                 log_filepath = os.path.join(logs_path, log_filename)
@@ -284,7 +395,7 @@ class ParserManager:
 
                 response = self.client.run_parser(
                     log_type=config.log_type,
-                    parser_code=config.parser,
+                    parser_code=parser_code,
                     parser_extension_code=config.parser_ext,
                     logs=raw_logs)
                 events = [
@@ -336,11 +447,20 @@ class ParserManager:
         if not all_raw_logs:
             return  # Nothing to validate
 
+        # For PREBUILT parsers, ensure we have the parser content
+        parser_code = config.parser
+        if config.parser_type == PARSER_TYPE_PREBUILT and not parser_code:
+            parser_code = self._get_any_prebuilt_parser(config.log_type)
+            if not parser_code:
+                raise ValidationError(
+                    f"Cannot validate: No PREBUILT parser found in SecOps for '{config.log_type}'."
+                )
+
         # Run parser and get generated events
         response = self.client.run_parser(
             config.log_type,
             logs=all_raw_logs,
-            parser_code=config.parser,
+            parser_code=parser_code,
             parser_extension_code=config.parser_ext)
         generated_events = [
             res.get("parsedEvents", [])
