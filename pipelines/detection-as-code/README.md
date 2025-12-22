@@ -201,7 +201,7 @@ module "test" {
   secops_project_id  = var.project_id
   secops_region      = "eu"
 }
-# tftest modules=1 resources=5 files=rule,config
+# tftest modules=1 resources=4 files=rule,config
 ```
 
 ```
