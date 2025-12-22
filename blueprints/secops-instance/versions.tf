@@ -18,7 +18,7 @@ terraform {
   required_providers {
     restful = {
       source  = "magodo/restful"
-      version = "= 0.21.0"
+      version = "0.25.1"
     }
   }
 }
