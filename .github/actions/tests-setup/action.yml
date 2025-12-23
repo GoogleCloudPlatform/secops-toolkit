@@ -30,7 +30,7 @@ runs:
         echo '{"type": "service_account", "project_id": "test-only"}' \
           | tee -a $GOOGLE_APPLICATION_CREDENTIALS
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ inputs.PYTHON_VERSION }}
         cache: 'pip'
