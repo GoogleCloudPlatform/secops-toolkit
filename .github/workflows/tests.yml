@@ -64,7 +64,7 @@ jobs:
           - flavour: tofu
             version: "${{ needs.compute-matrix.outputs.DEFAULT_TOFU_VERSION }}"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: hashicorp/setup-terraform@v3
         if: ${{ matrix.flavour == 'terraform' }}
@@ -120,7 +120,7 @@ jobs:
             version: "${{ needs.compute-matrix.outputs.DEFAULT_TOFU_VERSION }}"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Call composite action tests-setup
         uses: ./.github/actions/tests-setup

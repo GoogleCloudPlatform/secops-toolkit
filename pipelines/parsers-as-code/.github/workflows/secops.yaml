@@ -43,7 +43,7 @@ jobs:
     steps:
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       # set up authentication via Workload identity Federation and gcloud
 
