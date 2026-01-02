@@ -57,7 +57,7 @@ jobs:
 
       - id: gcp-sdk
         name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
         with:
           install_components: alpha
 
@@ -65,7 +65,7 @@ jobs:
         name: Install Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.10'
+          python-version: '3.14'
 
       - id: install-dependencies
         name: Install Dependencies
@@ -98,7 +98,7 @@ jobs:
       - id: pr-comment
         name: Post comment to Pull Request
         continue-on-error: true
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         if: github.event_name == 'pull_request' && steps.verify-deploy-parsers.outcome == 'success'
         with:
           script: |
