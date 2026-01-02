@@ -70,7 +70,7 @@ jobs:
 
       - id: gcp-sdk
         name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
         with:
           install_components: alpha
 
@@ -94,7 +94,7 @@ jobs:
 
       - id: tf-setup
         name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2.0.3
+        uses: hashicorp/setup-terraform@v3.1.2
         with:
           terraform_version: ${{env.TF_VERSION}}
 
