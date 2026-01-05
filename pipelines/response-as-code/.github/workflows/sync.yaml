@@ -33,7 +33,7 @@ env:
 jobs:
   sync-playbooks:
     runs-on: ubuntu-latest
-    container: python:3.11
+    container: python:3.14
     # Condition to run only on push to the default branch
     if: github.event.pull_request.merged == true
 
@@ -42,7 +42,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |

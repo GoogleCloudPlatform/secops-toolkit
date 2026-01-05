@@ -64,7 +64,7 @@ jobs:
           - flavour: tofu
             version: "${{ needs.compute-matrix.outputs.DEFAULT_TOFU_VERSION }}"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: hashicorp/setup-terraform@v3
         if: ${{ matrix.flavour == 'terraform' }}
@@ -93,13 +93,13 @@ jobs:
           ${{ matrix.flavour }} init
 
       - name: Upload Terraform provider cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.TF_PLUGIN_CACHE_DIR }}
           key: ${{ runner.os }}-${{ matrix.flavour }}-${{ matrix.version }}-${{ hashFiles('tools/lockfile/.terraform.lock.hcl') }}
 
       - name: Upload lockfile
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: lockfile-${{ runner.os }}-${{ matrix.flavour }}-${{ matrix.version }}
           path: tools/lockfile/.terraform.lock.hcl
@@ -120,7 +120,7 @@ jobs:
             version: "${{ needs.compute-matrix.outputs.DEFAULT_TOFU_VERSION }}"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Call composite action tests-setup
         uses: ./.github/actions/tests-setup

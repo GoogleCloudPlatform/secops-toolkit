@@ -30,11 +30,11 @@ env:
 jobs:
   pull-playbooks:
     runs-on: ubuntu-latest
-    container: python:3.11
+    container: python:3.14
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |
