@@ -13,7 +13,7 @@
 # limitations under the License.
 
 values:
-  module.chronicle-forwarder-deployment.kubernetes_deployment.cfps["tenant-1"]:
+  module.test.module.chronicle-forwarder-deployment.kubernetes_deployment.cfps["tenant-1"]:
     metadata:
       - annotations: null
         generate_name: null
@@ -158,7 +158,7 @@ values:
                     vsphere_volume: []
     timeouts: null
     wait_for_rollout: true
-  module.chronicle-forwarder-deployment.kubernetes_deployment.cfps["tenant-2"]:
+  module.test.module.chronicle-forwarder-deployment.kubernetes_deployment.cfps["tenant-2"]:
     metadata:
       - annotations: null
         generate_name: null
@@ -303,7 +303,7 @@ values:
                     vsphere_volume: []
     timeouts: null
     wait_for_rollout: true
-  module.chronicle-forwarder-deployment.kubernetes_horizontal_pod_autoscaler_v2.cfps["tenant-1"]:
+  module.test.module.chronicle-forwarder-deployment.kubernetes_horizontal_pod_autoscaler_v2.cfps["tenant-1"]:
     metadata:
       - annotations: null
         generate_name: null
@@ -330,7 +330,7 @@ values:
           - api_version: null
             kind: Deployment
             name: cfps-tenant-1
-  module.chronicle-forwarder-deployment.kubernetes_horizontal_pod_autoscaler_v2.cfps["tenant-2"]:
+  module.test.module.chronicle-forwarder-deployment.kubernetes_horizontal_pod_autoscaler_v2.cfps["tenant-2"]:
     metadata:
       - annotations: null
         generate_name: null
@@ -357,7 +357,7 @@ values:
           - api_version: null
             kind: Deployment
             name: cfps-tenant-2
-  module.chronicle-forwarder-deployment.kubernetes_namespace.namespace["tenant-1"]:
+  module.test.module.chronicle-forwarder-deployment.kubernetes_namespace.namespace["tenant-1"]:
     metadata:
       - annotations: null
         generate_name: null
@@ -365,7 +365,7 @@ values:
         name: ten-1
     timeouts: null
     wait_for_default_service_account: false
-  module.chronicle-forwarder-deployment.kubernetes_namespace.namespace["tenant-2"]:
+  module.test.module.chronicle-forwarder-deployment.kubernetes_namespace.namespace["tenant-2"]:
     metadata:
       - annotations: null
         generate_name: null
@@ -373,21 +373,22 @@ values:
         name: tenant-2
     timeouts: null
     wait_for_default_service_account: false
-  module.chronicle-forwarder-deployment.kubernetes_secret.secret_config["tenant-1"]:
+  module.test.module.chronicle-forwarder-deployment.kubernetes_secret.secret_config["tenant-1"]:
     binary_data: null
     binary_data_wo: null
     binary_data_wo_revision: null
     data:
-      config.conf: "      output:\n  url: malachiteingestion-pa.googleapis.com:443\n\
-        \  identity:\n    identity:\n    collector_id: COLLECTOR_ID \\\n    customer_id:\
-        \ CUSTOMER_ID \\\n\ncollectors:\n  - syslog:\n      common:\n        enabled:\
-        \ true\n        data_type: \"WINDOWS_DHCP\"\n        data_hint:\n        batch_n_seconds:\
-        \ 10\n        batch_n_bytes: 1048576\n      tcp_address: 0.0.0.0:10514\n \
-        \     udp_address: 0.0.0.0:10514\n      connection_timeout_sec: 60\n     \
-        \ tcp_buffer_size: 524288\n  - syslog:\n      common:\n        enabled: true\n\
-        \        data_type: \"WINDOWS_DNS\"\n        data_hint:\n        batch_n_seconds:\
-        \ 10\n        batch_n_bytes: 1048576\n      tcp_address: 0.0.0.0:10515\n \
-        \     connection_timeout_sec: 60\n      tcp_buffer_size: 524288\n"
+      config.conf: "# tftest-file id=config path=data/config.yaml\noutput:\n  url:\
+        \ malachiteingestion-pa.googleapis.com:443\n  identity:\n    identity:\n \
+        \   collector_id: COLLECTOR_ID \\\n    customer_id: CUSTOMER_ID \\\n\ncollectors:\n\
+        \  - syslog:\n      common:\n        enabled: true\n        data_type: \"\
+        WINDOWS_DHCP\"\n        data_hint:\n        batch_n_seconds: 10\n        batch_n_bytes:\
+        \ 1048576\n      tcp_address: 0.0.0.0:10514\n      udp_address: 0.0.0.0:10514\n\
+        \      connection_timeout_sec: 60\n      tcp_buffer_size: 524288\n  - syslog:\n\
+        \      common:\n        enabled: true\n        data_type: \"WINDOWS_DNS\"\n\
+        \        data_hint:\n        batch_n_seconds: 10\n        batch_n_bytes: 1048576\n\
+        \      tcp_address: 0.0.0.0:10515\n      connection_timeout_sec: 60\n    \
+        \  tcp_buffer_size: 524288\n"
     data_wo: null
     data_wo_revision: null
     immutable: null
@@ -400,7 +401,7 @@ values:
     timeouts: null
     type: Opaque
     wait_for_service_account_token: true
-  module.chronicle-forwarder-deployment.kubernetes_secret.secret_config["tenant-2"]:
+  module.test.module.chronicle-forwarder-deployment.kubernetes_secret.secret_config["tenant-2"]:
     binary_data: null
     binary_data_wo: null
     binary_data_wo_revision: null
@@ -413,10 +414,11 @@ values:
         \ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See\
         \ the License for the specific language governing permissions and\n# limitations\
         \ under the License.\n\noutput:\n  compression: true\n  url: europe-malachiteingestion-pa.googleapis.com:443\n\
-        \  identity:\n    secret_key: |\n            {\n      \"type\": \"service_account\"\
-        ,\n      \"project_id\": \"xxxx\",\n      \"private_key_id\": \"xxxxxxxxxxxxxx\"\
-        ,\n      \"private_key\": \"-----BEGIN PRIVATE KEY-----\\nsdcCDSCsLxhfQIOwdvzCn5wcwJ7xVA=\\\
-        n-----END PRIVATE KEY-----\\n\",\n      \"client_email\": \"sample@sample.iam.gserviceaccount.com\"\
+        \  identity:\n    secret_key: |\n      # tftest-file id=credentials path=data/secret_key.json\n\
+        \      {\n      \"type\": \"service_account\",\n      \"project_id\": \"xxxx\"\
+        ,\n      \"private_key_id\": \"xxxxxxxxxxxxxx\",\n      \"private_key\": \"\
+        -----BEGIN PRIVATE KEY-----\\nsdcCDSCsLxhfQIOwdvzCn5wcwJ7xVA=\\n-----END PRIVATE\
+        \ KEY-----\\n\",\n      \"client_email\": \"sample@sample.iam.gserviceaccount.com\"\
         ,\n      \"client_id\": \"ASDCVSACSA\",\n      \"auth_uri\": \"https://accounts.google.com/o/oauth2/auth\"\
         ,\n      \"token_uri\": \"https://oauth2.googleapis.com/token\",\n      \"\
         auth_provider_x509_cert_url\": \"https://www.googleapis.com/oauth2/v1/certs\"\
@@ -465,7 +467,7 @@ values:
     timeouts: null
     type: Opaque
     wait_for_service_account_token: true
-  module.chronicle-forwarder-deployment.kubernetes_service.service_tcp["tenant-1"]:
+  module.test.module.chronicle-forwarder-deployment.kubernetes_service.service_tcp["tenant-1"]:
     metadata:
       - annotations:
           networking.gke.io/load-balancer-type: Internal
@@ -534,7 +536,7 @@ values:
     timeouts:
       create: 5m
     wait_for_load_balancer: true
-  module.chronicle-forwarder-deployment.kubernetes_service.service_tcp["tenant-2"]:
+  module.test.module.chronicle-forwarder-deployment.kubernetes_service.service_tcp["tenant-2"]:
     metadata:
       - annotations:
           networking.gke.io/load-balancer-type: Internal
@@ -603,7 +605,7 @@ values:
     timeouts:
       create: 5m
     wait_for_load_balancer: true
-  module.chronicle-forwarder-deployment.kubernetes_service.service_udp["tenant-1"]:
+  module.test.module.chronicle-forwarder-deployment.kubernetes_service.service_udp["tenant-1"]:
     metadata:
       - annotations:
           networking.gke.io/load-balancer-type: Internal
@@ -666,7 +668,7 @@ values:
         type: LoadBalancer
     timeouts: null
     wait_for_load_balancer: true
-  module.chronicle-forwarder-deployment.kubernetes_service.service_udp["tenant-2"]:
+  module.test.module.chronicle-forwarder-deployment.kubernetes_service.service_udp["tenant-2"]:
     metadata:
       - annotations:
           networking.gke.io/load-balancer-type: Internal
@@ -729,7 +731,7 @@ values:
         type: LoadBalancer
     timeouts: null
     wait_for_load_balancer: true
-  module.chronicle-forwarder.google_container_cluster.cluster:
+  module.test.module.chronicle-forwarder.google_container_cluster.cluster:
     addons_config:
       - cloudrun_config:
           - disabled: true
@@ -859,7 +861,7 @@ values:
       goog-terraform-provisioned: 'true'
     timeouts: null
     user_managed_keys_config: []
-  module.fleet.google_gke_hub_membership.default["chronicle-log-ingestion"]:
+  module.test.module.fleet.google_gke_hub_membership.default["chronicle-log-ingestion"]:
     authority: []
     effective_labels:
       goog-terraform-provisioned: 'true'
@@ -873,7 +875,9 @@ values:
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
-  module.project.google_project.project[0]:
+  module.test.module.project.data.google_logging_project_settings.logging_sa[0]:
+    project: tmp-test
+  module.test.module.project.google_project.project[0]:
     auto_create_network: false
     billing_account: 12345-ABCDEF-12345
     deletion_policy: DELETE
@@ -888,109 +892,109 @@ values:
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
-  module.project.google_project_iam_member.service_agents["anthossupport"]:
+  module.test.module.project.google_project_iam_member.service_agents["anthossupport"]:
     condition: []
     project: tmp-test
     role: roles/anthossupport.serviceAgent
-  module.project.google_project_iam_member.service_agents["chronicle"]:
+  module.test.module.project.google_project_iam_member.service_agents["chronicle"]:
     condition: []
     project: tmp-test
     role: roles/chronicle.serviceAgent
-  module.project.google_project_iam_member.service_agents["compute-system"]:
+  module.test.module.project.google_project_iam_member.service_agents["compute-system"]:
     condition: []
     project: tmp-test
     role: roles/compute.serviceAgent
-  module.project.google_project_iam_member.service_agents["container-engine-robot"]:
+  module.test.module.project.google_project_iam_member.service_agents["container-engine-robot"]:
     condition: []
     project: tmp-test
     role: roles/container.serviceAgent
-  module.project.google_project_iam_member.service_agents["gkehub"]:
+  module.test.module.project.google_project_iam_member.service_agents["gkehub"]:
     condition: []
     project: tmp-test
     role: roles/gkehub.serviceAgent
-  module.project.google_project_iam_member.service_agents["gkenode"]:
+  module.test.module.project.google_project_iam_member.service_agents["gkenode"]:
     condition: []
     project: tmp-test
     role: roles/container.defaultNodeServiceAgent
-  module.project.google_project_iam_member.service_agents["monitoring-notification"]:
+  module.test.module.project.google_project_iam_member.service_agents["monitoring-notification"]:
     condition: []
     project: tmp-test
     role: roles/monitoring.notificationServiceAgent
-  module.project.google_project_service.project_services["chronicle.googleapis.com"]:
+  module.test.module.project.google_project_service.project_services["chronicle.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: chronicle.googleapis.com
     timeouts: null
-  module.project.google_project_service.project_services["compute.googleapis.com"]:
+  module.test.module.project.google_project_service.project_services["compute.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: compute.googleapis.com
     timeouts: null
-  module.project.google_project_service.project_services["connectgateway.googleapis.com"]:
+  module.test.module.project.google_project_service.project_services["connectgateway.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: connectgateway.googleapis.com
     timeouts: null
-  module.project.google_project_service.project_services["container.googleapis.com"]:
+  module.test.module.project.google_project_service.project_services["container.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: container.googleapis.com
     timeouts: null
-  module.project.google_project_service.project_services["gkeconnect.googleapis.com"]:
+  module.test.module.project.google_project_service.project_services["gkeconnect.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: gkeconnect.googleapis.com
     timeouts: null
-  module.project.google_project_service.project_services["gkehub.googleapis.com"]:
+  module.test.module.project.google_project_service.project_services["gkehub.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: gkehub.googleapis.com
     timeouts: null
-  module.project.google_project_service.project_services["iap.googleapis.com"]:
+  module.test.module.project.google_project_service.project_services["iap.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: iap.googleapis.com
     timeouts: null
-  module.project.google_project_service.project_services["logging.googleapis.com"]:
+  module.test.module.project.google_project_service.project_services["logging.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: logging.googleapis.com
     timeouts: null
-  module.project.google_project_service.project_services["monitoring.googleapis.com"]:
+  module.test.module.project.google_project_service.project_services["monitoring.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: monitoring.googleapis.com
     timeouts: null
-  module.project.google_project_service_identity.default["chronicle.googleapis.com"]:
+  module.test.module.project.google_project_service_identity.default["chronicle.googleapis.com"]:
     project: tmp-test
     service: chronicle.googleapis.com
     timeouts: null
-  module.project.google_project_service_identity.default["connectgateway.googleapis.com"]:
+  module.test.module.project.google_project_service_identity.default["connectgateway.googleapis.com"]:
     project: tmp-test
     service: connectgateway.googleapis.com
     timeouts: null
-  module.project.google_project_service_identity.default["container.googleapis.com"]:
+  module.test.module.project.google_project_service_identity.default["container.googleapis.com"]:
     project: tmp-test
     service: container.googleapis.com
     timeouts: null
-  module.project.google_project_service_identity.default["gkehub.googleapis.com"]:
+  module.test.module.project.google_project_service_identity.default["gkehub.googleapis.com"]:
     project: tmp-test
     service: gkehub.googleapis.com
     timeouts: null
-  module.project.google_project_service_identity.default["iap.googleapis.com"]:
+  module.test.module.project.google_project_service_identity.default["iap.googleapis.com"]:
     project: tmp-test
     service: iap.googleapis.com
     timeouts: null
-  module.project.google_project_service_identity.default["monitoring.googleapis.com"]:
+  module.test.module.project.google_project_service_identity.default["monitoring.googleapis.com"]:
     project: tmp-test
     service: monitoring.googleapis.com
     timeouts: null
@@ -998,6 +1002,7 @@ values:
 counts:
   google_container_cluster: 1
   google_gke_hub_membership: 1
+  google_logging_project_settings: 1
   google_project: 1
   google_project_iam_member: 7
   google_project_service: 9
@@ -1007,8 +1012,7 @@ counts:
   kubernetes_namespace: 2
   kubernetes_secret: 2
   kubernetes_service: 4
-  modules: 4
-  resources: 37
+  modules: 5
+  resources: 38
 
-outputs:
-  fleet_host: __missing__
+outputs: {}
