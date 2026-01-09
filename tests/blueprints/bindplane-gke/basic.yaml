@@ -11,8 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 values:
-  module.bindplane-gke.helm_release.bindplane:
+  helm_release.bindplane:
     atomic: false
     chart: bindplane
     cleanup_on_fail: false
@@ -61,7 +62,7 @@ values:
     version: 1.32.6
     wait: true
     wait_for_jobs: false
-  module.bindplane-gke.module.addresses.google_compute_address.internal["ingress"]:
+  module.addresses.google_compute_address.internal["ingress"]:
     address_type: INTERNAL
     description: Terraform managed.
     effective_labels:
@@ -78,7 +79,7 @@ values:
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
-  module.bindplane-gke.module.addresses.google_compute_address.psc["postgresql"]:
+  module.addresses.google_compute_address.psc["postgresql"]:
     address_type: INTERNAL
     description: Terraform managed.
     effective_labels:
@@ -94,7 +95,7 @@ values:
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
-  module.bindplane-gke.module.addresses.google_compute_forwarding_rule.psc_consumer["postgresql"]:
+  module.addresses.google_compute_forwarding_rule.psc_consumer["postgresql"]:
     all_ports: null
     allow_global_access: null
     allow_psc_global_access: true
@@ -114,7 +115,7 @@ values:
     source_ip_ranges: null
     subnetwork: https://www.googleapis.com/compute/v1/projects/prod-net-landing-0/regions/europe-west1/subnetworks/gke
     timeouts: null
-  module.bindplane-gke.module.bindplane-cluster.google_container_cluster.cluster:
+  module.bindplane-cluster.google_container_cluster.cluster:
     addons_config:
       - cloudrun_config:
           - disabled: true
@@ -246,7 +247,7 @@ values:
       goog-terraform-provisioned: 'true'
     timeouts: null
     user_managed_keys_config: []
-  module.bindplane-gke.module.bindplane-deployment.kubernetes_namespace.namespace:
+  module.bindplane-deployment.kubernetes_namespace.namespace:
     metadata:
       - annotations: null
         generate_name: null
@@ -254,7 +255,7 @@ values:
         name: bindplane
     timeouts: null
     wait_for_default_service_account: false
-  module.bindplane-gke.module.bindplane-deployment.kubernetes_secret.bindplane_secret:
+  module.bindplane-deployment.kubernetes_secret.bindplane_secret:
     binary_data: null
     binary_data_wo: null
     binary_data_wo_revision: null
@@ -275,7 +276,7 @@ values:
     timeouts: null
     type: Opaque
     wait_for_service_account_token: true
-  module.bindplane-gke.module.bindplane-deployment.kubernetes_secret.tls:
+  module.bindplane-deployment.kubernetes_secret.tls:
     binary_data: null
     binary_data_wo: null
     binary_data_wo_revision: null
@@ -291,11 +292,11 @@ values:
     timeouts: null
     type: kubernetes.io/tls
     wait_for_service_account_token: true
-  module.bindplane-gke.module.bindplane-sa.google_project_iam_member.project-roles["tmp-test-roles/pubsub.editor"]:
+  module.bindplane-sa.google_project_iam_member.project-roles["tmp-test-roles/pubsub.editor"]:
     condition: []
     project: tmp-test
     role: roles/pubsub.editor
-  module.bindplane-gke.module.bindplane-sa.google_service_account.service_account[0]:
+  module.bindplane-sa.google_service_account.service_account[0]:
     account_id: bindplane
     create_ignore_already_exists: null
     description: null
@@ -305,18 +306,18 @@ values:
     member: serviceAccount:bindplane@tmp-test.iam.gserviceaccount.com
     project: tmp-test
     timeouts: null
-  ? module.bindplane-gke.module.bindplane-sa.google_service_account_iam_binding.authoritative["roles/iam.workloadIdentityUser"]
-    : condition: []
-      members:
-        - serviceAccount:tmp-test.svc.id.goog[bindplane/bindplane]
-      role: roles/iam.workloadIdentityUser
-  module.bindplane-gke.module.db.google_sql_database.databases["bindplane"]:
+  module.bindplane-sa.google_service_account_iam_binding.authoritative["roles/iam.workloadIdentityUser"]:
+    condition: []
+    members:
+      - serviceAccount:tmp-test.svc.id.goog[bindplane/bindplane]
+    role: roles/iam.workloadIdentityUser
+  module.db.google_sql_database.databases["bindplane"]:
     deletion_policy: DELETE
     instance: tmp-bindplane
     name: bindplane
     project: tmp-test
     timeouts: null
-  module.bindplane-gke.module.db.google_sql_database_instance.primary:
+  module.db.google_sql_database_instance.primary:
     backupdr_backup: null
     clone: []
     database_version: POSTGRES_13
@@ -368,7 +369,7 @@ values:
         tier: db-g1-small
         time_zone: null
     timeouts: null
-  module.bindplane-gke.module.db.google_sql_user.users["bindplane"]:
+  module.db.google_sql_user.users["bindplane"]:
     deletion_policy: null
     instance: tmp-bindplane
     name: bindplane
@@ -378,7 +379,7 @@ values:
     project: tmp-test
     timeouts: null
     type: null
-  module.bindplane-gke.module.db.random_password.passwords["bindplane"]:
+  module.db.random_password.passwords["bindplane"]:
     keepers: null
     length: 16
     lower: true
@@ -391,7 +392,7 @@ values:
     override_special: null
     special: true
     upper: true
-  module.bindplane-gke.module.dns[0].google_dns_managed_zone.dns_managed_zone[0]:
+  module.dns[0].google_dns_managed_zone.dns_managed_zone[0]:
     cloud_logging_config:
       - enable_logging: false
     description: Terraform managed.
@@ -414,14 +415,14 @@ values:
       goog-terraform-provisioned: 'true'
     timeouts: null
     visibility: private
-  module.bindplane-gke.module.dns[0].google_dns_record_set.dns_record_set["A bindplane"]:
+  module.dns[0].google_dns_record_set.dns_record_set["A bindplane"]:
     managed_zone: bindplane
     name: bindplane.example.com.
     project: tmp-test
     routing_policy: []
     ttl: 600
     type: A
-  module.bindplane-gke.module.fleet.google_gke_hub_membership.default["bindplane"]:
+  module.fleet.google_gke_hub_membership.default["bindplane"]:
     authority: []
     effective_labels:
       goog-terraform-provisioned: 'true'
@@ -435,9 +436,9 @@ values:
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
-  module.bindplane-gke.module.project.data.google_logging_project_settings.logging_sa[0]:
+  module.project.data.google_logging_project_settings.logging_sa[0]:
     project: tmp-test
-  module.bindplane-gke.module.project.google_project.project[0]:
+  module.project.google_project.project[0]:
     auto_create_network: false
     billing_account: 12345-ABCDEF-12345
     deletion_policy: DELETE
@@ -452,117 +453,117 @@ values:
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
-  module.bindplane-gke.module.project.google_project_iam_binding.authoritative["roles/pubsub.editor"]:
+  module.project.google_project_iam_binding.authoritative["roles/pubsub.editor"]:
     condition: []
     project: tmp-test
     role: roles/pubsub.editor
-  module.bindplane-gke.module.project.google_project_iam_member.service_agents["anthossupport"]:
+  module.project.google_project_iam_member.service_agents["anthossupport"]:
     condition: []
     project: tmp-test
     role: roles/anthossupport.serviceAgent
-  module.bindplane-gke.module.project.google_project_iam_member.service_agents["chronicle"]:
+  module.project.google_project_iam_member.service_agents["chronicle"]:
     condition: []
     project: tmp-test
     role: roles/chronicle.serviceAgent
-  module.bindplane-gke.module.project.google_project_iam_member.service_agents["compute-system"]:
+  module.project.google_project_iam_member.service_agents["compute-system"]:
     condition: []
     project: tmp-test
     role: roles/compute.serviceAgent
-  module.bindplane-gke.module.project.google_project_iam_member.service_agents["container-engine-robot"]:
+  module.project.google_project_iam_member.service_agents["container-engine-robot"]:
     condition: []
     project: tmp-test
     role: roles/container.serviceAgent
-  module.bindplane-gke.module.project.google_project_iam_member.service_agents["gkehub"]:
+  module.project.google_project_iam_member.service_agents["gkehub"]:
     condition: []
     project: tmp-test
     role: roles/gkehub.serviceAgent
-  module.bindplane-gke.module.project.google_project_iam_member.service_agents["gkenode"]:
+  module.project.google_project_iam_member.service_agents["gkenode"]:
     condition: []
     project: tmp-test
     role: roles/container.defaultNodeServiceAgent
-  module.bindplane-gke.module.project.google_project_iam_member.service_agents["monitoring-notification"]:
+  module.project.google_project_iam_member.service_agents["monitoring-notification"]:
     condition: []
     project: tmp-test
     role: roles/monitoring.notificationServiceAgent
-  module.bindplane-gke.module.project.google_project_service.project_services["chronicle.googleapis.com"]:
+  module.project.google_project_service.project_services["chronicle.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: chronicle.googleapis.com
     timeouts: null
-  module.bindplane-gke.module.project.google_project_service.project_services["compute.googleapis.com"]:
+  module.project.google_project_service.project_services["compute.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: compute.googleapis.com
     timeouts: null
-  module.bindplane-gke.module.project.google_project_service.project_services["connectgateway.googleapis.com"]:
+  module.project.google_project_service.project_services["connectgateway.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: connectgateway.googleapis.com
     timeouts: null
-  module.bindplane-gke.module.project.google_project_service.project_services["container.googleapis.com"]:
+  module.project.google_project_service.project_services["container.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: container.googleapis.com
     timeouts: null
-  module.bindplane-gke.module.project.google_project_service.project_services["gkeconnect.googleapis.com"]:
+  module.project.google_project_service.project_services["gkeconnect.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: gkeconnect.googleapis.com
     timeouts: null
-  module.bindplane-gke.module.project.google_project_service.project_services["gkehub.googleapis.com"]:
+  module.project.google_project_service.project_services["gkehub.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: gkehub.googleapis.com
     timeouts: null
-  module.bindplane-gke.module.project.google_project_service.project_services["iap.googleapis.com"]:
+  module.project.google_project_service.project_services["iap.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: iap.googleapis.com
     timeouts: null
-  module.bindplane-gke.module.project.google_project_service.project_services["logging.googleapis.com"]:
+  module.project.google_project_service.project_services["logging.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: logging.googleapis.com
     timeouts: null
-  module.bindplane-gke.module.project.google_project_service.project_services["monitoring.googleapis.com"]:
+  module.project.google_project_service.project_services["monitoring.googleapis.com"]:
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: monitoring.googleapis.com
     timeouts: null
-  module.bindplane-gke.module.project.google_project_service_identity.default["chronicle.googleapis.com"]:
+  module.project.google_project_service_identity.default["chronicle.googleapis.com"]:
     project: tmp-test
     service: chronicle.googleapis.com
     timeouts: null
-  module.bindplane-gke.module.project.google_project_service_identity.default["connectgateway.googleapis.com"]:
+  module.project.google_project_service_identity.default["connectgateway.googleapis.com"]:
     project: tmp-test
     service: connectgateway.googleapis.com
     timeouts: null
-  module.bindplane-gke.module.project.google_project_service_identity.default["container.googleapis.com"]:
+  module.project.google_project_service_identity.default["container.googleapis.com"]:
     project: tmp-test
     service: container.googleapis.com
     timeouts: null
-  module.bindplane-gke.module.project.google_project_service_identity.default["gkehub.googleapis.com"]:
+  module.project.google_project_service_identity.default["gkehub.googleapis.com"]:
     project: tmp-test
     service: gkehub.googleapis.com
     timeouts: null
-  module.bindplane-gke.module.project.google_project_service_identity.default["iap.googleapis.com"]:
+  module.project.google_project_service_identity.default["iap.googleapis.com"]:
     project: tmp-test
     service: iap.googleapis.com
     timeouts: null
-  module.bindplane-gke.module.project.google_project_service_identity.default["monitoring.googleapis.com"]:
+  module.project.google_project_service_identity.default["monitoring.googleapis.com"]:
     project: tmp-test
     service: monitoring.googleapis.com
     timeouts: null
-  module.bindplane-gke.module.pubsub.google_pubsub_topic.default:
+  module.pubsub.google_pubsub_topic.default:
     effective_labels:
       goog-terraform-provisioned: 'true'
     ingestion_data_source_settings: []
@@ -577,7 +578,7 @@ values:
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
-  module.bindplane-gke.tls_cert_request.server_csr[0]:
+  tls_cert_request.server_csr[0]:
     dns_names:
       - bindplane.example.com
     ip_addresses: null
@@ -593,7 +594,7 @@ values:
         serial_number: null
         street_address: null
     uris: null
-  module.bindplane-gke.tls_locally_signed_cert.server_singed_cert[0]:
+  tls_locally_signed_cert.server_singed_cert[0]:
     allowed_uses:
       - digital_signature
       - key_encipherment
@@ -604,15 +605,15 @@ values:
     ready_for_renewal: false
     set_subject_key_id: false
     validity_period_hours: 87600
-  module.bindplane-gke.tls_private_key.ca_private_key[0]:
+  tls_private_key.ca_private_key[0]:
     algorithm: RSA
     ecdsa_curve: P224
     rsa_bits: 2048
-  module.bindplane-gke.tls_private_key.server_key[0]:
+  tls_private_key.server_key[0]:
     algorithm: RSA
     ecdsa_curve: P224
     rsa_bits: 2048
-  module.bindplane-gke.tls_self_signed_cert.ca_cert[0]:
+  tls_self_signed_cert.ca_cert[0]:
     allowed_uses:
       - digital_signature
       - cert_signing
@@ -660,7 +661,7 @@ counts:
   helm_release: 1
   kubernetes_namespace: 1
   kubernetes_secret: 2
-  modules: 10
+  modules: 9
   random_password: 1
   resources: 49
   tls_cert_request: 1
@@ -668,4 +669,9 @@ counts:
   tls_private_key: 2
   tls_self_signed_cert: 1
 
-outputs: {}
+outputs:
+  bindplane_hostname: https://bindplane.example.com
+  ca_cert: __missing__
+  cluster_ca_certificate: __missing__
+  fleet_host: __missing__
+  lb_ip_address: __missing__

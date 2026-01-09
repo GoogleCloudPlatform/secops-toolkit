@@ -723,7 +723,7 @@ values:
           - repo_source: []
             storage_source:
               - bucket: pre-gcp-project-id-anonymization
-                object: bundle-d1d24ae15a8d5aa1061224538ac43c72.zip
+                object: bundle-1e7d729431f30da733a368c853fc045c.zip
         worker_pool: null
     description: Terraform managed.
     effective_labels:
@@ -739,6 +739,7 @@ values:
         available_cpu: '1'
         available_memory: 2048M
         binary_authorization_policy: null
+        direct_vpc_network_interface: []
         ingress_settings: ALLOW_INTERNAL_AND_GCLB
         max_instance_count: 1
         min_instance_count: 0
@@ -823,16 +824,17 @@ values:
     content_disposition: null
     content_encoding: null
     content_language: null
+    contexts: []
     customer_encryption: []
     deletion_policy: null
     detect_md5hash: null
     event_based_hold: null
     force_empty_content_type: null
     metadata: null
-    name: bundle-d1d24ae15a8d5aa1061224538ac43c72.zip
+    name: bundle-1e7d729431f30da733a368c853fc045c.zip
     retention: []
     source: /tmp/bundle-gcp-project-id-secops-anonymization.zip
-    source_md5hash: d1d24ae15a8d5aa1061224538ac43c72
+    source_md5hash: 1e7d729431f30da733a368c853fc045c
     temporary_hold: null
     timeouts: null
   module.project.google_project.project[0]:
