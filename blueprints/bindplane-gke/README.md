@@ -158,5 +158,5 @@ module "bindplane-gke" {
   region = "europe-west8"
   prefix = "tmp"
 }
-# tftest modules=10 resources=48
+# tftest modules=10 resources=49
 ```

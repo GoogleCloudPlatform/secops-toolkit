@@ -873,6 +873,8 @@ values:
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
+  module.project.data.google_logging_project_settings.logging_sa[0]:
+    project: tmp-test
   module.project.google_project.project[0]:
     auto_create_network: false
     billing_account: 12345-ABCDEF-12345
@@ -998,6 +1000,7 @@ values:
 counts:
   google_container_cluster: 1
   google_gke_hub_membership: 1
+  google_logging_project_settings: 1
   google_project: 1
   google_project_iam_member: 7
   google_project_service: 9
@@ -1008,7 +1011,7 @@ counts:
   kubernetes_secret: 2
   kubernetes_service: 4
   modules: 4
-  resources: 37
+  resources: 38
 
 outputs:
   fleet_host: __missing__
