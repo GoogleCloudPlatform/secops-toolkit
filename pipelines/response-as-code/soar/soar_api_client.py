@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 from urllib.parse import urljoin
 
 import requests
 from packaging import version
+from requests.exceptions import HTTPError
 
 VERSION_6117 = version.parse("6.1.17")
 VERSION_6138 = version.parse("6.1.38.77")
@@ -41,14 +44,34 @@ class BaseUrlSession(requests.Session):
 
 class SiemplifyApiClient:
 
-    def __init__(self, api_root, api_key=None, use_ssl=False):
+    def __init__(
+        self,
+        api_root,
+        api_key=None,
+        smp_username=None,
+        smp_password=None,
+        use_ssl=True,
+    ) -> None:
         self.api_root = f"{api_root}/external/v1/"
         self.api_key = api_key
         self.use_ssl = use_ssl
         self.session = BaseUrlSession(base_url=self.api_root)
+        self.smp_username = smp_username
+        self.smp_password = smp_password
         self.session.headers = {"AppKey": self.api_key}
         self.session.verify = use_ssl
         self._version = None
+        self._bearer_token = None
+        if smp_username and smp_password:
+            self._bearer_token = self.get_bearer_token(smp_password,
+                                                       smp_username)
+
+    def get_bearer_token(self, smp_password, smp_username):
+        payload = {"password": smp_password, "username": smp_username}
+        res = self.session.post("auth/login", json=payload)
+        self.validate_response(res)
+
+        return f"Bearer {res.text}"
 
     @property
     def system_version(self):
@@ -63,9 +86,7 @@ class SiemplifyApiClient:
             raise Exception(f"{e}: {response.content}")
 
     def test_connectivity(self):
-        if self.get_system_version():
-            return True
-        return False
+        return bool(self.get_system_version())
 
     def get_page_results(self, url):
         payload = {"searchTerm": "", "requestedPage": 0, "pageSize": 100}
@@ -81,13 +102,22 @@ class SiemplifyApiClient:
                 results.extend(res.json()["objectsList"])
         return results
 
+    def get_soc_roles(self):
+        return self.get_page_results("socroles/GetSocRoles")
+
     def get_system_version(self):
         res = self.session.get("settings/GetSystemVersion")
         self.validate_response(res)
-        return res.content.decode("utf-8").replace("\"", "")
+        return res.content.decode("utf-8").replace('"', "")
 
     def get_environment_names(self):
         return self.get_page_results("settings/GetEnvironmentNames")
+
+    def get_environment_group_names(self):
+        res = self.session.get("environment-groups")
+        self.validate_response(res)
+        result = [f"({group['name']})" for group in res.json()["groups"]]
+        return result
 
     def get_env_dynamic_parameters(self):
         res = self.session.get("settings/GetDynamicParameters")
@@ -110,13 +140,12 @@ class SiemplifyApiClient:
     def get_environments(self):
         return self.get_page_results("settings/GetEnvironments")
 
-    def get_soc_roles(self):
-        return self.get_page_results("socroles/GetSocRoles")
-
     def import_environment(self, env_payload):
-        res = self.session.post("settings/AddOrUpdateEnvironmentRecords",
-                                json=env_payload,
-                                verify=False)
+        res = self.session.post(
+            "settings/AddOrUpdateEnvironmentRecords",
+            json=env_payload,
+            verify=False,
+        )
         self.validate_response(res)
         return True
 
@@ -124,20 +153,23 @@ class SiemplifyApiClient:
         res = self.session.post("settings/addOrUpdateAPIKeyRecord",
                                 json=api_record)
         self.validate_response(res)
-        return
 
-    def install_integration(self,
-                            integration_id,
-                            integration_version,
-                            is_certified=True):
+    def install_integration(
+        self,
+        integration_id,
+        integration_version,
+        is_certified=True,
+    ):
         payload = {
             "name": integration_id,
             "identifier": integration_id,
             "version": integration_version,
-            "isCertified": is_certified
+            "isCertified": is_certified,
         }
         res = self.session.post(
-            "store/DownloadAndInstallIntegrationFromLocalStore", json=payload)
+            "store/DownloadAndInstallIntegrationFromLocalStore",
+            json=payload,
+        )
         self.validate_response(res)
         return True
 
@@ -164,13 +196,14 @@ class SiemplifyApiClient:
     def get_integrations_instances(self, env):
         res = self.session.post(
             "integrations/GetEnvironmentInstalledIntegrations",
-            json={"name": env})
+            json={"name": env},
+        )
         self.validate_response(res)
         return res.json()["instances"]
 
     def get_integration_instance_settings(self, instance_id):
         res = self.session.get(
-            f"integrations/GetIntegrationInstanceSettings/{instance_id}")
+            f"integrations/GetIntegrationInstanceSettings/{instance_id}", )
         self.validate_response(res)
         return res.json()
 
@@ -184,17 +217,18 @@ class SiemplifyApiClient:
     def save_integration_instance_settings(self, instance_identifier,
                                            settings):
         data = {"instanceIdentifier": instance_identifier, **settings}
-        res = self.session.post("store/SaveIntegrationConfigurationProperties",
-                                json=data)
+        res = self.session.post(
+            "store/SaveIntegrationConfigurationProperties",
+            json=data,
+        )
         try:
             res.raise_for_status()
         except requests.HTTPError as e:
             if res.json()["ErrorMessage"].endswith(
-                    "already exists, please choose a different instance name."
+                    "already exists, please choose a different instance name.",
             ):
                 return False
-            else:
-                raise e
+            raise e
         return True
 
     def get_ide_cards(self, include_staging=False):
@@ -257,18 +291,21 @@ class SiemplifyApiClient:
             "source": source,
             "product": product or "",
             "eventName": event_name,
-            "visualFamily": visual_family
+            "visualFamily": visual_family,
         }
         res = self.session.post(
             "ontology/AddOrUpdateProductToVisualizationFamilyRecord",
-            json=payload)
+            json=payload,
+        )
         self.validate_response(res)
         return True
 
     def get_playbooks(self):
         if self.system_version >= VERSION_6138:
             res = self.session.post(
-                "playbooks/GetWorkflowMenuCardsWithEnvFilter", json=[0, 1])
+                "playbooks/GetWorkflowMenuCardsWithEnvFilter",
+                json=[0, 1],
+            )
         else:
             res = self.session.post("playbooks/GetWorkflowMenuCards",
                                     json=[0, 1])
@@ -278,11 +315,11 @@ class SiemplifyApiClient:
     def get_playbook(self, identifier):
         if self.system_version >= VERSION_6138:
             res = self.session.get(
-                f"playbooks/GetWorkflowFullInfoWithEnvFilterByIdentifier/{identifier}"
+                f"playbooks/GetWorkflowFullInfoWithEnvFilterByIdentifier/{identifier}",
             )
         else:
             res = self.session.get(
-                f"playbooks/GetWorkflowFullInfoByIdentifier/{identifier}")
+                f"playbooks/GetWorkflowFullInfoByIdentifier/{identifier}", )
         self.validate_response(res)
         return res.json()
 
@@ -298,17 +335,26 @@ class SiemplifyApiClient:
         return res.content
 
     def save_playbook(self, playbook):
-        res = self.session.post("playbooks/SaveWorkflowDefinitions",
-                                json=playbook)
-        self.validate_response(res)
-        return res
+        original_headers = self.session.headers.copy()
+        try:
+            if self.smp_username and self._bearer_token:
+                self.session.headers = {"Authorization": self._bearer_token}
+            res = self.session.post("playbooks/SaveWorkflowDefinitions",
+                                    json=playbook)
+            self.validate_response(res)
+            return res
+
+        finally:
+            self.session.headers = original_headers
 
     def get_networks(self):
         return self.get_page_results("settings/GetNetworkDetails")
 
     def update_network(self, network):
-        res = self.session.post("settings/AddOrUpdateNetworkDetailsRecords",
-                                json=network)
+        res = self.session.post(
+            "settings/AddOrUpdateNetworkDetailsRecords",
+            json=network,
+        )
         try:
             res.raise_for_status()
         except requests.HTTPError:
@@ -336,8 +382,7 @@ class SiemplifyApiClient:
                 if connector["environment"] == env_name:
                     connectors.append(connector)
             return connectors
-        else:
-            return res.json()["installedConnectors"]
+        return res.json()["installedConnectors"]
 
     def update_connector(self, connector_data):
         res = self.session.post("connectors/AddOrUpdateConnector",
@@ -351,8 +396,10 @@ class SiemplifyApiClient:
         return res.json()
 
     def update_custom_list(self, tracking_list):
-        res = self.session.post("settings/AddorUpdateTrackingListRecords",
-                                json=tracking_list)
+        res = self.session.post(
+            "settings/AddorUpdateTrackingListRecords",
+            json=tracking_list,
+        )
         self.validate_response(res)
         return True
 
@@ -397,7 +444,7 @@ class SiemplifyApiClient:
         self.validate_response(res)
         return True
 
-    def get_blacklists(self):
+    def get_denylists(self):
         if self.system_version > VERSION_6117:
             return self.get_blocklists()
 
@@ -405,12 +452,12 @@ class SiemplifyApiClient:
         self.validate_response(res)
         return res.json()
 
-    def update_blacklist(self, blacklist):
+    def update_denylist(self, denylist):
         if self.system_version > VERSION_6117:
-            return self.update_blocklist(blacklist)
+            return self.update_blocklist(denylist)
 
         res = self.session.post("settings/AddOrUpdateModelBlackRecords",
-                                json=blacklist)
+                                json=denylist)
         self.validate_response(res)
         return res.content
 
@@ -470,7 +517,7 @@ class SiemplifyApiClient:
             "categoryState": 0,  # Empty
             "id": 0,
             "isDefaultCategory": False,
-            "name": name
+            "name": name,
         }
         res = self.session.post("playbooks/AddOrUpdatePlaybookCategory",
                                 json=req)
@@ -496,3 +543,68 @@ class SiemplifyApiClient:
         res = self.session.post("attackssimulator/ImportCustomCase", json=case)
         self.validate_response(res)
         return True
+
+    def get_integration_instance_name(
+        self,
+        chronicle_soar,
+        integration_name: str,
+        instance_id: str,
+        environments,
+    ) -> str | None:
+        """Gets the integration instance name.
+
+        Args:
+            integration_name (str): Integration name.
+            instance_id (str): Integration instance id.
+
+        Returns:
+            str: Returns display name of the integration instance.
+        """
+        res = get_integration_instance_details_by_id(
+            chronicle_soar=chronicle_soar,
+            integration_identifier=integration_name,
+            instance_id=instance_id,
+            environments=environments,
+        )
+        if res is None:
+            return None
+
+        return res.get("displayName") or res.get("instanceName")
+
+    def get_integration_instance_id_by_name(
+        self,
+        chronicle_soar,
+        integration_name: str,
+        environments,
+        display_name: str | None,
+        consider_404_to_none: bool = False,
+    ) -> str | None:
+        """Gets the integration instance id by name.
+
+        Args:
+            integration_name (str): Integration name.
+            display_name (str | None): Display name of the integration instance.
+            consider_404_to_none (bool, optional): If True, treats HTTP 404 errors as None
+
+        Returns:
+            str | None: Returns integration instance id.
+        """
+        if display_name is None:
+            return None
+
+        try:
+            res = get_integration_instance_details_by_name(
+                chronicle_soar=chronicle_soar,
+                integration_identifier=integration_name,
+                instance_display_name=display_name,
+                environments=environments)
+        except HTTPError as e:
+            if e.response and e.response.status_code == 404 and consider_404_to_none:
+                return None
+
+            raise
+
+        if res is None:
+            return None
+
+        return res.get("identifier")

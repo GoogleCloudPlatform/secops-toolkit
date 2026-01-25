@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 import json
 import stat
 import zipfile
 from io import BytesIO
-from tkinter.tix import Tree
-from typing import Any
-from soar.git_manager import Git
-from soar.local_folder_manager import LocalFolderManager
-from soar.soar_api_client import SiemplifyApiClient
-from soar.definitions import (
+from typing import TYPE_CHECKING, Any
+from .local_folder_manager import LocalFolderManager
+
+from .definitions import (
     Connector,
     File,
     Integration,
@@ -31,6 +31,10 @@ from soar.definitions import (
     VisualFamily,
     Workflow,
 )
+
+if TYPE_CHECKING:
+    from .GitManager import Git
+    from .SiemplifyApiClient import SiemplifyApiClient
 
 INTEGRATIONS_PATH = "Integrations"
 PLAYBOOKS_PATH = "Playbooks"
@@ -53,7 +57,7 @@ NETWORKS_FILE = f"{SETTINGS_PATH}/networks.json"
 DOMAINS_FILE = f"{SETTINGS_PATH}/domains.json"
 CUSTOM_LISTS_FILE = f"{SETTINGS_PATH}/customLists.json"
 EMAIL_TEMPLATES_FILE = f"{SETTINGS_PATH}/emailTemplates.json"
-BLACKLIST_FILE = f"{SETTINGS_PATH}/blacklists.json"
+DENYLIST_FILE = f"{SETTINGS_PATH}/blacklists.json"
 SLA_DEFINITIONS_FILE = f"{SETTINGS_PATH}/slaDefinitions.json"
 
 
@@ -91,13 +95,18 @@ class GitContentManager:
             integration_name: Integration name
 
         Returns: An Integration object, or None if the integration doesn't exist
+
         """
         try:
             zip_buffer = BytesIO()
-            with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED,
-                                 False) as zip_file:
-                for file in self.sync.get_file_objects_from_path(
-                        f"Integrations/{integration_name}"):
+            with zipfile.ZipFile(
+                    zip_buffer,
+                    "a",
+                    zipfile.ZIP_DEFLATED,
+                    False,
+            ) as zip_file:
+                for file in self.git.get_file_objects_from_path(
+                        f"Integrations/{integration_name}", ):
                     if file.path == f"Integration-{integration_name}.def":
                         definition = json.loads(file.content)
                     zip_file.writestr(file.path, file.content)
@@ -155,6 +164,7 @@ class GitContentManager:
             connector_name: Name of the connector, or None if the connector doesn't exist
 
         Returns: A Connector object
+
         """
         try:
             for connector in self.sync.get_file_objects_from_path(
@@ -197,6 +207,7 @@ class GitContentManager:
             source_name: Source integration name
 
         Returns: A Mapping object, or None if the mappings doesn't exist
+
         """
         try:
             records = json.loads(
@@ -298,8 +309,8 @@ class GitContentManager:
         return json.loads(self._get_file_or_default(EMAIL_TEMPLATES_FILE,
                                                     "[]"))
 
-    def get_blacklists(self) -> list[dict]:
-        return json.loads(self._get_file_or_default(BLACKLIST_FILE, "[]"))
+    def get_denylists(self) -> list[dict]:
+        return json.loads(self._get_file_or_default(DENYLIST_FILE, "[]"))
 
     def get_sla_definitions(self) -> list[dict]:
         return json.loads(self._get_file_or_default(SLA_DEFINITIONS_FILE,
@@ -310,6 +321,7 @@ class GitContentManager:
 
         Args:
             integration: An integration object
+
         """
         integration.generate_readme(
             self.metadata.get_readme_addon("Integration",
@@ -324,6 +336,7 @@ class GitContentManager:
 
         Args:
             playbook: A playbook object
+
         """
         self._push_obj(
             playbook,
@@ -337,6 +350,7 @@ class GitContentManager:
 
         Args:
             connector: A Connector object to write
+
         """
         self._push_obj(
             connector,
@@ -350,6 +364,7 @@ class GitContentManager:
 
         Args:
             job: A Job object
+
         """
         self.sync.update_objects(job.iter_files())
 
@@ -358,6 +373,7 @@ class GitContentManager:
 
         Args:
             mapping: A Mapping object to write
+
         """
         self._push_obj(
             mapping,
@@ -371,6 +387,7 @@ class GitContentManager:
 
         Args:
             family: A VisualFamily object
+
         """
         self._push_obj(
             family,
@@ -419,8 +436,8 @@ class GitContentManager:
     def push_email_templates(self, email_templates: list[dict]) -> None:
         self._push_file(EMAIL_TEMPLATES_FILE, email_templates)
 
-    def push_blacklists(self, blacklists: list[dict]) -> None:
-        self._push_file(BLACKLIST_FILE, blacklists)
+    def push_denylists(self, denylists: list[dict]) -> None:
+        self._push_file(DENYLIST_FILE, denylists)
 
     def push_sla_definitions(self, sla_definitions: list[dict]) -> None:
         self._push_file(SLA_DEFINITIONS_FILE, sla_definitions)

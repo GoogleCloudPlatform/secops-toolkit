@@ -12,30 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 import base64
 import json
-from collections.abc import Iterator
-from typing import Any
+import re
+from typing import TYPE_CHECKING, Any
+import uuid
 from zipfile import ZipFile
 
-from jinja2 import Environment as JinjaEnvironment, Template
+from jinja2 import Environment as JinjaEnvironment
+from jinja2 import Template
+from requests.exceptions import HTTPError
 
-from soar.soar_api_client import SiemplifyApiClient
-from soar.constants import (
-    ACTION_PARAMETER_TYPES,
-    BASE_PARAMETER_TYPES,
-    CONDITION_MATCH_TYPES,
-    CONDITION_OPERATORS,
-    CONNECTOR_README,
-    INTEGRATION_README_TEMPLATE,
-    JOB_README,
-    MAPPING_README,
-    PLAYBOOK_README_TEMPLATE,
-    ScriptType,
-    TRIGGER_TYPES,
-    VISUAL_FAMILY_README,
-    WorkflowTypes,
-)
+from .constants import (ACTION_PARAMETER_TYPES, BASE_PARAMETER_TYPES,
+                        CONDITION_MATCH_TYPES, CONDITION_OPERATORS,
+                        CONNECTOR_README, INTEGRATION_README_TEMPLATE,
+                        JOB_README, MAPPING_README, PLAYBOOK_README_TEMPLATE,
+                        TRIGGER_TYPES, VISUAL_FAMILY_README, ScriptType,
+                        WorkflowTypes, STEP_TYPE)
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from .SiemplifyApiClient import SiemplifyApiClient
+    from TIPCommon.types import ChronicleSOAR
 
 
 class File:
@@ -61,17 +62,22 @@ class Metadata:
 
     def __init__(self, **kwargs):
 
-        def _get_arg_with_multiple_names(args: dict[str, Any],
-                                         arg_name_options: list[str],
-                                         default_value: Any):
+        def _get_arg_with_multiple_names(
+            args: dict[str, Any],
+            arg_name_options: list[str],
+            default_value: Any,
+        ):
             for name in arg_name_options:
-                value = args.get(name, None)
+                value = args.get(name)
                 if value:
                     return value
             return default_value
 
         self.system_version = _get_arg_with_multiple_names(
-            kwargs, ["system_version", "systemVersion"], "")
+            kwargs,
+            ["system_version", "systemVersion"],
+            "",
+        )
         self.readme_addons = _get_arg_with_multiple_names(
             kwargs,
             ["readme_addons", "readmeAddons"],
@@ -90,12 +96,16 @@ class Metadata:
                          content_name: str) -> str | None:
         if content_type not in self.readme_addons:
             raise KeyError(f"Content Type {content_type} doesn't exist")
-        elif content_name not in self.readme_addons[content_type]:
+        if content_name not in self.readme_addons[content_type]:
             return None
         return self.readme_addons[content_type][content_name]
 
-    def set_readme_addon(self, content_type: str, content_name: str,
-                         readme: str) -> None:
+    def set_readme_addon(
+        self,
+        content_type: str,
+        content_name: str,
+        readme: str,
+    ) -> None:
         if content_type not in self.readme_addons:
             raise KeyError(f"Content Type {content_type} doesn't exist")
         self.readme_addons[content_type][content_name] = "\n".join(
@@ -155,8 +165,10 @@ class VisualFamily(Content):
 
     def iter_files(self) -> Iterator[File]:
         yield File("README.md", self.readme)
-        yield File(f"{self.name}.json",
-                   json.dumps(self.get_importable_format(), indent=4))
+        yield File(
+            f"{self.name}.json",
+            json.dumps(self.get_importable_format(), indent=4),
+        )
         yield File(f"{self.name}.png", base64.b64decode(self.imageBase64))
 
     def generate_readme(self, additional_info: str = None) -> None:
@@ -187,11 +199,15 @@ class Mapping(Content):
                 fam_fields["modificationTimeUnixTimeInMs"] = 0
 
     def iter_files(self) -> Iterator[File]:
-        yield File(f"README.md", self.readme)
-        yield File(f"{self.integrationName}_Records.json",
-                   json.dumps(self.records, indent=4))
-        yield File(f"{self.integrationName}_Rules.json",
-                   json.dumps(self.rules, indent=4))
+        yield File("README.md", self.readme)
+        yield File(
+            f"{self.integrationName}_Records.json",
+            json.dumps(self.records, indent=4),
+        )
+        yield File(
+            f"{self.integrationName}_Rules.json",
+            json.dumps(self.rules, indent=4),
+        )
 
     def generate_readme(self, additional_info: str = None) -> None:
         template = MAPPING_README
@@ -212,7 +228,7 @@ class Integration(Content):
         self.identifier = self.integration_card.get("identifier")
         self.isCustom = self.integration_card.get("isCustomIntegration")
         self.definition = json.loads(
-            self.zipfile.read(f"Integration-{self.identifier}.def"))
+            self.zipfile.read(f"Integration-{self.identifier}.def"), )
         self.version = self.definition.get("Version")
         if not self.isCustom:
             self.definition["IsCustom"] = False
@@ -230,8 +246,8 @@ class Integration(Content):
                 self.actions.append(json.loads(self.zipfile.read(file)))
             elif file.startswith("Jobs") and not file.startswith("JobsScrips"):
                 self.jobs.append(json.loads(self.zipfile.read(file)))
-            elif file.startswith(
-                    "Connectors") and not file.startswith("ConnectorsScripts"):
+            elif file.startswith("Connectors") and not file.startswith(
+                    "ConnectorsScripts", ):
                 self.connectors.append(json.loads(self.zipfile.read(file)))
             elif (not self.isCustom and file.startswith("Managers")
                   and file.endswith(".managerdef")):
@@ -264,12 +280,11 @@ class Integration(Content):
 
     def generate_readme(self, additional_info: str = None):
         env = JinjaEnvironment()
-        env.filters.update({
-            "action_param_type":
-            lambda x: ACTION_PARAMETER_TYPES.get(x),
-            "base_param_type":
-            lambda x: BASE_PARAMETER_TYPES.get(x),
-        })
+        env.filters.update(
+            {
+                "action_param_type": lambda x: ACTION_PARAMETER_TYPES.get(x),
+                "base_param_type": lambda x: BASE_PARAMETER_TYPES.get(x),
+            }, )
         template = INTEGRATION_README_TEMPLATE
         if additional_info:
             template += additional_info
@@ -294,12 +309,14 @@ class Integration(Content):
         """Iterates all files in integration.
 
         If the integration is custom, it will only return custom and mandatory files.
-        if not, it will iterate all the files in the exported zip. It yields tuples of (relative_path, data)
+        if not, it will iterate all the files in the exported zip. It yields tuples of
+        (relative_path, data)
 
         Args:
             api: SiemplifyApiClient object - to diff between custom and commercial scripts
 
         Returns: A generator of File object instances representing the integration
+
         """
         yield File("README.md", self.readme)
         if not self.isCustom:
@@ -327,7 +344,7 @@ class Integration(Content):
                         yield File(
                             f"ActionsScripts/{card['name']}.py",
                             self.zipfile.read(
-                                f"ActionsScripts/{card['name']}.py").decode(
+                                f"ActionsScripts/{card['name']}.py", ).decode(
                                     "utf-8"),
                         )
 
@@ -354,8 +371,8 @@ class Integration(Content):
                         yield File(
                             f"ConnectorsScripts/{card['name']}.py",
                             self.zipfile.read(
-                                f"ConnectorsScripts/{card['name']}.py").decode(
-                                    "utf-8"),
+                                f"ConnectorsScripts/{card['name']}.py",
+                            ).decode("utf-8"),
                         )
 
                     elif card["type"] == ScriptType.MANAGER.value:
@@ -366,7 +383,8 @@ class Integration(Content):
                         yield File(
                             f"Managers/{card['name']}.py",
                             self.zipfile.read(
-                                f"Managers/{card['name']}.py").decode("utf-8"),
+                                f"Managers/{card['name']}.py").decode(
+                                    "utf-8", ),
                         )
         else:
             for file in self.zipfile.namelist():
@@ -394,7 +412,6 @@ class Workflow(Content):
         self.category = self.raw_data.get("categoryName", "Default")
         self.environments = self.raw_data.get("environments")
         self.modification_time = self.raw_data["modificationTimeUnixTimeInMs"]
-        self.overviewTemplates = self.raw_data.get("overviewTemplates", [])
 
     def __hash__(self):
         """Used to remove duplicates in workflow lists"""
@@ -407,22 +424,25 @@ class Workflow(Content):
     def generate_readme(self, additional_info: str = None):
         env = JinjaEnvironment()
         env.globals["WorkflowTypes"] = WorkflowTypes
-        env.filters.update({
-            "trigger_type":
-            lambda x: TRIGGER_TYPES.get(x),
-            "condition_operator":
-            lambda x: CONDITION_OPERATORS.get(x),
-            "condition_match_type":
-            lambda x: CONDITION_MATCH_TYPES.get(x),
-            "split_action_name":
-            lambda x: x.split("_", 1)[1] if "_" in x else x,
-        })
+        env.filters.update(
+            {
+                "trigger_type":
+                lambda x: TRIGGER_TYPES.get(x),
+                "condition_operator":
+                lambda x: CONDITION_OPERATORS.get(x),
+                "condition_match_type":
+                lambda x: CONDITION_MATCH_TYPES.get(x),
+                "split_action_name":
+                lambda x: x.split("_", 1)[1] if "_" in x else x,
+            }, )
         template = PLAYBOOK_README_TEMPLATE
         if additional_info:
             template += additional_info
         readme = env.from_string(template)
-        self.readme = readme.render(playbook=self.__dict__,
-                                    involved_blocks=self.get_involved_blocks())
+        self.readme = readme.render(
+            playbook=self.__dict__,
+            involved_blocks=self.get_involved_blocks(),
+        )
 
     def iter_files(self) -> Iterator[File]:
         yield File(self.name + ".json", json.dumps(self.raw_data, indent=4))
@@ -430,6 +450,94 @@ class Workflow(Content):
 
     def get_involved_blocks(self):
         return [x for x in self.steps if x.get("type") == 5]
+
+    def update_instance_name_in_steps(
+        self,
+        api: SiemplifyApiClient,
+        chronicle_soar: ChronicleSOAR,
+    ) -> None:
+        """Updates name of instances in the steps."""
+        for step in self.steps:
+            if (step.get("type") == STEP_TYPE
+                    and step.get("actionProvider") == "Scripts"):
+                self._update_instance_display_names_for_step(
+                    step, api, chronicle_soar)
+
+    def _is_integration_instance_param(
+        self,
+        param_name: str | None,
+        param_value: str | None,
+    ) -> bool:
+        """Checks if a parameter is a valid integration instance parameter."""
+        return param_name in (
+            "IntegrationInstance",
+            "FallbackIntegrationInstance",
+        ) and self._is_valid_instance_id(param_value)
+
+    def _update_instance_display_names_for_step(
+        self,
+        step: dict,
+        api: SiemplifyApiClient,
+        chronicle_soar: ChronicleSOAR,
+    ) -> None:
+        """Updates display names for integration instance parameters in a step.
+
+        Args:
+            step (dict): The workflow step dictionary to process.
+            api (SiemplifyApiClient): An API client instance used to fetch
+                integration instance names.
+        """
+        integration_name = step["integration"]
+
+        for param in step.get("parameters", []):
+            param_name = param.get("name")
+            param_value = param.get("value")
+            try:
+                if not self._is_integration_instance_param(
+                        param_name, param_value):
+                    continue
+
+                display_name = api.get_integration_instance_name(
+                    chronicle_soar,
+                    integration_name,
+                    param_value,
+                    self.environments,
+                )
+
+                match param_name:
+                    case "IntegrationInstance":
+                        param["InstanceDisplayName"] = display_name
+                    case "FallbackIntegrationInstance":
+                        param["FallbackInstanceDisplayName"] = display_name
+            except HTTPError as e:
+                # ignoring 404 errors as they expected in migrations between instances.
+                if e.response is not None and hasattr(e.response,
+                                                      'status_code'):
+                    status_code = e.response.status_code
+                    if status_code != 404:
+                        raise e
+                else:
+                    # TIPCommon is re-raising HTTPError without response object
+                    # Try to extract status code from the error message itself
+                    error_msg = str(e)
+                    status_code_match = re.search(r'(\d{3})\s+Client Error',
+                                                  error_msg)
+                    if status_code_match:
+                        status_code = int(status_code_match.group(1))
+                        if status_code != 404:
+                            raise e
+                    else:
+                        # can't determine the status code
+                        raise e
+
+    def _is_valid_instance_id(self, instance_id: str) -> bool:
+        try:
+            val = uuid.UUID(instance_id, version=4)
+
+        except (TypeError, ValueError):
+            return False
+
+        return str(val) == instance_id and val.version == 4
 
 
 class Job(Content):

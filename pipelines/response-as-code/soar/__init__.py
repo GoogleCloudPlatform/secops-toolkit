@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""Google SOAR GitSync for Python."""
+"""SecOps Response As Code."""

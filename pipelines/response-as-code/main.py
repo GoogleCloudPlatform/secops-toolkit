@@ -20,6 +20,7 @@ from soar.definitions import Workflow
 from soar.soar_api_client import SiemplifyApiClient
 import os
 import logging
+import sys
 
 LOGGER = logging.getLogger("soar")
 
@@ -66,7 +67,7 @@ def sync_playbooks():
         for playbook in git_playbooks:
             LOGGER.info(f"Playbook {playbook.name}")
 
-            overview_templates = playbook.overviewTemplates
+            overview_templates = playbook.raw_data["overviewTemplates"]
             new_templates = []
             for overview_template in overview_templates:
                 LOGGER.info(f"Roles: {overview_template['roles']}")
@@ -77,9 +78,9 @@ def sync_playbooks():
                             new_roles.append(soc_role["id"])
                 overview_template["roles"] = new_roles
                 new_templates.append(overview_template)
-            playbook.overviewTemplates = new_templates
+            playbook.raw_data["overviewTemplates"] = new_templates
             LOGGER.info(
-                f"Playbook Updated Overview templates: {playbook.overviewTemplates}"
+                f"Playbook Updated Overview templates: {playbook.raw_data['overviewTemplates']}"
             )
 
             playbooks[playbook.name] = playbook
@@ -138,10 +139,7 @@ def pull_playbooks():
 
             playbook = Workflow(
                 gitsync.api.get_playbook(playbook.get("identifier")))
-            LOGGER.info(
-                f"Playbook Original Overview templates: {playbook.overviewTemplates}"
-            )
-            overview_templates = playbook.overviewTemplates
+            overview_templates = playbook.raw_data["overviewTemplates"]
             new_templates = []
             for overview_template in overview_templates:
                 LOGGER.info(f"Roles: {overview_template['roles']}")
@@ -153,9 +151,6 @@ def pull_playbooks():
                 overview_template["roles"] = new_roles
                 new_templates.append(overview_template)
             playbook.overview_templates = new_templates
-            LOGGER.info(
-                f"Playbook Updated Overview templates: {playbook.overviewTemplates}"
-            )
 
             gitsync.content.push_playbook(playbook)
             if include_blocks:
@@ -182,4 +177,13 @@ def pull_playbooks():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        stream=sys.
+        stdout,  # Explicitly print to stdout for GitHub Actions visibility
+        force=True)
+
+    # Ensure our specific logger is also set to INFO
+    LOGGER.setLevel(logging.INFO)
     cli()
