@@ -13,39 +13,33 @@
 # limitations under the License.
 
 from __future__ import annotations
-# import re # Removed as COMMIT_AUTHOR_REGEX is no longer used here
-import os
-# import tempfile # Removed as _wd is removed
-import uuid  # Used by WorkflowInstaller
-import logging
-from typing import Any
-from jinja2 import Template  # Used by generate_root_readme
 
-# soar.git_content_manager.GitContentManager is kept under the crucial assumption
-# that it has been adapted to use LocalFolderManager instead of a Git client.
-from soar.git_content_manager import GitContentManager
-# from soar.git_manager import Git # REMOVED
-from soar.soar_api_client import SiemplifyApiClient
-from soar.cache import Cache, Context  # Used by WorkflowInstaller and GitSyncManager
-from soar.constants import (
+import os
+import re
+import tempfile
+import uuid
+import logging
+from typing import TYPE_CHECKING, Any
+from jinja2 import Template
+from .cache import Cache, Context
+from .constants import (
     ALL_ENVIRONMENTS_IDENTIFIER,
-    # COMMIT_AUTHOR_REGEX, # REMOVED
-    # DEFAULT_AUTHOR, # REMOVED
-    # DEFAULT_USERNAME, # REMOVED as git_username parameter is gone
+    DEFAULT_AUTHOR,
     IGNORED_INTEGRATIONS,
-    INTEGRATION_NAME,  # Kept, usage might be elsewhere or in unadapted GitContentManager
     ROOT_README,
     ScriptType,
     WorkflowTypes,
 )
-from soar.definitions import Connector, File, Integration, Job, Mapping, Workflow  # File is used by update_readme
+from .definitions import Connector, File, Integration, Job, Mapping, Workflow
+from .git_content_manager import GitContentManager
+from .soar_api_client import SiemplifyApiClient
 from soar.local_folder_manager import LocalFolderManager
 
 LOGGER = logging.getLogger("soar")
 
 
 class MergeConflictError(Exception):
-    """A merge conflict was discovered."""  # Kept as its direct removal isn't requested.
+    """A merge conflict was discovered."""
 
 
 class GitSyncManager:
@@ -120,39 +114,45 @@ class GitSyncManager:
     def install_integration(self, integration: Integration) -> None:
         """Install or update a custom or commercial integration.
 
+        There are two different flows to install an integration,
+        If the integration is custom, the entire zip (ide/exportPackage) is used when pushing, so we
+        import it as a zip file (ide/importPackage)
+        if the integration is commercial, only custom items are pushed, that means we iterate the
+        items, install new items and update existing ones.
+
         Args:
             integration: An Integration object instance to install
+
         """
         if integration.identifier in IGNORED_INTEGRATIONS:
             return
         LOGGER.info(f"Installing {integration.identifier}")
         if integration.isCustom:
             LOGGER.info(
-                f"{integration.identifier} is a custom integration - importing as zip"
+                f"{integration.identifier} is a custom integration - importing as zip",
             )
-            self.api.import_package(integration.identifier,
-                                    integration.get_zip_as_base64())
+            self.api.import_package(
+                integration.identifier,
+                integration.get_zip_as_base64(),
+            )
         else:
             LOGGER.info(
-                f"{integration.identifier} is a commercial integration - Checking installation"
+                f"{integration.identifier} is a commercial integration - Checking installation",
             )
             if not self.get_installed_integration_version(
                     integration.identifier):
                 LOGGER.info(
-                    f"{integration.identifier} is not installed - installing from the marketplace"
+                    f"{integration.identifier} is not installed - installing from the marketplace",
                 )
                 if not self.install_marketplace_integration(
                         integration.identifier):
                     LOGGER.warn(
-                        f"Couldn't install integration {integration.identifier} from the marketplace"
-                    )
+                        f"Couldn't install integration {integration.identifier} "
+                        "from the marketplace", )
                     return
             integration_cards = next(
-                (x for x in self.api.get_ide_cards()
-                 if x["identifier"] == integration.identifier),
-                {"cards": []
-                 }  # Provide default if integration not found in IDE cards
-            )["cards"]
+                x for x in self.api.get_ide_cards()
+                if x["identifier"] == integration.identifier)["cards"]
             for script in integration.get_all_items():
                 item_card = next(
                     (x
@@ -163,55 +163,65 @@ class GitSyncManager:
                 if item_card:
                     script["id"] = item_card["id"]
                     LOGGER.info(
-                        f"Updating {integration.identifier} - {script['name']}"
+                        f"Updating {integration.identifier} - {script['name']}",
                     )
                 else:
                     LOGGER.info(
-                        f"Adding {integration.identifier} - {script['name']}")
+                        f"Adding {integration.identifier} - {script['name']}",
+                    )
                 script["script"] = integration.get_script(
-                    script.get("name"), ScriptType(script.get("type")))
+                    script.get("name"),
+                    ScriptType(script.get("type")),
+                )
                 self.api.update_ide_item(script)
 
     def install_connector(self, connector: Connector) -> None:
         """Installs or update a connector instance
 
+        If the integration of the connector doesn't exist, will attempt to install it from the
+        marketplace or from the git repository,
+        If the connector instance integration version doesn't match the installed integration,
+        the update button on the connector will forcibly activate to update the definition
+
         Args:
             connector: A Connector object instance to install
+
         """
         installed_version = self.get_installed_integration_version(
-            connector.integration)
+            connector.integration, )
         if not installed_version:
             LOGGER.info(
-                f"Connector {connector.name} integration ({connector.integration}) not installed"
+                f"Connector {connector.name} integration ({connector.integration}) not installed",
             )
-            # Assumes self.content.get_integration works with LocalFolderManager
+            # Integration is not installed - try installing from repo,
+            # and if not install from the marketplace
             integration = self.content.get_integration(connector.integration)
             if integration and integration.isCustom:
-                LOGGER.info(
-                    "Custom integration found in local storage, installing")
+                LOGGER.info("Custom integration found in repo, installing")
+                # Integration found in repo
                 self.install_integration(integration)
             else:
+                # Try installing integration from marketplace
                 LOGGER.info(
-                    "Trying to install connector integration from the marketplace"
+                    "Trying to install connector integration from the marketplace",
                 )
                 if not self.install_marketplace_integration(
                         connector.integration):
                     raise Exception(
-                        f"Error installing connector {connector.name} - missing integration"
+                        f"Error installing connector {connector.name} - missing integration",
                     )
                 LOGGER.info(
-                    "Connector integration successfully installed from the marketplace"
+                    "Connector integration successfully installed from the marketplace",
                 )
         if connector.integration_version != installed_version:
             LOGGER.warn(
-                "Installed integration version doesn't match the connector integration version. Please upgrade the "
-                "connector.")
+                "Installed integration version doesn't match the connector integration version. "
+                "Please upgrade the connector.", )
             connector.raw_data["isUpdateAvailable"] = True
         if connector.environment not in self.api.get_environment_names():
             LOGGER.warn(
-                f"Connector is set to non-existing environment {connector.environment}. Using Default Environment "
-                f"instead")
-            # Potentially set connector.environment = self.api.get_default_environment_name() or similar if desired
+                f"Connector is set to non-existing environment {connector.environment}. "
+                f"Using Default Environment instead", )
         self.api.update_connector(connector.raw_data)
 
     def install_mappings(self, mappings: Mapping) -> None:
@@ -219,6 +229,7 @@ class GitSyncManager:
 
         Args:
             mappings: A Mapping object instance to install
+
         """
         LOGGER.info(f"Installing mappings for {mappings.integrationName}")
         for rule in mappings.rules:
@@ -241,30 +252,40 @@ class GitSyncManager:
 
         Raises:
             Exception: When a playbook environment doesn't exist
+
         """
+        # Validate all playbook environments exist as environments or environment groups
         environments = (self.api.get_environment_names() +
+                        self.api.get_environment_group_names() +
                         [ALL_ENVIRONMENTS_IDENTIFIER])
         for p in workflows:
-            if not all(x in environments for x in p.environments):
+            invalid_environments = [
+                x for x in p.environments if x not in environments
+            ]
+            if invalid_environments:
                 raise Exception(
-                    f"Playbook {p.name} is assigned to environment that doesn't exist - {p.environments[0]}"
-                )
+                    f"Playbook '{p.name}' is assigned to environment(s) that don't exist: "
+                    f"{', '.join(invalid_environments)}. "
+                    f"Available environments: {', '.join(environments)}")
 
+        # Remove duplicates and split by type
         workflows = list(set(workflows))
-        cache: Cache[
-            str, int] = Cache()  # This cache seems local to the method call
+        cache: Cache[str, int] = Cache()
         playbook_installer = WorkflowInstaller(self.api, cache)
         blocks, playbooks = [], []
         for workflow in workflows:
             if workflow.type == WorkflowTypes.BLOCK:
                 blocks.append(workflow)
+
             else:
                 playbooks.append(workflow)
 
+        # Save blocks first
         for block in blocks:
             playbook_installer.install_workflow(block)
-        playbook_installer.refresh_cache_item(
-            "playbooks")  # Refreshes WorkflowInstaller's internal cache
+
+        playbook_installer.refresh_cache_item("playbooks")
+
         for playbook in playbooks:
             playbook_installer.install_workflow(playbook)
 
@@ -273,61 +294,52 @@ class GitSyncManager:
 
         Args:
             job: A Job object instance to install
+
         """
         if not self.get_installed_integration_version(job.integration):
             LOGGER.warn(
-                f"Error installing job {job.name} - Job integration ({job.integration}) is not installed"
-            )
+                f"Error installing job {job.name} - Job integration ({job.integration}) "
+                "is not installed", )
             return
-
-        integration_cards_data = next(
+        # Try to find and fix the jobDefinitionId field
+        integration_cards = next(
             (x for x in self.api.get_ide_cards()
              if x["identifier"] == job.integration),
             {},
-        )
-        integration_cards = integration_cards_data.get(
-            "cards", [])  # Ensure 'cards' is a list
-
-        if integration_cards:  # Check if list is not empty
-            job_def_id_card = next(
-                (
-                    x for x in integration_cards if x["type"] == 2
-                    and x["name"] == job.name  # Assuming type 2 is for jobs
-                ),
+        ).get("cards", None)
+        if integration_cards:
+            job_def_id = next(
+                (x for x in integration_cards
+                 if x["type"] == 2 and x["name"] == job.name),
                 None,
             )
-            if job_def_id_card:
-                job.raw_data["jobDefinitionId"] = job_def_id_card.get("id")
+            if job_def_id:
+                job.raw_data["jobDefinitionId"] = job_def_id.get("id")
 
-        job_data_from_api = next(
+        job_id = next(
             (x for x in self.api.get_jobs() if x["name"] == job.name), None)
-        if job_data_from_api:
-            job.raw_data["id"] = job_data_from_api.get("id")
+        if job_id:
+            job.raw_data["id"] = job_id.get("id")
         self.api.add_job(job.raw_data)
 
     def generate_root_readme(self) -> str:
-        """Generates the readme file contents for the root of the local sync folder.
+        """Generates the readme file contents for the root of the repository
 
-        Contains all assets currently found via the content manager.
+        Contains all assets currently in the repository
 
-        Returns: Readme file contents as a string.
+        Returns: Readme file contents
         """
 
-        def strip_new_lines(s: str | None):  # Added type hint for s
-            return s.replace(
-                "\n",
-                "").strip() if s else ""  # Return empty string if s is None
+        def strip_new_lines(s: str):
+            # Description might be None
+            return s.replace("\n", "").strip() if s else s
 
-        # These calls assume self.content methods are functional with LocalFolderManager
-        integrations = [
-            {
-                "name":
-                integration.definition.get(
-                    "DisplayName", integration.identifier),  # Safer access
-                "description":
-                strip_new_lines(integration.definition.get("Description")),
-            } for integration in self.content.get_integrations()
-        ]
+        integrations = [{
+            "name":
+            integration.definition["DisplayName"],
+            "description":
+            strip_new_lines(integration.definition["Description"]),
+        } for integration in self.content.get_integrations()]
 
         playbooks = [{
             "name": playbook.name,
@@ -363,12 +375,16 @@ class GitSyncManager:
         )
 
     def update_readme(self, readme: str, base_path: str = "") -> None:
-        """Creates or updates a readme file in basePath using LocalFolderManager.
+        """Creates or updates a readme file in basePath
+
+        Valid base_path format:
+        - "Integrations"
+        - "Playbooks/PlaybookName/"
 
         Args:
-            readme: The readme contents (string).
-            base_path: Base path in the local sync folder to write the readme file.
-                       Writes to root by default.
+            readme: The readme contents
+            base_path: Base path in the repo to write the readme file. Writes to root by default.
+
         """
         if base_path and not base_path.endswith(
                 "/"):  # Ensure trailing slash for base_path if not empty
@@ -381,44 +397,33 @@ class GitSyncManager:
         LOGGER.info(f"Updated README.md at {base_path}README.md")
 
     def commit_and_push(self, message: str) -> None:
-        """Saves metadata and readme updates to the local file system.
-        The 'commit and push' terminology is a holdover from Git; this method
-        now finalizes local changes described by the message.
+        """Commits all the changes and pushes the commit to the repo
 
         Args:
-            message: A message describing the changes (used for logging).
-        """
-        LOGGER.info(
-            f"Saving changes to local file system with message: {message}")
+            message: The commit message
 
-        # Assuming self.content.metadata and self.content.push_metadata are adapted
+        """
         if self.content.metadata.get_setting_by_name("update_root_readme"):
+            # Generate root readme
             root_readme = self.generate_root_readme()
             self.update_readme(root_readme)
 
         self.content.metadata.system_version = self.api.get_system_version()
-        self.content.push_metadata(
-        )  # This should use local_manager via content manager
-
-        LOGGER.info("Changes have been written to the local file system.")
+        self.content.push_metadata()
+        self.git_client.commit_and_push(message)
 
     @property
     def _marketplace_integrations(self) -> list[dict]:
         if "marketplace" not in self._cache:
             self._cache["marketplace"] = self.api.get_store_data()
-        return self._cache.get("marketplace",
-                               [])  # Return empty list if key not found
+        return self._cache.get("marketplace")
 
     def clear_cache(self) -> None:
         self._cache = {}
-        LOGGER.info("Cache cleared.")
 
-    def refresh_cache_item(self, item_name: str) -> None:  # Added type hint
+    def refresh_cache_item(self, item_name) -> None:
         if item_name in self._cache:
             del self._cache[item_name]
-            LOGGER.info(f"Cache item '{item_name}' refreshed.")
-        else:
-            LOGGER.debug(f"Cache item '{item_name}' not found for refreshing.")
 
     def install_marketplace_integration(self, integration_name: str) -> bool:
         """Installs or update an integration from the marketplace.
@@ -427,6 +432,7 @@ class GitSyncManager:
             integration_name: Name of the integration to install
 
         Returns: True if the integration was installed successfully, otherwise False
+
         """
         store_integration = next(
             (x for x in self._marketplace_integrations
@@ -435,7 +441,7 @@ class GitSyncManager:
         )
         if not store_integration:
             LOGGER.warn(
-                f"Integration {integration_name} wasn't found in the marketplace"
+                f"Integration {integration_name} wasn't found in the marketplace",
             )
             return False
         try:
@@ -444,44 +450,29 @@ class GitSyncManager:
                 store_integration["version"],
                 store_integration["isCertified"],
             )
-            LOGGER.info(
-                f"{integration_name} installed successfully from marketplace")
-            # After successful installation, the local cache for installed versions might be stale.
-            self.refresh_cache_item(
-                "marketplace")  # Refresh to get updated installedVersion
+            LOGGER.info(f"{integration_name} installed successfully")
             return True
         except Exception as e:
-            LOGGER.warn(
-                f"Couldn't install {integration_name} from marketplace - {e}")
+            LOGGER.warn(f"Couldn't install {integration_name} - {e}")
             return False
 
     def get_installed_integration_version(self,
                                           integration_name: str) -> float:
-        """Get currently installed integration version by checking the marketplace data.
+        """Get the currently installed integration version
 
-        If the integration is not listed or not installed, 0.0 will be returned.
+        If the integration is not installed, 0.0 will be returned
 
         Args:
-            integration_name: Name of the integration to check.
+            integration_name: Name of the integration to check
 
-        Returns: Integration version as float, or 0.0 if not installed/found.
+        Returns: Integration version
+
         """
-        integration_data = next(
-            (
-                x for x in
-                self._marketplace_integrations  # Uses cached marketplace data
-                if x["identifier"] == integration_name),
-            None,
+        return next(
+            (x["installedVersion"] for x in self._marketplace_integrations
+             if x["identifier"] == integration_name),
+            0.0,
         )
-        if integration_data and integration_data.get("installedVersion"):
-            try:
-                return float(integration_data["installedVersion"])
-            except (ValueError, TypeError):
-                LOGGER.warning(
-                    f"Could not parse installedVersion '{integration_data.get('installedVersion')}' as float for {integration_name}."
-                )
-                return 0.0
-        return 0.0
 
 
 class WorkflowInstaller:
@@ -494,17 +485,18 @@ class WorkflowInstaller:
     ) -> None:
         self.api: SiemplifyApiClient = api
         self._mod_time_cache: Cache[str, int] = mod_time_cache
-        self._cache: dict[str, Any] = {
-        }  # This is WorkflowInstaller's internal cache
+        self._cache: dict[str, Any] = {}
 
     def install_workflow(self, workflow: Workflow) -> None:
         """Save a playbook or block in the current platform
 
         Args:
             workflow: A Playbook object to install
+
         """
         if self._workflow_exists(workflow.name):
             self._update_workflow_if_needed(workflow)
+
         else:
             self.install_new_workflow(workflow)
 
@@ -516,7 +508,7 @@ class WorkflowInstaller:
         if not self._workflow_was_modified(workflow):
             LOGGER.info(
                 f"Skipped update for unchanged workflow '{workflow.name}'")
-            self._filter_and_save_context()  # Pushes mod_time_cache
+            self._filter_and_save_context()
             return
 
         self._log_merge_conflicts(workflow)
@@ -525,15 +517,12 @@ class WorkflowInstaller:
     def _log_merge_conflicts(self, workflow: Workflow) -> None:
         if self._has_merge_conflicts(workflow):
             LOGGER.warn(
-                f"Potential merge conflict for workflow '{workflow.name}'. "
-                "Both the stored version and local platform version appear modified since last sync. "
-                "Stored version will override local platform changes!")
+                "Both the git playbook and local installed playbook were modified."
+                "  Git version will override local changes!", )
 
     def _has_merge_conflicts(self, workflow: Workflow) -> bool:
         cached_time: int = self._mod_time_cache.get(workflow.name, -1)
         local_time: int = self._get_local_workflow_mod_time(workflow.name, -1)
-        # Merge conflict if local was modified after last sync AND remote was modified after last sync
-        # Simplified: if local_time > cached_time AND workflow.modification_time > cached_time
         return min(local_time, workflow.modification_time) > cached_time
 
     def _workflow_was_modified(self, workflow: Workflow) -> bool:
@@ -552,310 +541,368 @@ class WorkflowInstaller:
         """Adjust workflow identifiers to match the existing workflow's
         (with the same name) identifiers.
         """
-        playbook_id: str | None = self._installed_playbooks.get(
-            workflow.name, {}).get("identifier")
-        if not playbook_id:
-            LOGGER.error(
-                f"Cannot adjust IDs for workflow '{workflow.name}': Not found in installed playbooks cache."
-            )
-            # This situation should ideally not happen if _workflow_exists was true
-            return
-
+        playbook_id: str = self._installed_playbooks[
+            workflow.name]["identifier"]
         local_playbook: dict[str, Any] = self.api.get_playbook(playbook_id)
-        if not local_playbook:
-            LOGGER.error(
-                f"Cannot fetch local playbook details for ID '{playbook_id}' (name: '{workflow.name}')."
-            )
-            return
-
         self._copy_ids_from_existing_workflow(workflow, local_playbook)
         self._process_steps(workflow, local_playbook)
 
     def install_new_workflow(self, workflow: Workflow) -> None:
-        """Install a new workflow in the platform."""
+        """Install a new workflow to the platform."""
         LOGGER.info(f"Installing new workflow '{workflow.name}'")
         self._define_workflow_as_new(workflow)
-        self._process_steps(
-            workflow)  # No installed_workflow to pass for new ones
+        self._process_steps(workflow)
         self.api.save_playbook(workflow.raw_data)
         self._save_workflow_mod_time_to_context(workflow)
         LOGGER.info(
             f"New workflow '{workflow.name}' was installed successfully")
 
-    def _process_steps(self,
-                       workflow: Workflow,
-                       installed_workflow: dict | None = None) -> None:
-        """Iterate the playbook steps and assign the correct integration instances and block identifiers
+    def _process_steps(
+        self,
+        workflow: Workflow,
+        installed_workflow: dict = None,
+    ) -> None:
+        """Iterate the playbook steps and assign the correct integration instances and block
+        identifiers
 
         Args:
             workflow: Workflow to iterate steps
-            installed_workflow: Optional current installed playbooks to copy identifiers from
+            installed_workflow: Optional current installed playbooks to copy identifiers
+
         """
+        # A dict where the keys are the old step identifiers and values are the new step identifiers
+        # Used for patching step relations
         identifier_mappings = {}
-        old_steps_flat = (self._flatten_playbook_steps(
-            installed_workflow["steps"]) if installed_workflow
-                          and "steps" in installed_workflow else [])
-
-        current_steps_flat = self._flatten_playbook_steps(
-            workflow.raw_data.get("steps", []))
-
-        for step in current_steps_flat:
+        # Flatten steps to include action containers
+        old_steps = (self._flatten_playbook_steps(
+            installed_workflow.get("steps")) if installed_workflow else None)
+        for step in self._flatten_playbook_steps(
+                workflow.raw_data.get("steps")):
             provider = step.get("actionProvider")
-            step_type = step.get("type")  # 0 for action, 5 for nested workflow
+            step_type = step.get("type")
 
             step["workflowIdentifier"] = workflow.raw_data.get("identifier")
-            existing_step = None
-            if old_steps_flat:  # Only try to find existing_step if there was an installed_workflow
-                existing_step = next(
-                    (
-                        s for s in old_steps_flat if s.get("instanceName") ==
-                        step.get("instanceName")  # Match by instanceName
-                    ),
-                    None,
-                )
-
+            # Take the step identifier if the same step instance name already exists.
+            existing_step = (next(
+                (x for x in old_steps
+                 if (x.get("instanceName") == step.get("instanceName") and
+                     x.get("actionProvider") == step.get("actionProvider"))),
+                None,
+            ) if old_steps else None)
             if existing_step:
                 old_step_identifier = step.get("identifier")
-                new_identifier = existing_step.get("identifier")
-                if old_step_identifier and new_identifier and old_step_identifier != new_identifier:
-                    identifier_mappings[old_step_identifier] = new_identifier
-
-                step["identifier"] = new_identifier
+                identifier_mappings[old_step_identifier] = existing_step.get(
+                    "identifier", )
+                step["identifier"] = existing_step.get("identifier")
                 step["originalStepIdentifier"] = existing_step.get(
-                    "originalStepIdentifier")
+                    "originalStepIdentifier", )
 
                 step_debug_data = step.get("debugData")
-                if step_debug_data:
-                    if "originalStepIdentifier" in step_debug_data:
-                        step_debug_data[
-                            "originalStepIdentifier"] = existing_step.get(
-                                "originalStepIdentifier")
-                    if "originalWorkflowIdentifier" in step_debug_data and installed_workflow:
-                        step_debug_data[
-                            "originalWorkflowIdentifier"] = installed_workflow.get(
-                                "originalPlaybookIdentifier")
-            else:  # New step or no existing workflow to match against
-                # Ensure new steps get unique identifiers if not already set,
-                # or if we are defining a workflow as completely new.
-                if not step.get(
-                        "identifier"
-                ) or not installed_workflow:  # also if workflow itself is new
-                    step["identifier"] = str(uuid.uuid4())
-                # originalStepIdentifier might need specific handling for brand new steps
-                # often it's same as identifier for new, non-copied steps.
+                if step_debug_data and step_debug_data.get(
+                        "originalStepIdentifier"):
+                    step_debug_data[
+                        "originalStepIdentifier"] = existing_step.get(
+                            "originalStepIdentifier", )
+                if step_debug_data and step_debug_data.get(
+                        "originalWorkflowIdentifier", ):
+                    step_debug_data["originalWorkflowIdentifier"] = (
+                        installed_workflow.get("originalPlaybookIdentifier"))
 
             if step_type == 0 and provider == "Scripts":  # Regular Action
                 self._assign_integration_instance_to_step(
-                    step, workflow.environments, existing_step)
-            elif step_type == 5:  # Nested Workflow (Block)
+                    step,
+                    workflow.environments,
+                    existing_step,
+                )
+            elif step_type == 5:  # Nested Workflow
                 self._link_nested_block_step(step)
 
-        # Patch relations based on new identifiers
-        for relation in workflow.raw_data.get("stepsRelations", []):
+        for relation in workflow.raw_data.get("stepsRelations"):
             if relation.get("fromStep") in identifier_mappings:
-                relation["fromStep"] = identifier_mappings[relation.get(
-                    "fromStep")]
+                relation["fromStep"] = identifier_mappings.get(
+                    relation.get("fromStep"))
             if relation.get("toStep") in identifier_mappings:
-                relation["toStep"] = identifier_mappings[relation.get(
-                    "toStep")]
+                relation["toStep"] = identifier_mappings.get(
+                    relation.get("toStep"))
+
+        self._adjust_loop_keys_and_parameters(identifier_mappings, workflow)
+
+    def _adjust_loop_keys_and_parameters(self, identifier_mappings, workflow):
+        for step in self._flatten_playbook_steps(
+                workflow.raw_data.get("steps")):
+            if step.get("startLoopStepIdentifier"):
+                mapped_id = identifier_mappings.get(
+                    step["startLoopStepIdentifier"])
+                if mapped_id:
+                    step["startLoopStepIdentifier"] = mapped_id
+
+            if step.get("endLoopStepIdentifier"):
+                mapped_id = identifier_mappings.get(
+                    step["endLoopStepIdentifier"])
+                if mapped_id:
+                    step["endLoopStepIdentifier"] = mapped_id
+
+            parameters = step.get("parameters", [])
+            for param in parameters:
+                param_name = param.get("name")
+                param_value = param.get("value")
+
+                # Handle Start/EndLoopStepIdentifier parameter
+                if (param_name in {
+                        "StartLoopStepIdentifier", "EndLoopStepIdentifier"
+                } and param_value):
+                    mapped_id = identifier_mappings.get(param_value)
+                    if mapped_id:
+                        param["value"] = mapped_id
 
     def _save_workflow_mod_time_to_context(self, workflow: Workflow) -> None:
-        self.refresh_cache_item(
-            "playbooks"
-        )  # Refresh WorkflowInstaller's cache of installed playbooks
+        self.refresh_cache_item("playbooks")
         new_mod_time: int = self._get_local_workflow_mod_time(
             workflow.name, -1)
-        self._mod_time_cache[
-            workflow.name] = new_mod_time  # Update external cache
+        self._mod_time_cache[workflow.name] = new_mod_time
         self._filter_and_save_context()
 
     def _filter_and_save_context(self) -> None:
-        # Filter items in external mod_time_cache to only include currently installed playbooks
-        self._mod_time_cache.filter_items(set(
-            self._installed_playbooks.keys()))
-        self._mod_time_cache.push_local_to_external()  # Save external cache
+        self._mod_time_cache.filter_items(set(self._installed_playbooks))
+        self._mod_time_cache.push_local_to_external()
 
-    def _get_local_workflow_mod_time(self,
-                                     __workflow_name: str,
-                                     default: int | None = None,
-                                     /) -> int:
-        playbook: dict[str, Any] | None = self._installed_playbooks.get(
-            __workflow_name)
-        if playbook:
-            return playbook.get("modificationTimeUnixTimeInMs", default)
-        return default if default is not None else -1
+    def _get_local_workflow_mod_time(
+        self,
+        __workflow_name: str,
+        default: int | None = None,
+        /,
+    ) -> int:
+        playbook: dict[str, Any] = self._installed_playbooks[__workflow_name]
+        return playbook.get("modificationTimeUnixTimeInMs", default)
 
     @property
     def _installed_playbooks(self) -> dict[str, dict[str, Any]]:
-        """Currently installed playbooks and blocks. Fetches if not cached."""
-        if "playbooks" not in self._cache:  # Refers to WorkflowInstaller's internal _cache
-            LOGGER.debug(
-                "Fetching installed playbooks for WorkflowInstaller cache.")
+        """Currently installed playbooks and blocks"""
+        if "playbooks" not in self._cache:
             self._cache["playbooks"] = {
                 x.get("name"): x
                 for x in self.api.get_playbooks()
-                if x.get("name")  # Ensure name exists
             }
-        return self._cache.get("playbooks", {})
+        return self._cache.get("playbooks")
 
     @property
-    def _playbook_categories(
-            self) -> dict[str, dict[str, Any]]:  # Added return type hint
-        """Currently configured playbook categories. Fetches if not cached."""
-        if "categories" not in self._cache:  # Refers to WorkflowInstaller's internal _cache
-            LOGGER.debug(
-                "Fetching playbook categories for WorkflowInstaller cache.")
+    def _playbook_categories(self) -> dict:
+        """Currently configured playbook categories"""
+        if "categories" not in self._cache:
             self._cache["categories"] = {
                 x.get("name"): x
                 for x in self.api.get_playbook_categories()
-                if x.get("name")  # Ensure name exists
             }
-        return self._cache.get("categories", {})
+        return self._cache.get("categories")
 
-    def refresh_cache_item(self, item_name: str) -> None:  # Added type hint
-        if item_name in self._cache:  # Refers to WorkflowInstaller's internal _cache
+    def refresh_cache_item(self, item_name) -> None:
+        if item_name in self._cache:
             del self._cache[item_name]
-            LOGGER.debug(
-                f"WorkflowInstaller cache item '{item_name}' refreshed.")
 
     def _assign_integration_instance_to_step(
-            self,
-            step: dict,
-            environments: list[str],
-            existing_step: dict | None = None  # Typed environments
+        self,
+        step: dict,
+        environments: list,
+        existing_step: dict = None,
     ) -> None:
-        if existing_step:
-            # Try to preserve existing integration instance if step is matched
-            instance_param = self._get_step_parameter_by_name(
-                existing_step, "IntegrationInstance")
-            if instance_param and "value" in instance_param:
-                self._set_step_parameter_by_name(step, "IntegrationInstance",
-                                                 instance_param["value"])
+        """Reconfigure an integration instance of a workflow step.
 
-            fallback_param = self._get_step_parameter_by_name(
-                existing_step, "FallbackIntegrationInstance")
-            if fallback_param and "value" in fallback_param:
-                self._set_step_parameter_by_name(
-                    step, "FallbackIntegrationInstance",
-                    fallback_param["value"])
+        If old_steps is supplied, It will first try to match the same step in the old playbook and
+        assign the step to the same integration instance.
+        Otherwise, If the playbook is assigned to only one environment (and not all environments),
+        it will assign the first integration instance it finds.
+        If the playbook is assigned to All Environments or more than one environment, The step will
+        be set to dynamic mode and assigned to the first shared instance, or None if it doesn't
+        exist.
+
+        Args:
+            step: The step to reconfigure
+            environments: Playbook assigned environments, for searching integration instances
+            existing_step: Optional - if the step is already defined, take the integration instance
+            from it instead
+
+        """
+        if existing_step:
+            instance = self._get_step_parameter_by_name(
+                existing_step,
+                "IntegrationInstance",
+            ).get("value")
+            self._set_step_parameter_by_name(step, "IntegrationInstance",
+                                             instance)
+            fallback = self._get_step_parameter_by_name(
+                existing_step,
+                "FallbackIntegrationInstance",
+            ).get("value")
+            self._set_step_parameter_by_name(
+                step,
+                "FallbackIntegrationInstance",
+                fallback,
+            )
             return
 
-        # New step or step couldn't be matched, assign based on environment logic
+        instance_display_name = self._get_instance_display_name(
+            step,
+            "IntegrationInstance",
+            "InstanceDisplayName",
+        )
+
+        # If the playbook is for one specific environment, choose the first integration instance
+        # from that environment. Otherwise, set the step to dynamic mode and set the first shared
+        # integration instance as fallback
         if len(environments
                ) == 1 and environments[0] != ALL_ENVIRONMENTS_IDENTIFIER:
             integration_instances = self._find_integration_instances_for_step(
-                step.get("integration"), environments[0])
+                step.get("integration"),
+                environments[0],
+            )
             if integration_instances:
                 self._set_step_parameter_by_name(
-                    step, "IntegrationInstance",
-                    integration_instances[0].get("identifier"))
-            else:  # No instance found for the specific environment
-                self._set_step_parameter_by_name(step, "IntegrationInstance",
-                                                 None)  # Or handle as error
-            self._set_step_parameter_by_name(step,
-                                             "FallbackIntegrationInstance",
-                                             None)
-        else:  # All Environments or multiple environments
-            shared_instances = self._find_integration_instances_for_step(
-                step.get("integration"),
-                ALL_ENVIRONMENTS_IDENTIFIER  # Check for shared instances
-            )
-            self._set_step_parameter_by_name(step, "IntegrationInstance",
-                                             "AutomaticEnvironment")
-            if shared_instances:
+                    step,
+                    "IntegrationInstance",
+                    integration_instances[0].get("identifier"),
+                )
                 self._set_step_parameter_by_name(
-                    step, "FallbackIntegrationInstance",
-                    shared_instances[0].get("identifier"))
+                    step,
+                    "FallbackIntegrationInstance",
+                    None,
+                )
+        else:
+            integration_instances = self._find_integration_instances_for_step(
+                step.get("integration"),
+                ALL_ENVIRONMENTS_IDENTIFIER,
+            )
+            self._set_step_parameter_by_name(
+                step,
+                "IntegrationInstance",
+                "AutomaticEnvironment",
+            )
+            if integration_instances:
+                self._set_step_parameter_by_name(
+                    step,
+                    "FallbackIntegrationInstance",
+                    None or integration_instances[0].get("identifier"),
+                )
             else:
                 self._set_step_parameter_by_name(
-                    step, "FallbackIntegrationInstance", None)
+                    step,
+                    "FallbackIntegrationInstance",
+                    None,
+                )
+
+    def _get_instance_display_name(
+        self,
+        step: dict,
+        parameter_name: str,
+        display_name_key: str,
+    ) -> str | None:
+        """Helper to get the display name of an integration instance parameter."""
+        param_json = self._get_step_parameter_by_name(step, parameter_name)
+
+        if param_json is not None:
+            return param_json.get(display_name_key)
+
+        return None
 
     def _find_integration_instances_for_step(
-            self,
-            integration_name: str | None,
-            environment: str  # Typed integration_name
+        self,
+        integration_name: str,
+        environment: str,
     ) -> list[dict]:
-        if not integration_name: return []
+        """Find integration instances available for integration per environment
 
+        Args:
+            integration_name: The integration name to look for
+            environment: The environment to fetch the integration instances
+
+        Returns:
+            A list of configured integration instances
+
+        """
         cache_key = f"integration_instances_{environment}"
-        if cache_key not in self._cache:  # Refers to WorkflowInstaller's internal _cache
+        if cache_key not in self._cache:
             self._cache[cache_key] = self.api.get_integrations_instances(
                 environment)
 
-        all_instances: list[dict] = self._cache.get(cache_key, [])
+        instances = self._cache.get(cache_key)
+        instances.sort(key=lambda x: x.get("instanceName"))
 
-        # Filter for the specific integration and ensure they are configured
-        # Sort by instanceName for deterministic selection if taking the first one
-        filtered_instances = sorted([
-            inst for inst in all_instances
-            if inst.get("integrationIdentifier") == integration_name
-            and inst.get("isConfigured")
-        ],
-                                    key=lambda x: x.get("instanceName", ""))
-        return filtered_instances
+        return [
+            x for x in instances
+            if x.get("integrationIdentifier") == integration_name
+            and x.get("isConfigured")
+        ]
 
     @staticmethod
-    def _flatten_playbook_steps(
-            steps: list | None) -> list[dict]:  # Typed steps
-        if not steps: return []
+    def _flatten_playbook_steps(steps: list) -> list[dict]:
+        """Flatten playbook steps with parallel actions to one list
+
+        Args:
+            steps: The playbook steps to flatten
+
+        Returns:
+            Flattened list of steps
+
+        """
         flat_steps = []
         for step in steps:
-            if step.get(
-                    "actionProvider"
-            ) == "ParallelActionsContainer":  # ParallelActionsContainer
-                # Extend with actions inside the container
-                flat_steps.extend(step.get("parallelActions", []))
-            # Always add the step itself (container or regular step)
+            if step.get("actionProvider") == "ParallelActionsContainer":
+                flat_steps.extend(step.get("parallelActions"))
             flat_steps.append(step)
-        # The original return `steps` seemed incorrect if flattening was intended.
-        # It should return `flat_steps`. Let's assume original was a bug or simplified.
-        # For true flattening that includes container contents and not the container itself:
-        # flat_steps = []
-        # for step in steps:
-        #     if step.get("actionProvider") == "ParallelActionsContainer":
-        #         flat_steps.extend(step.get("parallelActions", []))
-        #     else:
-        #         flat_steps.append(step)
-        # However, the logic in _process_steps seems to expect containers to also be in the list
-        # for matching. The original `flat_steps.append(step)` after extend was likely intentional.
         return flat_steps
 
     def _set_step_parameter_by_name(
-            self, step: dict, parameter_name: str,
-            parameter_value: str | None) -> None:  # Typed parameter_value
-        param = self._get_step_parameter_by_name(step, parameter_name)
-        if param:
-            param["value"] = parameter_value
-        else:
-            LOGGER.warning(
-                f"Parameter '{parameter_name}' not found in step '{step.get('instanceName', step.get('name'))}' to set value."
-            )
+        self,
+        step: dict,
+        parameter_name: str,
+        parameter_value: str | None,
+    ):
+        """Set the value of a step parameter
+
+        Args:
+            step: The step to reconfigure
+            parameter_name: Name of the parameter to reconfigure
+            parameter_value: New value of the parameter
+
+        """
+        self._get_step_parameter_by_name(
+            step, parameter_name)["value"] = (parameter_value)
 
     @staticmethod
     def _get_step_parameter_by_name(step: dict,
                                     parameter_name: str) -> dict | None:
-        if "parameters" not in step or not isinstance(step["parameters"],
-                                                      list):
-            return None
+        """Get a workflow step parameter by name
+
+        Args:
+            step: The step to get the parameter from
+            parameter_name: Name of the parameter
+
+        Returns:
+            The parameter dict instance, or None if not found
+
+        """
         return next(
-            (p for p in step["parameters"] if p.get("name") == parameter_name),
-            None)
+            (x for x in step.get("parameters")
+             if x.get("name") == parameter_name),
+            None,
+        )
 
     @staticmethod
-    def _copy_ids_from_existing_workflow(
-            workflow: Workflow, other: dict[str, Any]) -> None:  # Typed other
+    def _copy_ids_from_existing_workflow(workflow: Workflow,
+                                         other: dict) -> None:
+        """Reconfigure 'workflow' values according to 'other' workflow
+
+        Args:
+            workflow: The workflow to copy the ids to
+            other: A dict of the other workflow to copy the ids from
+
+        """
         workflow.raw_data["id"] = other.get("id")
         workflow.raw_data["identifier"] = other.get("identifier")
         workflow.raw_data["originalPlaybookIdentifier"] = other.get(
-            "originalPlaybookIdentifier")
-
-        trigger = workflow.raw_data.get("trigger", {})
-        other_trigger = other.get("trigger", {})
-        trigger["id"] = other_trigger.get("id")
-        trigger["identifier"] = other_trigger.get("identifier")
-        workflow.raw_data[
-            "trigger"] = trigger  # Ensure it's set back if it was missing
-
+            "originalPlaybookIdentifier", )
+        workflow.raw_data["trigger"]["id"] = other.get("trigger").get("id")
+        workflow.raw_data["trigger"]["identifier"] = other.get("trigger").get(
+            "identifier", )
         workflow.raw_data["categoryName"] = other.get("categoryName")
         workflow.raw_data["categoryId"] = other.get("categoryId")
 
@@ -864,70 +911,36 @@ class WorkflowInstaller:
 
         Args:
             workflow: A new workflow to reconfigure
+
         """
-        new_uuid = str(uuid.uuid4())
-        workflow.raw_data["identifier"] = new_uuid
-        workflow.raw_data[
-            "originalPlaybookIdentifier"] = new_uuid  # For new, original is itself
+        workflow.raw_data["identifier"] = workflow.raw_data[
+            "originalPlaybookIdentifier"] = str(uuid.uuid4())
+        workflow.raw_data["trigger"]["id"] = 0
+        workflow.raw_data["trigger"]["identifier"] = str(uuid.uuid4())
 
-        trigger = workflow.raw_data.get("trigger", {})
-        trigger[
-            "id"] = 0  # For new workflows, backend usually assigns this upon first save
-        trigger["identifier"] = str(uuid.uuid4())
-        workflow.raw_data["trigger"] = trigger
-
-        category_name = workflow.category  # Assuming workflow.category holds the name
-        if category_name not in self._playbook_categories:  # Uses property, so fetches if needed
-            LOGGER.info(
-                f"Playbook category '{category_name}' not found. Creating new one."
-            )
-            try:
-                category = self.api.create_playbook_category(category_name)
-                self.refresh_cache_item("categories")  # Refresh after creation
-            except Exception as e:
-                LOGGER.error(
-                    f"Failed to create playbook category '{category_name}': {e}"
-                )
-                # Decide on fallback: use default, raise error, or proceed without categoryId
-                category = {
-                    "id": None,
-                    "name": category_name
-                }  # Fallback example
+        if workflow.category not in self._playbook_categories:
+            category = self.api.create_playbook_category(workflow.category)
+            self.refresh_cache_item("categories")
         else:
-            category = self._playbook_categories[category_name]
+            category = self._playbook_categories.get(workflow.category)
 
         workflow.raw_data["categoryId"] = category.get("id")
-        workflow.raw_data["categoryName"] = category.get(
-            "name")  # Ensure name is also consistent
 
     def _link_nested_block_step(self, step: dict) -> None:
         """Links a nested block step to the correct block that is stored on the system
 
         Args:
-            step: A nested workflow step to reconfigure (type 5)
+            step: A nested workflow step to reconfigure
+
         """
-        block_name = step.get(
-            "name")  # The 'name' of the step is the block's name
-        if block_name in self._installed_playbooks:  # Check if block exists by name
-            block_details = self._installed_playbooks[block_name]
-            if block_details.get("playbookType") == WorkflowTypes.BLOCK.value:
-                nested_workflow_param = self._get_step_parameter_by_name(
-                    step, "NestedWorkflowIdentifier")
-                if nested_workflow_param:
-                    nested_workflow_param["value"] = block_details.get(
-                        "identifier")
-                    LOGGER.debug(
-                        f"Linked step '{step.get('instanceName')}' to block '{block_name}' (ID: {block_details.get('identifier')})"
-                    )
-                else:
-                    LOGGER.warning(
-                        f"Step '{step.get('instanceName')}' (block '{block_name}') is missing 'NestedWorkflowIdentifier' parameter."
-                    )
-            else:
-                LOGGER.warning(
-                    f"Found item '{block_name}' in playbooks, but it's not a Block. Cannot link step '{step.get('instanceName')}'."
-                )
-        else:
-            LOGGER.warning(
-                f"Block '{block_name}' for step '{step.get('instanceName')}' not found in installed playbooks. Cannot link."
+        if (step.get("name") in self._installed_playbooks and
+                self._installed_playbooks[step.get("name")].get("playbookType")
+                == WorkflowTypes.BLOCK.value):
+            nested_workflow_identifier = self._get_step_parameter_by_name(
+                step,
+                "NestedWorkflowIdentifier",
             )
+            if nested_workflow_identifier:
+                nested_workflow_identifier[
+                    "value"] = self._installed_playbooks[step.get("name")].get(
+                        "identifier")

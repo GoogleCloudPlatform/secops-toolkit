@@ -23,7 +23,7 @@ permissions:
 
 env:
   LOCAL_SYNC_PATH: ${{ vars.LOCAL_SYNC_PATH }}
-  SOURCE_SOAR_API_URL: ${{ secrets.SOURCE_SOAR_API_URL }}
+  SOURCE_SOAR_API_URL: ${{ vars.SOURCE_SOAR_API_URL }}
   SOURCE_SOAR_API_KEY: ${{ secrets.SOURCE_SOAR_API_KEY }}
   SSH_AUTH_SOCK: /tmp/ssh_agent.sock
 
@@ -43,6 +43,9 @@ jobs:
       - name: Run Python script
         run: |
           python main.py pull-playbooks
+
+      - name: Fix dubious ownership
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Commit and push changes
         run: |

@@ -101,7 +101,7 @@ You will need to add the following:
 | Name | Type | Description                                                                         |
 | :--- | :--- |:------------------------------------------------------------------------------------|
 | `SOURCE_SOAR_API_KEY` | **Secret** | The API key for authenticating with the source SOAR platform.                       |
-| `SOURCE_SOAR_API_URL` | **Secret** | The base URL for the source SOAR platform's API (e.g., `https://*..siemplify-soar.com/api/`).    |
+| `SOURCE_SOAR_API_URL` | **Variable** | The base URL for the source SOAR platform's API (e.g., `https://*..siemplify-soar.com/api/`).    |
 | `LOCAL_SYNC_PATH` | **Variable** | The local directory path within the repository where the playbooks should be saved. |
 
 ---
@@ -162,10 +162,12 @@ The pipeline is configured in .gitlab-ci.yml and relies on GitLab CI/CD variable
 
 Go to Settings > CI/CD > Variables and add the following:
 
-| Variable |	Description | 	Example Value         |	Protected |	Masked |
-|----------|--------------|------------------------|------------|---------|
-| TARGET_SOAR_API_URL | The API URL of the production SOAR instance. | https://*.siemplify-soar.com/api/	 | Yes |	No |
-| TARGET_SOAR_API_KEY	| The API key for the production SOAR instance. | 	glpat-xxxxxxxxxx      | Yes	| Yes |
+| Variable             | 	Description                                   | 	Example Value         |	Protected |	Masked |
+|----------------------|------------------------------------------------|------------------------|------------|---------|
+| SOURCE_SOAR_API_URL  | The API URL of the development SOAR instance.  | https://*.siemplify-soar.com/api/	 | Yes |	No |
+| SOURCE_SOAR_API_KEY	 | The API key for the development SOAR instance. | 	glpat-xxxxxxxxxx      | Yes	| Yes |
+| TARGET_SOAR_API_URL  | The API URL of the production SOAR instance.   | https://*.siemplify-soar.com/api/	 | Yes |	No |
+| TARGET_SOAR_API_KEY	 | The API key for the production SOAR instance.  | 	glpat-xxxxxxxxxx      | Yes	| Yes |
 
 Export to Sheets
 Note: It is critical to set the TARGET_SOAR_API_KEY as Masked to prevent it from being exposed in job logs. Both variables should be Protected to ensure they are only available on protected branches, like main.
