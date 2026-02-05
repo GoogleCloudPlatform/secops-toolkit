@@ -84,6 +84,12 @@ Modules aim to stay close to the low-level provider resources they encapsulate a
 
 This repository provides a collection of sample repositories for automating Google Cloud SecOps configuration through CICD pipelines.
 
+## Dashboards As Code
+
+<a href="./pipelines/dashboards-as-code/" title="Dashboards As Code pipeline"><img src="./pipelines/dashboards-as-code/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [sample repository](./pipelines/dashboards-as-code/) provides a framework for managing SecOps Native Dashboards as Code.</p>
+
+<br clear="left">
+
 ### Detection As Code
 
 <a href="./pipelines/detection-as-code/" title="Detection As Code pipeline"><img src="./pipelines/detection-as-code/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [sample repository](./pipelines/detection-as-code/) contains ready-to-use code for automated deployment of detection rules and reference lists in Google SecOps via CICD (currently with sample pipelines for GitLab and GitHub).</p>
