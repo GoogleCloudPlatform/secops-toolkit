@@ -1,0 +1,33 @@
+{
+  "dashboards": [
+    {
+      "dashboard": {
+        "name": "6d75c46c-1970-4788-9930-ff8a3285551f",
+        "displayName": "test",
+        "definition": {
+          "filters": [
+            {
+              "id": "GlobalTimeFilter",
+              "dataSource": "GLOBAL",
+              "filterOperatorAndFieldValues": [
+                {
+                  "filterOperator": "PAST",
+                  "fieldValues": [
+                    "1",
+                    "DAY"
+                  ]
+                }
+              ],
+              "displayName": "Global Time Filter",
+              "isStandardTimeRangeFilter": true,
+              "isStandardTimeRangeFilterEnabled": true
+            }
+          ]
+        },
+        "type": "CUSTOM",
+        "etag": "f4895058ce0a5279b14f6e95681d72a8ab5c87aa6925f956e02eea1dd9c19b44",
+        "access": "DASHBOARD_PRIVATE"
+      }
+    }
+  ]
+}
