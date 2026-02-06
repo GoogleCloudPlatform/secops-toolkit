@@ -21,6 +21,10 @@ from secops import SecOpsClient
 from secops.exceptions import APIError
 from config import SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION
 from models import NativeDashboard, DashboardType, DashboardOperation
+from secops.auth import RetryConfig
+from utils import setup_logging
+
+setup_logging()
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,6 +38,12 @@ class DashboardManager:
                 "Missing SecOps env vars: SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION."
             )
         try:
+            retry_config = RetryConfig(
+                total=10,
+                retry_status_codes=[429, 500, 502, 503, 504],
+                allowed_methods=["GET", "POST", "PATCH", "DELETE"],
+                backoff_factor=0.5,
+            )
             self.client = SecOpsClient().chronicle(
                 customer_id=SECOPS_CUSTOMER_ID,
                 project_id=SECOPS_PROJECT_ID,
