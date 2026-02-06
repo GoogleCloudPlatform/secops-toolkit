@@ -87,10 +87,10 @@ def apply(manager: DashboardManager):
               help="Name of Custom Dashboard to download.")
 @click.pass_obj
 def download(manager: DashboardManager, dashboard: str):
-    print("🚀 Starting dashboard download...")
+    LOGGER.info("🚀 Starting dashboard download...")
     remote_dashboards = manager.list_remote_dashboards(include_charts=False)
     if not remote_dashboards:
-        print("No remote dashboards found. Exiting.")
+        LOGGER.info("No remote dashboards found. Exiting.")
         return
 
     dashboard_dir = Path("./dashboards")
@@ -99,12 +99,12 @@ def download(manager: DashboardManager, dashboard: str):
     for name, data in remote_dashboards.items():
         if name == dashboard:
             file_path = dashboard_dir / f"{dashboard.replace(' ','_').lower()}.json"
-            print(f"  -> Saving dashboard '{name}' to {file_path}...")
+            LOGGER.info(f"  -> Saving dashboard '{name}' to {file_path}...")
             with open(file_path, "w") as f:
                 dashboard_export = manager.export_dashboard(
                     dashboard_names=[data.name])
                 json.dump(dashboard_export["inlineDestination"], f, indent=2)
-    print("\n✅ Download complete.")
+    LOGGER.info("\n✅ Download complete.")
 
 
 if __name__ == "__main__":
