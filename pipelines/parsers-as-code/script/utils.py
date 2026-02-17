@@ -38,10 +38,15 @@ def filter_lines(lines_list: list, ignore_patterns: list = None) -> list:
     """
     if not ignore_patterns:
         return lines_list
-    return [line for line in lines_list if not any(re.search(pattern, line) for pattern in ignore_patterns)]
+    return [
+        line for line in lines_list
+        if not any(re.search(pattern, line) for pattern in ignore_patterns)
+    ]
 
 
-def compare_yaml_files(file1_path: str, file2_path: str, ignore_patterns: list = None) -> list | None:
+def compare_yaml_files(file1_path: str,
+                       file2_path: str,
+                       ignore_patterns: list = None) -> list | None:
     """
     Compares two YAML files, ignoring specified patterns, and returns the differences.
 
@@ -61,8 +66,12 @@ def compare_yaml_files(file1_path: str, file2_path: str, ignore_patterns: list =
     try:
         data1 = yaml.safe_load(content1)
         data2 = yaml.safe_load(content2)
-        processed_content1 = yaml.dump(data1, default_flow_style=False, sort_keys=True)
-        processed_content2 = yaml.dump(data2, default_flow_style=False, sort_keys=True)
+        processed_content1 = yaml.dump(data1,
+                                       default_flow_style=False,
+                                       sort_keys=True)
+        processed_content2 = yaml.dump(data2,
+                                       default_flow_style=False,
+                                       sort_keys=True)
     except yaml.YAMLError:
         # Fallback to plain text if YAML is invalid
         processed_content1 = content1
@@ -72,7 +81,9 @@ def compare_yaml_files(file1_path: str, file2_path: str, ignore_patterns: list =
     lines2 = filter_lines(processed_content2.splitlines(), ignore_patterns)
 
     diff_generator = difflib.Differ().compare(lines1, lines2)
-    differences = [line for line in diff_generator if line.startswith(('+', '-'))]
+    differences = [
+        line for line in diff_generator if line.startswith(('+', '-'))
+    ]
     return differences if differences else None
 
 
@@ -90,7 +101,10 @@ def process_data_for_dump(data):
         The processed data structure.
     """
     if isinstance(data, dict):
-        return {k: '' if k == 'collectedTimestamp' else process_data_for_dump(v) for k, v in data.items()}
+        return {
+            k: '' if k == 'collectedTimestamp' else process_data_for_dump(v)
+            for k, v in data.items()
+        }
     if isinstance(data, list):
         return [process_data_for_dump(item) for item in data]
     return data
@@ -100,7 +114,8 @@ def count_total_events(events: list) -> int:
     """Counts total events in a list of parsed events (handling batches)."""
     count = 0
     for item in events:
-        if isinstance(item, dict) and "events" in item and isinstance(item["events"], list):
+        if isinstance(item, dict) and "events" in item and isinstance(
+                item["events"], list):
             count += len(item["events"])
         elif isinstance(item, list):
             count += len(item)
@@ -108,7 +123,14 @@ def count_total_events(events: list) -> int:
             count += 1
     return count
 
-def generate_event_files(client, log_type: str, parser_code: str, parser_ext_code: str | None, logs_dir: str, events_dir: str, file_suffix: str = "") -> dict:
+
+def generate_event_files(client,
+                         log_type: str,
+                         parser_code: str,
+                         parser_ext_code: str | None,
+                         logs_dir: str,
+                         events_dir: str,
+                         file_suffix: str = "") -> dict:
     """
     Generates UDM event files from logs using the provided parser content.
     
@@ -129,8 +151,11 @@ def generate_event_files(client, log_type: str, parser_code: str, parser_ext_cod
         LOGGER.warning(f"[{log_type}] Logs directory not found: {logs_dir}")
         return results
 
-    log_files = [f for f in sorted(os.listdir(logs_dir)) if os.path.isfile(os.path.join(logs_dir, f))]
-    
+    log_files = [
+        f for f in sorted(os.listdir(logs_dir))
+        if os.path.isfile(os.path.join(logs_dir, f))
+    ]
+
     if not log_files:
         LOGGER.warning(f"[{log_type}] No log files found in {logs_dir}")
         return results
@@ -141,50 +166,54 @@ def generate_event_files(client, log_type: str, parser_code: str, parser_ext_cod
         log_filepath = os.path.join(logs_dir, log_filename)
         with open(log_filepath, "r", encoding="utf-8") as f:
             raw_logs = [line.strip() for line in f if line.strip()]
-        
+
         if not raw_logs:
             continue
-            
+
         LOGGER.info(f"[{log_type}] Generating events for {log_filename}...")
         try:
-            response = client.run_parser(
-                log_type=log_type,
-                parser_code=parser_code,
-                parser_extension_code=parser_ext_code,
-                logs=raw_logs
-            )
+            response = client.run_parser(log_type=log_type,
+                                         parser_code=parser_code,
+                                         parser_extension_code=parser_ext_code,
+                                         logs=raw_logs)
             events = [
                 res.get("parsedEvents", [])
                 for res in response.get("runParserResults", [])
             ]
-            
+
             # Construct output filename
             base_name = os.path.splitext(log_filename)[0]
             output_filename = f"{base_name}{file_suffix}.yaml"
             output_path = os.path.join(events_dir, output_filename)
-            
+
             with open(output_path, "w", encoding="utf-8") as f:
                 yaml.dump(process_data_for_dump(events), f, sort_keys=True)
 
             total_count = count_total_events(events)
             results[log_filename] = (output_path, total_count, events)
-            LOGGER.info(f"[{log_type}] Saved {total_count} events to {output_filename}")
-            
+            LOGGER.info(
+                f"[{log_type}] Saved {total_count} events to {output_filename}"
+            )
+
         except Exception as e:
-            LOGGER.error(f"[{log_type}] Failed to generate events for {log_filename}: {e}")
-            
+            LOGGER.error(
+                f"[{log_type}] Failed to generate events for {log_filename}: {e}"
+            )
+
     return results
 
-def generate_pr_comment_output(plan: dict, submitted_info: list, has_errors: bool):
+
+def generate_pr_comment_output(plan: dict, submitted_info: list,
+                               has_errors: bool):
     """Generates a structured JSON output for a GitHub PR comment."""
     LOGGER.info("\n--- Generating output for PR comment ---")
     submitted_map = {info['log_type']: info for info in submitted_info}
     report_lines = ["\n"]
 
     for log_type, details in sorted(plan.items()):
-        if (details.parser_operation == Operation.NONE and
-                details.parser_ext_operation == Operation.NONE and
-                not details.validation_failed):
+        if (details.parser_operation == Operation.NONE
+                and details.parser_ext_operation == Operation.NONE
+                and not details.validation_failed):
             continue
 
         line_parts = [f"- **Log Type**: `{log_type}`"]
@@ -197,7 +226,9 @@ def generate_pr_comment_output(plan: dict, submitted_info: list, has_errors: boo
             if details.validation_failed:
                 status_text, icon = "EVENT_VALIDATION_FAILED", "❌"
                 details_text = "Not submitted due to local event validation failure."
-            elif action in [Operation.CREATE, Operation.UPDATE, Operation.RELEASE]:
+            elif action in [
+                    Operation.CREATE, Operation.UPDATE, Operation.RELEASE
+            ]:
                 if action == Operation.RELEASE:
                     status_text = "READY_TO_RELEASE"
                     details_text = "Pending Release Candidate matched. Ready for activation key."
@@ -206,9 +237,10 @@ def generate_pr_comment_output(plan: dict, submitted_info: list, has_errors: boo
                     status = details.parser_validation_status or "PENDING"
                     icon = "✅" if status == ParserValidationStatus.PASSED.value else "❌" if status == ParserValidationStatus.FAILED.value else "⏳"
                     status_text = f"{status} {icon}"
-                    parser_id = submitted_map.get(log_type, {}).get('parser_id', 'N/A')
+                    parser_id = submitted_map.get(log_type,
+                                                  {}).get('parser_id', 'N/A')
                     details_text = f"Submitted for deployment. Parser ID: `{parser_id}`"
-            else: # Operation is NONE, but we're here because something else happened (e.g., ext change)
+            else:  # Operation is NONE, but we're here because something else happened (e.g., ext change)
                 status_text = "NO_CHANGE"
                 details_text = "No changes detected for the parser."
 
@@ -218,7 +250,8 @@ def generate_pr_comment_output(plan: dict, submitted_info: list, has_errors: boo
         # --- Parser Extension Details ---
         if details.config.parser_ext:
             action = details.parser_ext_operation
-            line_parts.append(f"  - **Parser Extension Action**: `{action.value}`")
+            line_parts.append(
+                f"  - **Parser Extension Action**: `{action.value}`")
 
             if details.validation_failed:
                 status_text, icon = "EVENT_VALIDATION_FAILED", "❌"
@@ -227,9 +260,10 @@ def generate_pr_comment_output(plan: dict, submitted_info: list, has_errors: boo
                 status = details.parser_ext_validation_status or "PENDING"
                 icon = "✅" if status == ParserExtensionState.VALIDATED.value else "❌" if status == ParserExtensionState.REJECTED.value else "⏳"
                 status_text = f"{status} {icon}"
-                ext_id = submitted_map.get(log_type, {}).get('parser_ext_id', 'N/A')
+                ext_id = submitted_map.get(log_type,
+                                           {}).get('parser_ext_id', 'N/A')
                 details_text = f"Submitted for deployment. Extension ID: `{ext_id}`"
-            else: # Operation is NONE
+            else:  # Operation is NONE
                 status_text = "NO_CHANGE"
                 details_text = "No changes detected for the parser extension."
 
@@ -239,8 +273,9 @@ def generate_pr_comment_output(plan: dict, submitted_info: list, has_errors: boo
         # --- Comparison Report ---
         if details.comparison_report:
             report = details.comparison_report
-            line_parts.append(f"\n<details><summary><b>📉 UDM Comparison Report</b></summary>\n\n```text\n{report}\n```\n</details>")
-
+            line_parts.append(
+                f"\n<details><summary><b>📉 UDM Comparison Report</b></summary>\n\n```text\n{report}\n```\n</details>"
+            )
 
         report_lines.append("\n".join(line_parts))
 
@@ -267,6 +302,10 @@ def generate_pr_comment_output(plan: dict, submitted_info: list, has_errors: boo
                 f.write(f"pr_comment_data<<EOF\n{json_output}\nEOF\n")
         except IOError as e:
             LOGGER.error(f"Failed to write to GITHUB_OUTPUT file: {e}")
-            LOGGER.info(f"PR Comment Data (fallback):\n{json.dumps(comment_data, indent=2)}")
+            LOGGER.info(
+                f"PR Comment Data (fallback):\n{json.dumps(comment_data, indent=2)}"
+            )
     else:
-        LOGGER.info(f"PR Comment Data (simulation - GITHUB_OUTPUT not set):\n{json.dumps(comment_data, indent=2)}")
+        LOGGER.info(
+            f"PR Comment Data (simulation - GITHUB_OUTPUT not set):\n{json.dumps(comment_data, indent=2)}"
+        )

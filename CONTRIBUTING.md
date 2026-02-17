@@ -45,7 +45,7 @@ Generate tfdoc (example for `secops-tenant`)
 #### Python Code formatting
 
 ```shell
-yapf -i .     --parallel    --recursive     --exclude "**/.terraform/"     --exclude "tools/"     --exclude "tests/" --exclude "**/__pycache__" --exclude "venv/" --exclude "**/data/"
+yapf .  -i  --recursive     --exclude "**/.terraform/"     --exclude "tools/"     --exclude "tests/" --exclude "**/__pycache__" --exclude "**/venv/*" --exclude "**/data/" --exclude "**/**/requirements.txt"
 ```
 
 ### Code reviews
