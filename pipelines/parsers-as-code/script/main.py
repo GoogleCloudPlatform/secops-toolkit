@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# Copyright 2025 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,134 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import logging
+import os
 import sys
 import time
 import click
+from secops.exceptions import APIError
 from parser_manager import ParserManager
-from models import ParserError, Operation, ParserValidationStatus, ParserExtensionState
-from config import GITHUB_OUTPUT_FILE, PARSER_TYPE_CUSTOM, PARSER_TYPE_PREBUILT
+from models import ParserError, Operation
+from utils import generate_pr_comment_output
+from compare import ParserComparator
 from dotenv import load_dotenv
 
-load_dotenv()
-
-# --- Logger Configuration ---
-logging.basicConfig(
-    level="INFO",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    stream=sys.stdout,
-)
-LOGGER = logging.getLogger(__name__)
-
-
-def generate_pr_comment_output(plan: dict, submitted_info: list,
-                               has_errors: bool):
-    """Generates a structured JSON output for a GitHub PR comment."""
-    LOGGER.info("\n--- Generating output for PR comment ---")
-    submitted_map = {info['log_type']: info for info in submitted_info}
-    report_lines = []
-
-    for log_type, details in sorted(plan.items()):
-        if (details['parser_operation'] == Operation.NONE
-                and details['parser_ext_operation'] == Operation.NONE
-                and not details.get("validation_failed")):
-            continue
-
-        parser_type = details['config'].parser_type
-        line_parts = [
-            f"- **Log Type**: `{log_type}`",
-            f"  - **Parser Type**: `{parser_type}`"
-        ]
-
-        # --- Parser Details ---
-        if details['config'].parser:
-            action = details['parser_operation']
-
-            # For PREBUILT parsers, skip parser action reporting (no operations allowed)
-            if parser_type == PARSER_TYPE_PREBUILT:
-                line_parts.append(
-                    f"  - **Parser**: Using PREBUILT parser from SecOps (read-only)"
-                )
-            else:
-                # For CUSTOM parsers, show action
-                line_parts.append(f"  - **Parser Action**: `{action.value}`")
-
-                if details.get("validation_failed"):
-                    status_text, icon = "EVENT_VALIDATION_FAILED", "❌"
-                    details_text = "Not submitted due to local event validation failure."
-                elif action in [Operation.CREATE, Operation.UPDATE]:
-                    status = details.get("parser_validation_status", "PENDING")
-                    icon = "✅" if status == ParserValidationStatus.PASSED.value else "❌" if status == ParserValidationStatus.FAILED.value else "⏳"
-                    status_text = f"{status} {icon}"
-                    parser_id = submitted_map.get(log_type,
-                                                  {}).get('parser_id', 'N/A')
-                    action_verb = "Created" if action == Operation.CREATE else "Updated"
-                    details_text = f"{action_verb} CUSTOM parser. Parser ID: `{parser_id}`"
-                else:  # Operation is NONE, but we're here because something else happened (e.g., ext change)
-                    status_text = "NO_CHANGE"
-                    details_text = "No changes detected for the CUSTOM parser."
-
-                line_parts.append(f"  - **Validation Status**: {status_text}")
-                line_parts.append(f"  - **Details**: {details_text}")
-
-        # --- Parser Extension Details ---
-        if details['config'].parser_ext:
-            action = details['parser_ext_operation']
-            line_parts.append(
-                f"  - **Parser Extension Action**: `{action.value}`")
-
-            if details.get("validation_failed"):
-                status_text, icon = "EVENT_VALIDATION_FAILED", "❌"
-                details_text = "Not submitted due to local event validation failure."
-            elif action in [Operation.CREATE, Operation.UPDATE]:
-                status = details.get("parser_ext_validation_status", "PENDING")
-                icon = "✅" if status == ParserExtensionState.VALIDATED.value else "❌" if status == ParserExtensionState.REJECTED.value else "⏳"
-                status_text = f"{status} {icon}"
-                ext_id = submitted_map.get(log_type,
-                                           {}).get('parser_ext_id', 'N/A')
-                action_verb = "Attached" if action == Operation.CREATE else "Updated"
-                parser_context = "PREBUILT parser" if parser_type == PARSER_TYPE_PREBUILT else "CUSTOM parser"
-                details_text = f"{action_verb} extension to {parser_context}. Extension ID: `{ext_id}`"
-            else:  # Operation is NONE
-                status_text = "NO_CHANGE"
-                details_text = "No changes detected for the parser extension."
-
-            line_parts.append(f"  - **Validation Status**: {status_text}")
-            line_parts.append(f"  - **Details**: {details_text}")
-
-        report_lines.append("\n".join(line_parts))
-
-    body = "\n\n".join(report_lines)
-
-    if has_errors:
-        title = "❌ Parser Deployment Failed"
-        summary = "Errors were encountered during the process. See action logs for details."
-    elif not submitted_info and not report_lines:
-        title = "✅ All Parsers Up-to-Date"
-        summary = "No changes were needed for any parsers or extensions."
-        body = "All configurations in the repository are in sync with the active versions in Chronicle."
-    else:
-        title = "✅ Parser Deployment Plan"
-        summary = f"{len(submitted_info)} log type(s) had changes submitted. Review validation status below."
-
-    comment_data = {"title": title, "summary": summary, "details": body}
-
-    if GITHUB_OUTPUT_FILE:
-        LOGGER.info("Writing PR comment data to GITHUB_OUTPUT.")
-        json_output = json.dumps(comment_data)
-        try:
-            with open(GITHUB_OUTPUT_FILE, "a") as f:
-                f.write(f"pr_comment_data<<EOF\n{json_output}\nEOF\n")
-        except IOError as e:
-            LOGGER.error(f"Failed to write to GITHUB_OUTPUT file: {e}")
-            LOGGER.info(
-                f"PR Comment Data (fallback):\n{json.dumps(comment_data, indent=2)}"
-            )
-    else:
-        LOGGER.info(
-            f"PR Comment Data (simulation - GITHUB_OUTPUT not set):\n{json.dumps(comment_data, indent=2)}"
-        )
+LOGGER = logging.getLogger("pac")
 
 
 @click.group()
@@ -166,23 +51,23 @@ def verify_and_deploy(manager: ParserManager):
         LOGGER.info("--- Phase 1: Planning and Local Validation ---")
         plan = manager.plan_deployment()
 
-        ops_to_run = any(d["parser_operation"] != Operation.NONE
-                         or d["parser_ext_operation"] != Operation.NONE
-                         for d in plan.values())
+        ops_to_run = any(
+            d.parser_operation != Operation.NONE or d.parser_ext_operation != Operation.NONE
+            for d in plan.values()
+        )
         if not ops_to_run:
-            LOGGER.info(
-                "No parsers or extensions need to be created or updated.")
+            LOGGER.info("No parsers or extensions need to be created or updated.")
             generate_pr_comment_output(plan, [], False)
             return
 
         LOGGER.info("\n--- Phase 2: Submitting to Chronicle API ---")
         submitted = manager.execute_deployment(plan)
         if submitted:
-            LOGGER.info(
-                f"\n--- Pausing 60s for Chronicle validation to begin ---")
+            LOGGER.info(f"\n--- Pausing 60s for Chronicle validation to begin ---")
             time.sleep(60)
         else:
             LOGGER.info("No valid changes to submit.")
+
 
         LOGGER.info("\n--- Phase 3: Verifying Submission Status ---")
         plan = manager.verify_submissions(submitted, plan)
@@ -195,41 +80,106 @@ def verify_and_deploy(manager: ParserManager):
         if has_errors:
             sys.exit(1)
 
-
 @cli.command()
 @click.pass_obj
 def activate_parsers(manager: ParserManager):
     """Finds and activates parsers that have passed validation."""
     try:
-        LOGGER.info(
-            "Checking for parsers and extensions ready for activation...")
+        LOGGER.info("Checking for parsers and extensions ready for activation...")
         count = manager.activate_all_passed()
         if count > 0:
             LOGGER.info(f"Successfully activated {count} item(s).")
         else:
             LOGGER.info("No new items were ready for activation.")
     except ParserError as e:
-        LOGGER.error(f"An error occurred during activation: {e}",
-                     exc_info=True)
+        LOGGER.error(f"An error occurred during activation: {e}", exc_info=True)
         sys.exit(1)
 
-
 @cli.command()
-@click.option('--parser',
-              'target_parser_name',
-              type=str,
-              help="Generate for a specific parser (log type).")
+@click.option('--log-type', '-t', type=str, help="Generate for a specific parser (log type).")
 @click.pass_obj
-def generate_events(manager: ParserManager, target_parser_name: str):
+def generate_events(manager: ParserManager, log_type: str):
     """Generates UDM event YAML files from raw log files."""
     try:
         LOGGER.info("Starting event generation...")
-        manager.generate_events(target_parser_name)
+        manager.generate_events(log_type)
         LOGGER.info("Event generation completed successfully.")
     except ParserError as e:
         LOGGER.error(f"Failed to generate events: {e}", exc_info=True)
         sys.exit(1)
 
+@cli.command()
+@click.option('--log-type', '-t', help='Specific log type to ingest (e.g., "OKTA"). Ingests all types if omitted.')
+@click.pass_obj
+def pull_parser(manager: ParserManager, log_type: str):
+    """Pulls an active parser from Chronicle and updates or creates it locally."""
+    try:
+        LOGGER.info(f"Attempting to pull parser for log type: {log_type}...")
+        is_update = manager.pull_parser(log_type)
+
+        if is_update is None:
+            LOGGER.info(f"[{log_type}] No active custom parser found in Chronicle. No action taken.")
+            return
+
+        if is_update:
+            LOGGER.info(f"[{log_type}] Parser was updated. Regenerating events...")
+            # To regenerate events, we need some sample logs.
+            # The user must add them manually if this is a new parser.
+            # We can check if there are any logs before attempting to generate events.
+            logs_dir = os.path.join("parsers", log_type, "logs")
+            if os.path.isdir(logs_dir) and os.listdir(logs_dir):
+                manager.generate_events(target_log_type=log_type)
+            else:
+                LOGGER.warning(f"[{log_type}] No sample logs found in '{logs_dir}'. Skipping event generation.")
+                LOGGER.warning(f"[{log_type}] Please add sample log files to generate events.")
+
+        LOGGER.info(f"Successfully pulled parser for log type: {log_type}.")
+
+    except APIError as e:
+        if "NOT_FOUND" in str(e):
+            LOGGER.info(f"[{log_type}] No active custom parser found in Chronicle. No action taken.")
+        else:
+            LOGGER.error(f"Failed to pull parser: {e}", exc_info=True)
+            sys.exit(1)
+    except ParserError as e:
+        LOGGER.error(f"Failed to pull parser: {e}", exc_info=True)
+        sys.exit(1)
+
+@cli.command()
+@click.pass_obj
+def pull_parsers(manager: ParserManager):
+    """Pulls ALL active parsers from Chronicle and updates local files."""
+    try:
+        LOGGER.info("Starting bulk pull of all parsers...")
+        manager.pull_all_parsers()
+        LOGGER.info("Bulk pull completed.")
+    except ParserError as e:
+        LOGGER.error(f"Failed to pull parsers: {e}", exc_info=True)
+        sys.exit(1)
+
+@cli.command(name="compare-parsers")
+@click.option('--log-type', required=True, help="The log type to compare.")
+@click.option('--branch', default=None, help="The git branch to use as fallback if no active parser found (optional).")
+@click.pass_obj
+def compare_parsers(manager: ParserManager, log_type: str, branch: str):
+    """Compares the current local parser against the active parser in SecOps (or git branch as fallback)."""
+    try:
+        comparator = ParserComparator(log_type, client=manager.client)
+        report = comparator.run(branch=branch)
+        # valid report printed by run()
+    except Exception as e:
+        LOGGER.error(f"Failed to compare parsers: {e}", exc_info=True)
+        sys.exit(1)
+
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        stream=sys.
+        stdout,  # Explicitly print to stdout for GitHub Actions visibility
+        force=True)
+
+    # Ensure our specific logger is also set to INFO
+    LOGGER.setLevel(logging.INFO)
     cli()

@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# Copyright 2025 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,12 +32,9 @@ SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
 PARSERS_ROOT_DIR = "./parsers"
 PARSER_CONFIG_FILENAME = "parser.conf"
 PARSER_EXT_CONFIG_FILENAME = "parser_extension.conf"
+PARSER_YAML_FILENAME = "parser.yaml"
 LOGS_FOLDER_NAME = "logs"
 EVENTS_FOLDER_NAME = "events"
-
-# SecOps API constants
-PARSER_TYPE_CUSTOM = "CUSTOM"
-PARSER_TYPE_PREBUILT = "PREBUILT"
 
 # Environment variable to get the path to the GitHub Actions output file
 GITHUB_OUTPUT_FILE = os.getenv('GITHUB_OUTPUT')

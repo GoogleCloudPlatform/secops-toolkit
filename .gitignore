@@ -11,3 +11,8 @@
 **/terraform.tfvars
 **/__pycache__
 /secops-toolkit.iml
+/**/.env
+/**/.terraform.lock.hcl
+/**/terraform.tfstate
+/**/.DS_Store
+/**/.idea

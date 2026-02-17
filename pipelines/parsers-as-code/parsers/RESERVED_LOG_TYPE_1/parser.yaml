@@ -1,0 +1,6 @@
+log_type: RESERVED_LOG_TYPE_1
+parser:
+  type: CUSTOM
+  cbn: parser.conf
+parser_extension:
+  cbn: parser_extension.conf

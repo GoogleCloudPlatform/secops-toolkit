@@ -2,7 +2,8 @@
 
 This repository provides a framework for managing Google SecOps parsers and parser extensions as code. It enables a
 robust GitOps workflow with version control, automated local and remote validation, and a CI/CD pipeline that provides
-direct feedback on pull requests before deploying changes.
+direct feedback on pull requests before deploying changes. To get an understanding of how the automation works, please refer to the [following medium article](https://medium.com/google-cloud/parsers-as-code-in-google-secops-30cf3de785c8) while for setting up the integration with GitHub via Workload Identity Federation reder to this [medium article](https://medium.com/google-cloud/secure-google-secops-automations-the-definitive-guide-to-workload-identity-federation-5b1331db9c0c).
+
 
 ### GitHub CICD Pipeline design
 
@@ -45,7 +46,7 @@ This framework is built around a two-stage deployment process managed by a CI/CD
     * Finds parsers in `PASSED` state and extensions in `VALIDATED` state
     * Verifies content matches local configurations
     * Activates them in Chronicle (parsers → `ACTIVE`, extensions → `LIVE`)
-    * Only activates CUSTOM parsers (PREBUILT parsers are read-only)
+    * Activates CUSTOM parsers and promotes PREBUILT parsers from Release Candidate to Active
 
 * **Generate Events (`generate-events`):**
     * Runs local parsers against sample log files in the `logs/` directory
@@ -74,16 +75,18 @@ dedicated `logs` and `events` subdirectories.
 │       └── secops-pipeline.yml   # Your GitHub Actions workflow file
 ├── parsers/
 │   ├── <LOG_TYPE_A>/             # e.g., CISCO_ASA
-│   │   ├── parser.conf           # The CBN parser configuration (optional)
+│   │   ├── parser.yaml           # Metadata and configuration (Required)
+│   │   ├── parser.conf           # The CBN parser configuration (optional for Prebuilt)
 │   │   ├── parser_extension.conf # The CBN parser extension (optional)
 │   │   ├── logs/                 # Subdirectory for sample logs
-│   │   │   └── sample1.log
+│   │   │   └── logs.txt
 │   │   └── events/               # Subdirectory for expected events
-│   │       └── sample1.yaml
+│   │       └── events.yaml
 │   ├── <LOG_TYPE_B>/
 │   │   └── ...
 │   └── ...
 ├── script/
+│   ├── compare.py                # Parser comparator
 │   ├── main.py                   # CLI entry point (using Click)
 │   ├── parser_manager.py         # Core business logic
 │   ├── models.py                 # Data classes, Enums, and custom exceptions
@@ -95,17 +98,18 @@ dedicated `logs` and `events` subdirectories.
 
 **Key components:**
 
-* **`parsers/<LOG_TYPE>/`**: Each subdirectory represents a unique log type. It must contain at least one configuration file.
-    * **`parser.conf`**: Contains the full SecOps parser configuration code (for CUSTOM parsers).
+* **`parsers/<LOG_TYPE>/`**: Each subdirectory represents a unique log type.
+    * **`parser.yaml`**: The source of truth for the parser configuration. Defines the type (CUSTOM/PREBUILT) and file paths.
+    * **`parser.conf`**: Contains the full SecOps parser configuration code (Required for CUSTOM).
     * **`parser_extension.conf`**: Contains the parser extension code.
     * **`logs/`**: A directory containing raw sample log files.
-    * **`events/`**: A directory containing the expected normalized events in YAML format, corresponding to the log files.
+    * **`events/`**: A directory containing the expected normalized events in YAML format.
 * **`script/`**: Contains all the Python source code for the command-line tool.
 
 **Parser Types:**
 
-* **CUSTOM**: User-defined parsers where both the parser configuration and extension are managed in the repository. Requires `parser.conf` file.
-* **PREBUILT**: Google-provided parsers that are read-only. Only extensions can be managed locally. Requires only `parser_extension.conf` file (no `parser.conf`).
+* **CUSTOM**: User-defined parsers where both the parser configuration and extension are managed in the repository.
+* **PREBUILT**: Google-provided parsers. Extensions can be managed locally. Local script can also detect and release pending "Release Candidates" for Prebuilt parsers if the local code matches the pending version.
 
 ---
 
@@ -116,12 +120,13 @@ dedicated `logs` and `events` subdirectories.
 **Structure:**
 ```
 parsers/MY_CUSTOM_PARSER/
-├── parser.conf              # Required: Full parser configuration
+├── parser.yaml              # Required: Parser configuration
+├── parser.conf              # Required: Full parser code
 ├── parser_extension.conf    # Optional: Extension code
 ├── logs/                    # Required: Sample log files
-│   └── sample.log
-└── events/                  # Required: Expected event files
-    └── sample.yaml
+│   └── logs.txt
+└── events/                  # Optional: Expected event files
+    └── events.yaml
 ```
 
 **Operations Supported:**
@@ -143,18 +148,21 @@ parsers/MY_CUSTOM_PARSER/
 **Structure:**
 ```
 parsers/MY_PREBUILT_PARSER/
-├── parser_extension.conf    # Required: Extension code only
+├── parser.yaml              # Required: Parser configuration
+├── parser.conf              # Required: Parser prebuilt code or pending release code
+├── parser_extension.conf    # Optional: Parser extension code
 ├── logs/                    # Required: Sample log files
-│   └── sample.log
+│   └── logs.txt
 └── events/                  # Required: Expected event files
-    └── sample.yaml
+    └── events.yaml
 ```
 
 **Operations Supported:**
+- ✅ Release pending Release Candidates (if local code matches pending RC)
 - ✅ Attach/update parser extension
 - ✅ Activate extension after validation
 - ✅ Local event generation and validation
-- ❌ Create/update base parser (read-only, managed by Google)
+- ❌ Create/update base parser (managed by Google)
 
 **Workflow:**
 1. Write extension code in `parser_extension.conf`
@@ -172,7 +180,7 @@ parsers/MY_PREBUILT_PARSER/
 | Extension managed locally | ✅ Yes | ✅ Yes |
 | Requires `parser.conf` | ✅ Yes | ❌ No |
 | Requires `parser_extension.conf` | Optional | ✅ Yes |
-| Parser activation | ✅ Yes | ❌ No (already active) |
+| Parser activation | ✅ Yes | ✅ Yes (if Release Candidate matches) |
 | Extension activation | ✅ Yes | ✅ Yes |
 | Auto-fetches parser content | ❌ Not needed | ✅ Yes (for validation) |
 
@@ -277,6 +285,19 @@ The `main.py` script uses [Click](https://click.palletsprojects.com/) for its co
   - Saves the generated UDM events to YAML files in the `events/` subdirectory
   - For PREBUILT parsers, fetches the parser content from Chronicle if not available locally
 
+* **Pull Parser:**
+  Fetches the active parser configuration (and extension) from Chronicle and updates/creates the local files.
+    ```bash
+    python3 script/main.py pull-parser --log-type <LOG_TYPE>
+    ```
+
+* **Pull All Parsers:**
+  Bulk fetches ALL active parsers from the tenant and updates/creates local files.
+    ```bash
+    python3 script/main.py pull-parsers
+    ```
+  **Note:** This is useful for initial repository population or synchronization.
+
 ---
 
 ## 🔍 Validation & Error Handling
@@ -339,6 +360,20 @@ The pipeline generates structured PR comments with the following format:
   - **Parser Extension Action**: `CREATE`
   - **Validation Status**: VALIDATED ✅
   - **Details**: Attached extension to CUSTOM parser. Extension ID: `def456`
+
+📉 UDM Comparison Report
+
+============================================================
+COMPARISON REPORT: MY_CUSTOM_PARSER
+============================================================
+Events Generated (Old): 1
+Events Generated (New): 1
+Event counts match.
+------------------------------------------------------------
+No field-level changes detected (excluding timestamps/etags).
+------------------------------------------------------------
+No raw YAML validation differences found.
+============================================================
 ```
 
 **Example for PREBUILT parser:**
@@ -353,6 +388,20 @@ The pipeline generates structured PR comments with the following format:
   - **Parser Extension Action**: `UPDATE`
   - **Validation Status**: VALIDATED ✅
   - **Details**: Updated extension to PREBUILT parser. Extension ID: `xyz789`
+
+📉 UDM Comparison Report
+
+============================================================
+COMPARISON REPORT: MY_PREBUILT_PARSER
+============================================================
+Events Generated (Old): 1
+Events Generated (New): 1
+Event counts match.
+------------------------------------------------------------
+No field-level changes detected (excluding timestamps/etags).
+------------------------------------------------------------
+No raw YAML validation differences found.
+============================================================
 ```
 
 **Example with validation failure:**
@@ -430,17 +479,28 @@ Principal: principalSet://iam.googleapis.com/projects/<PROJECT_NUMBER>/locations
 2- **SecOps API Permissions:**
 Role: roles/chronicle.admin (easiest) or a custom role with the following permissions:
 
+* `chronicle.instances.get`
+* `chronicle.parserExtensions.activate`
+* `chronicle.parserExtensions.create`
+* `chronicle.parserExtensions.delete`
+* `chronicle.parserExtensions.generateKeyValueMappings`
+* `chronicle.parserExtensions.get`
+* `chronicle.parserExtensions.legacySubmitParserExtension`
+* `chronicle.parserExtensions.list`
+* `chronicle.parserExtensions.removeSyslog`
+* `chronicle.parsers.activate`
+* `chronicle.parsers.activateReleaseCandidate`
+* `chronicle.parsers.copyPrebuiltParser`
 * `chronicle.parsers.create`
+* `chronicle.parsers.deactivate`
+* `chronicle.parsers.delete`
+* `chronicle.parsers.generateEventTypesSuggestions`
 * `chronicle.parsers.get`
 * `chronicle.parsers.list`
-* `chronicle.parsers.run`
-* `chronicle.parsers.activate`
-* `chronicle.parserExtensions.create`
-* `chronicle.parserExtensions.get`
-* `chronicle.parserExtensions.list`
-* `chronicle.parserExtensions.activate`
+* `chronicle.parsers.runParser`
+* `chronicle.parsers.update`
 
 ## License
 
-Copyright 2025 Google. This software is provided as-is, without warranty or representation for any use or purpose. Your
+Copyright 2026 Google. This software is provided as-is, without warranty or representation for any use or purpose. Your
 use of it is subject to your agreement with Google.  
