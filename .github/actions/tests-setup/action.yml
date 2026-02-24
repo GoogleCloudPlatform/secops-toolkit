@@ -37,7 +37,7 @@ runs:
         cache-dependency-path: 'tests/requirements.txt'
 
     - name: Set up Terraform
-      uses: hashicorp/setup-terraform@v3
+      uses: hashicorp/setup-terraform@v4
       if: ${{ inputs.TERRAFORM_FLAVOUR == 'terraform' }}
       with:
         terraform_version: ${{ inputs.TERRAFORM_VERSION }}
