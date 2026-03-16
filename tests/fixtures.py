@@ -35,7 +35,7 @@ def _prepare_root_module(path):
   """Context manager to prepare a terraform module to be tested.
 
   `path` is copied to a temporary directory and a few terraform files
-  (e.g. terraform.tfvars) are deleted to ensure a clean test
+  (e.g. terraform.tfvars.sample) are deleted to ensure a clean test
   environment.
   """
   # if we're copying the module, we might as well ignore files and
@@ -45,7 +45,7 @@ def _prepare_root_module(path):
                                            '[0-9]-*-providers.tf',
                                            'terraform.tfstate*',
                                            '.terraform.lock.hcl',
-                                           'terraform.tfvars', '.terraform')
+                                           'terraform.tfvars.sample', '.terraform')
 
   with tempfile.TemporaryDirectory(dir=path.parent) as tmp_path:
     tmp_path = Path(tmp_path)
@@ -339,7 +339,7 @@ def e2e_validator(module_path, extra_files, tf_var_files, basedir=None):
     tf.setup(extra_files=extra_files, upgrade=True)
     tf_var_files = [(basedir / x).resolve() for x in tf_var_files or []]
 
-    # we need only prefix variable to run the example test, all the other are passed in terraform.tfvars file
+    # we need only prefix variable to run the example test, all the other are passed in terraform.tfvars.sample file
     prefix = get_tfvars_for_e2e()["prefix"]
     # to allow different tests to create projects (or other globally unique resources) with the same name
     # bump prefix forward on each test execution
