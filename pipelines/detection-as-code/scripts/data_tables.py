@@ -111,7 +111,7 @@ class DataTables:
                         if data_table.get("scopeInfo") else None),
             )
         except pydantic.ValidationError as e:
-            LOGGER.error(
+            _LOGGER.error(
                 "ValidationError occurred for data table %s\n%s",
                 data_table,
                 json.dumps(e.errors(), indent=4),
@@ -131,13 +131,13 @@ class DataTables:
         data_tables_dir: pathlib.Path = DATA_TABLES_DIR,
     ) -> Mapping[str, DataTable]:
         """Load data table config from file."""
-        LOGGER.info("Loading data table config from file %s",
+        _LOGGER.info("Loading data table config from file %s",
                     data_table_config_file)
         with open(data_table_config_file, "r", encoding="utf-8") as f:
             data_table_config = ruamel_yaml.load(f)
 
         if not data_table_config:
-            LOGGER.info("Data table config file is empty.")
+            _LOGGER.info("Data table config file is empty.")
             return {}
 
         cls.check_data_table_config(data_table_config)
@@ -155,13 +155,13 @@ class DataTables:
                     scopes=config_entry.get("scopes"),
                 )
             except pydantic.ValidationError as e:
-                LOGGER.error(
+                _LOGGER.error(
                     "ValidationError occurred for data table config entry %s\n%s",
                     name,
                     json.dumps(e.errors(), indent=4),
                 )
                 raise
-        LOGGER.info(
+        _LOGGER.info(
             "Loaded metadata and config for %d data tables from %s",
             len(parsed_config),
             data_tables_dir,
@@ -219,7 +219,7 @@ class DataTables:
                         key_column=column.get("keyColumn"),
                     ))
             except pydantic.ValidationError as e:
-                LOGGER.error(
+                _LOGGER.error(
                     "ValidationError for data table column %s\n%s",
                     column,
                     json.dumps(e.errors(), indent=4),
@@ -250,9 +250,9 @@ class DataTables:
     def get_remote_data_tables(
             cls, chronicle_client: ChronicleClient) -> "DataTables":
         """Retrieve all data tables from Google SecOps."""
-        LOGGER.info("Retrieving all data tables from Google SecOps...")
+        _LOGGER.info("Retrieving all data tables from Google SecOps...")
         retrieved_data_tables = chronicle_client.list_data_tables() or []
-        LOGGER.info("Retrieved %d data tables.", len(retrieved_data_tables))
+        _LOGGER.info("Retrieved %d data tables.", len(retrieved_data_tables))
         parsed = cls.parse_data_tables(data_tables=retrieved_data_tables)
         return DataTables(data_tables=parsed)
 
@@ -268,19 +268,19 @@ class DataTables:
         if write_to_file:
             file_path = DATA_TABLES_DIR / f"{data_table_name}.csv"
             log_message += f" and writing to {file_path}"
-        LOGGER.info(log_message)
+        _LOGGER.info(log_message)
 
         rows = chronicle_client.list_data_table_rows(
             name=data_table_name) or []
         row_values = [row["values"] for row in rows]
 
-        LOGGER.info("Retrieved %d rows for data table '%s'.", len(row_values),
+        _LOGGER.info("Retrieved %d rows for data table '%s'.", len(row_values),
                     data_table_name)
 
         if write_to_file:
             with open(file_path, "w", encoding="utf-8", newline="") as f:
                 csv.writer(f).writerows(row_values)
-            LOGGER.info("Wrote %d rows to %s.", len(row_values), file_path)
+            _LOGGER.info("Wrote %d rows to %s.", len(row_values), file_path)
 
         return row_values
 
@@ -303,7 +303,7 @@ class DataTables:
         data_table_config_file: pathlib.Path = DATA_TABLE_CONFIG_FILE,
     ) -> Mapping[str, list[str]]:
         """Update data tables in Google SecOps based on local files."""
-        LOGGER.info(
+        _LOGGER.info(
             "Updating data tables in Google SecOps from local files...")
         local_tables = cls.load_data_table_config(data_table_config_file,
                                                   data_tables_dir)
@@ -335,7 +335,7 @@ class DataTables:
     def _create_new_data_table(cls, chronicle_client: ChronicleClient,
                                name: str, local: DataTable, summary: dict):
         """Create a new data table."""
-        LOGGER.info(f"Creating new data table '{name}'.")
+        _LOGGER.info(f"Creating new data table '{name}'.")
         rows = cls._read_data_table_csv(name)
         header = {
             col.original_column: DataTableColumnType(col.column_type)
@@ -391,7 +391,7 @@ class DataTables:
         summary: dict,
     ):
         """Recreate a data table by deleting and then creating it."""
-        LOGGER.info(f"Recreating data table '{name}' due to schema change.")
+        _LOGGER.info(f"Recreating data table '{name}' due to schema change.")
         chronicle_client.delete_data_table(name=remote.name, force=True)
         cls._create_new_data_table(chronicle_client, name, local, summary)
         summary["recreated"].append(name)
@@ -402,7 +402,7 @@ class DataTables:
         """Check for configuration changes and update if necessary."""
         if (local.description != remote.description
                 or local.row_time_to_live != remote.row_time_to_live):
-            LOGGER.info(f"Updating configuration for data table '{name}'.")
+            _LOGGER.info(f"Updating configuration for data table '{name}'.")
             # Placeholder for actual update logic
             summary["config_updated"].append(name)
 
@@ -414,7 +414,7 @@ class DataTables:
         local_rows = cls._read_data_table_csv(name)
 
         if cls.are_data_tables_different(remote_rows, local_rows):
-            LOGGER.info(f"Updating content for data table '{name}'.")
+            _LOGGER.info(f"Updating content for data table '{name}'.")
             cls.update_remote_data_table_rows(chronicle_client, name,
                                               local_rows)
             summary["content_updated"].append(name)
@@ -438,7 +438,7 @@ class DataTables:
             raise ValueError(
                 f"No rows found in local data table '{data_table_name}'")
 
-        LOGGER.info(
+        _LOGGER.info(
             "Uploading %d rows to data table '%s'.",
             len(row_values),
             data_table_name,
@@ -447,7 +447,7 @@ class DataTables:
         # The following is a placeholder for the actual implementation.
         # As of now, the secops library does not support bulk row replacement.
         # This will be implemented once the library is updated.
-        LOGGER.warning(
+        _LOGGER.warning(
             "Bulk row update is not yet implemented in the secops library."
             " Skipping content update for '%s'.",
             data_table_name,
