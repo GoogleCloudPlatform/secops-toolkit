@@ -132,7 +132,7 @@ class DataTables:
     ) -> Mapping[str, DataTable]:
         """Load data table config from file."""
         _LOGGER.info("Loading data table config from file %s",
-                    data_table_config_file)
+                     data_table_config_file)
         with open(data_table_config_file, "r", encoding="utf-8") as f:
             data_table_config = ruamel_yaml.load(f)
 
@@ -275,7 +275,7 @@ class DataTables:
         row_values = [row["values"] for row in rows]
 
         _LOGGER.info("Retrieved %d rows for data table '%s'.", len(row_values),
-                    data_table_name)
+                     data_table_name)
 
         if write_to_file:
             with open(file_path, "w", encoding="utf-8", newline="") as f:
