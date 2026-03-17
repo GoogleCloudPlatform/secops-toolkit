@@ -8,9 +8,14 @@ The blueprint deploys the following resources in the specified Google Cloud Proj
 
 ### 1. Cloud Monitoring Dashboard
 A centralized dashboard named **"SecOps API & Ingestion Health"** providing visualizations for:
-*   **API Health:** Request rates, latency (Avg vs Max), error rates (4xx vs 5xx), and authentication failures (401/403).
 *   **Ingestion Metrics:** Events per second by log type, log count by Forwarder ID, Google Cloud Region, Project ID, and Log Type.
 *   **Forwarder Health:** Forwarder throughput breakdown by Namespace, Collector ID, and Log Type.
+*   **API Health:** Request rates, latency (Avg vs Max), error rates (4xx vs 5xx), and authentication failures (401/403).
+
+Please find below 2 sample screenshots of the dashboard:
+
+![SecOps Data Ingestion Health](images/data_ingestion.png)
+![SecOps API Health](images/secops_apis.png)
 
 ### 2. Alerting Policies
 Essential alerting policies to proactively notify your team of potential issues:
