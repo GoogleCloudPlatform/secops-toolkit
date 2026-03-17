@@ -57,7 +57,7 @@ values:
     timeouts: null
     upgrade_install: false
     values:
-      - null
+    - null
     verify: false
     version: 1.33.0
     wait: true
@@ -67,6 +67,7 @@ values:
     description: Terraform managed.
     effective_labels:
       goog-terraform-provisioned: 'true'
+    ip_collection: null
     ip_version: null
     ipv6_endpoint_type: null
     labels: null
@@ -84,6 +85,7 @@ values:
     description: Terraform managed.
     effective_labels:
       goog-terraform-provisioned: 'true'
+    ip_collection: null
     ip_version: null
     ipv6_endpoint_type: null
     labels: null
@@ -117,42 +119,42 @@ values:
     timeouts: null
   module.bindplane-cluster.google_container_cluster.cluster:
     addons_config:
-      - cloudrun_config:
-          - disabled: true
-            load_balancer_type: null
-        config_connector_config:
-          - enabled: false
-        gke_backup_agent_config:
-          - enabled: false
-        horizontal_pod_autoscaling:
-          - disabled: false
-        http_load_balancing:
-          - disabled: false
-        kalm_config:
-          - enabled: false
+    - cloudrun_config:
+      - disabled: true
+        load_balancer_type: null
+      config_connector_config:
+      - enabled: false
+      gke_backup_agent_config:
+      - enabled: false
+      horizontal_pod_autoscaling:
+      - disabled: false
+      http_load_balancing:
+      - disabled: false
+      kalm_config:
+      - enabled: false
     allow_net_admin: false
     binary_authorization: []
     cluster_autoscaling:
-      - auto_provisioning_defaults:
-          - boot_disk_kms_key: null
-            disk_size: null
-            disk_type: null
-            image_type: null
-            min_cpu_platform: null
-            service_account: default
-            shielded_instance_config: []
-        autoscaling_profile: null
-        default_compute_class_enabled: null
-        resource_limits: []
+    - auto_provisioning_defaults:
+      - boot_disk_kms_key: null
+        disk_size: null
+        disk_type: null
+        image_type: null
+        min_cpu_platform: null
+        service_account: default
+        shielded_instance_config: []
+      autoscaling_profile: null
+      default_compute_class_enabled: null
+      resource_limits: []
     control_plane_endpoints_config:
-      - dns_endpoint_config:
-          - allow_external_traffic: false
-            enable_k8s_certs_via_dns: null
-            enable_k8s_tokens_via_dns: null
-        ip_endpoints_config:
-          - enabled: true
-    cost_management_config:
+    - dns_endpoint_config:
+      - allow_external_traffic: true
+        enable_k8s_certs_via_dns: null
+        enable_k8s_tokens_via_dns: null
+      ip_endpoints_config:
       - enabled: true
+    cost_management_config:
+    - enabled: true
     deletion_protection: false
     description: null
     disable_l4_lb_firewall_reconciliation: false
@@ -172,71 +174,71 @@ values:
     enable_tpu: false
     fleet: []
     gateway_api_config:
-      - channel: CHANNEL_STANDARD
+    - channel: CHANNEL_STANDARD
     in_transit_encryption_config: null
     initial_node_count: 1
     ip_allocation_policy:
-      - additional_ip_ranges_config: []
-        additional_pod_ranges_config: []
-        cluster_secondary_range_name: pods
-        services_secondary_range_name: services
-        stack_type: IPV4
+    - additional_ip_ranges_config: []
+      additional_pod_ranges_config: []
+      cluster_secondary_range_name: pods
+      services_secondary_range_name: services
+      stack_type: IPV4
     location: europe-west8
     logging_config:
-      - enable_components:
-          - APISERVER
-          - CONTROLLER_MANAGER
-          - SCHEDULER
-          - SYSTEM_COMPONENTS
-          - WORKLOADS
+    - enable_components:
+      - APISERVER
+      - CONTROLLER_MANAGER
+      - SCHEDULER
+      - SYSTEM_COMPONENTS
+      - WORKLOADS
     maintenance_policy:
-      - daily_maintenance_window:
-          - start_time: 03:00
-        maintenance_exclusion: []
-        recurring_window: []
+    - daily_maintenance_window:
+      - start_time: 03:00
+      maintenance_exclusion: []
+      recurring_window: []
     master_auth:
-      - client_certificate_config:
-          - issue_client_certificate: false
+    - client_certificate_config:
+      - issue_client_certificate: false
     master_authorized_networks_config:
-      - cidr_blocks:
-          - cidr_block: 10.0.0.0/8
-            display_name: rfc-1918-10-8
+    - cidr_blocks:
+      - cidr_block: 10.0.0.0/8
+        display_name: rfc-1918-10-8
     min_master_version: null
     monitoring_config:
-      - enable_components:
-          - APISERVER
-          - CONTROLLER_MANAGER
-          - DAEMONSET
-          - DEPLOYMENT
-          - HPA
-          - POD
-          - SCHEDULER
-          - STATEFULSET
-          - STORAGE
-          - SYSTEM_COMPONENTS
-        managed_prometheus:
-          - enabled: true
+    - enable_components:
+      - APISERVER
+      - CONTROLLER_MANAGER
+      - DAEMONSET
+      - DEPLOYMENT
+      - HPA
+      - POD
+      - SCHEDULER
+      - STATEFULSET
+      - STORAGE
+      - SYSTEM_COMPONENTS
+      managed_prometheus:
+      - enabled: true
     name: bindplane-op
     network: https://www.googleapis.com/compute/v1/projects/prod-net-landing-0/global/networks/prod-landing-0
     network_performance_config: []
     network_policy: []
     networking_mode: VPC_NATIVE
     node_pool_auto_config:
-      - linux_node_config: []
-        network_tags: []
-        node_kubelet_config:
-          - {}
-        resource_manager_tags: null
+    - linux_node_config: []
+      network_tags: []
+      node_kubelet_config:
+      - {}
+      resource_manager_tags: null
     pod_security_policy_config: []
     private_cluster_config:
-      - enable_private_endpoint: null
-        enable_private_nodes: true
-        master_global_access_config:
-          - enabled: true
-        private_endpoint_subnetwork: null
+    - enable_private_endpoint: null
+      enable_private_nodes: true
+      master_global_access_config:
+      - enabled: true
+      private_endpoint_subnetwork: null
     project: tmp-test
     release_channel:
-      - channel: REGULAR
+    - channel: REGULAR
     remove_default_node_pool: null
     resource_labels: null
     resource_usage_export_config: []
@@ -249,10 +251,10 @@ values:
     user_managed_keys_config: []
   module.bindplane-deployment.kubernetes_namespace.namespace:
     metadata:
-      - annotations: null
-        generate_name: null
-        labels: null
-        name: bindplane
+    - annotations: null
+      generate_name: null
+      labels: null
+      name: bindplane
     timeouts: null
     wait_for_default_service_account: false
   module.bindplane-deployment.kubernetes_secret.bindplane_secret:
@@ -268,11 +270,11 @@ values:
     data_wo_revision: null
     immutable: null
     metadata:
-      - annotations: null
-        generate_name: null
-        labels: null
-        name: bindplane
-        namespace: bindplane
+    - annotations: null
+      generate_name: null
+      labels: null
+      name: bindplane
+      namespace: bindplane
     timeouts: null
     type: Opaque
     wait_for_service_account_token: true
@@ -284,11 +286,11 @@ values:
     data_wo_revision: null
     immutable: null
     metadata:
-      - annotations: null
-        generate_name: null
-        labels: null
-        name: bindplane-tls
-        namespace: bindplane
+    - annotations: null
+      generate_name: null
+      labels: null
+      name: bindplane-tls
+      namespace: bindplane
     timeouts: null
     type: kubernetes.io/tls
     wait_for_service_account_token: true
@@ -309,7 +311,7 @@ values:
   module.bindplane-sa.google_service_account_iam_binding.authoritative["roles/iam.workloadIdentityUser"]:
     condition: []
     members:
-      - serviceAccount:tmp-test.svc.id.goog[bindplane/bindplane]
+    - serviceAccount:tmp-test.svc.id.goog[bindplane/bindplane]
     role: roles/iam.workloadIdentityUser
   module.db.google_sql_database.databases["bindplane"]:
     deletion_policy: DELETE
@@ -332,44 +334,46 @@ values:
     root_password_wo: null
     root_password_wo_version: null
     settings:
-      - activation_policy: ALWAYS
-        active_directory_config: []
-        advanced_machine_features: []
-        availability_type: REGIONAL
-        collation: null
-        database_flags: []
-        deletion_protection_enabled: false
-        deny_maintenance_period: []
-        disk_autoresize: true
-        disk_autoresize_limit: 0
-        disk_type: PD_SSD
-        edition: ENTERPRISE
-        enable_dataplex_integration: null
-        enable_google_ml_integration: null
-        final_backup_config: []
-        ip_configuration:
-          - allocated_ip_range: null
-            authorized_networks: []
-            custom_subject_alternative_names: null
-            enable_private_path_for_google_cloud_services: false
-            ipv4_enabled: false
-            private_network: null
-            psc_config:
-              - allowed_consumer_projects:
-                  - tmp-test
-                network_attachment_uri: ''
-                psc_auto_connections: []
-                psc_enabled: true
-            server_ca_pool: null
-        maintenance_window: []
-        password_validation_policy: []
-        pricing_plan: PER_USE
-        retain_backups_on_delete: null
-        sql_server_audit_config: []
-        tier: db-g1-small
-        time_zone: null
+    - activation_policy: ALWAYS
+      active_directory_config: []
+      advanced_machine_features: []
+      auto_upgrade_enabled: null
+      availability_type: REGIONAL
+      collation: null
+      database_flags: []
+      deletion_protection_enabled: false
+      deny_maintenance_period: []
+      disk_autoresize: true
+      disk_autoresize_limit: 0
+      disk_type: PD_SSD
+      edition: ENTERPRISE
+      enable_dataplex_integration: null
+      enable_google_ml_integration: null
+      final_backup_config: []
+      ip_configuration:
+      - allocated_ip_range: null
+        authorized_networks: []
+        custom_subject_alternative_names: null
+        enable_private_path_for_google_cloud_services: false
+        ipv4_enabled: false
+        private_network: null
+        psc_config:
+        - allowed_consumer_projects:
+          - tmp-test
+          network_attachment_uri: ''
+          psc_auto_connections: []
+          psc_enabled: true
+        server_ca_pool: null
+      maintenance_window: []
+      password_validation_policy: []
+      pricing_plan: PER_USE
+      retain_backups_on_delete: null
+      sql_server_audit_config: []
+      tier: db-g1-small
+      time_zone: null
     timeouts: null
   module.db.google_sql_user.users["bindplane"]:
+    database_roles: null
     deletion_policy: null
     instance: tmp-bindplane
     name: bindplane
@@ -394,7 +398,7 @@ values:
     upper: true
   module.dns[0].google_dns_managed_zone.dns_managed_zone[0]:
     cloud_logging_config:
-      - enable_logging: false
+    - enable_logging: false
     description: Terraform managed.
     dns_name: example.com.
     effective_labels:
@@ -405,9 +409,9 @@ values:
     name: bindplane
     peering_config: []
     private_visibility_config:
-      - gke_clusters: []
-        networks:
-          - network_url: https://www.googleapis.com/compute/v1/projects/prod-net-landing-0/global/networks/prod-landing-0
+    - gke_clusters: []
+      networks:
+      - network_url: https://www.googleapis.com/compute/v1/projects/prod-net-landing-0/global/networks/prod-landing-0
     project: tmp-test
     reverse_lookup: false
     service_directory_config: []
@@ -427,8 +431,8 @@ values:
     effective_labels:
       goog-terraform-provisioned: 'true'
     endpoint:
-      - gke_cluster:
-          - {}
+    - gke_cluster:
+      - {}
     labels: null
     location: global
     membership_id: bindplane
@@ -580,26 +584,26 @@ values:
     timeouts: null
   tls_cert_request.server_csr[0]:
     dns_names:
-      - bindplane.example.com
+    - bindplane.example.com
     ip_addresses: null
     subject:
-      - common_name: Gitlab
-        country: IT
-        email_address: null
-        locality: Milan
-        organization: Example
-        organizational_unit: Example
-        postal_code: null
-        province: Lombardy
-        serial_number: null
-        street_address: null
+    - common_name: Gitlab
+      country: IT
+      email_address: null
+      locality: Milan
+      organization: Example
+      organizational_unit: Example
+      postal_code: null
+      province: Lombardy
+      serial_number: null
+      street_address: null
     uris: null
   tls_locally_signed_cert.server_singed_cert[0]:
     allowed_uses:
-      - digital_signature
-      - key_encipherment
-      - server_auth
-      - client_auth
+    - digital_signature
+    - key_encipherment
+    - server_auth
+    - client_auth
     early_renewal_hours: 0
     is_ca_certificate: false
     ready_for_renewal: false
@@ -615,9 +619,9 @@ values:
     rsa_bits: 2048
   tls_self_signed_cert.ca_cert[0]:
     allowed_uses:
-      - digital_signature
-      - cert_signing
-      - crl_signing
+    - digital_signature
+    - cert_signing
+    - crl_signing
     dns_names: null
     early_renewal_hours: 0
     ip_addresses: null
@@ -626,16 +630,16 @@ values:
     set_authority_key_id: false
     set_subject_key_id: false
     subject:
-      - common_name: Bindplane
-        country: IT
-        email_address: null
-        locality: Milan
-        organization: Example
-        organizational_unit: Example
-        postal_code: null
-        province: Lombardy
-        serial_number: null
-        street_address: null
+    - common_name: Bindplane
+      country: IT
+      email_address: null
+      locality: Milan
+      organization: Example
+      organizational_unit: Example
+      postal_code: null
+      province: Lombardy
+      serial_number: null
+      street_address: null
     uris: null
     validity_period_hours: 87600
 
