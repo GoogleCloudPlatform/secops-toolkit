@@ -82,7 +82,6 @@ module "bindplane-cluster" {
     master_authorized_ranges = var.cluster_config.master_authorized_ranges
   }
   access_config = {
-    dns_access = false
     ip_access = {
       authorized_ranges = {
         "rfc-1918-10-8" = "10.0.0.0/8"
