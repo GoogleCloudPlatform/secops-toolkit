@@ -99,7 +99,7 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.flavour }}-${{ matrix.version }}-${{ hashFiles('tools/lockfile/.terraform.lock.hcl') }}
 
       - name: Upload lockfile
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: lockfile-${{ runner.os }}-${{ matrix.flavour }}-${{ matrix.version }}
           path: tools/lockfile/.terraform.lock.hcl
