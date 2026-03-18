@@ -16,7 +16,6 @@
 
 project_id = "xxx-prod-secops-0"
 monitoring_config = {
-  enabled = true
   notification_channels = [
     {
       display_name = "SecOps Team"

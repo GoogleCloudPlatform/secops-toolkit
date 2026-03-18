@@ -22,8 +22,6 @@ variable "project_id" {
 variable "monitoring_config" {
   description = "Configuration for monitoring and alerting."
   type = object({
-    enabled        = optional(bool, true)
-    alerts_enabled = optional(bool, false)
     notification_channels = optional(list(object({
       display_name = string
       type         = string
@@ -32,8 +30,63 @@ variable "monitoring_config" {
     })), [])
   })
   default = {
-    enabled               = true
-    alerts_enabled        = false
     notification_channels = []
   }
+}
+
+variable "alerting_config" {
+  description = "Configuration for individual alerts"
+  type = object({
+    secops_ingestion = optional(object({
+      enabled               = optional(bool, true)
+      notifications_enabled = optional(bool, false)
+      threshold             = optional(number, 80)
+    }), {})
+    ingestion_quota_rejection = optional(object({
+      enabled               = optional(bool, true)
+      notifications_enabled = optional(bool, false)
+    }), {})
+    forwarder_buffer_usage = optional(object({
+      enabled               = optional(bool, true)
+      notifications_enabled = optional(bool, false)
+      threshold             = optional(number, 0.01)
+    }), {})
+    secops_forwarder_silence = optional(object({
+      enabled               = optional(bool, true)
+      notifications_enabled = optional(bool, false)
+      duration              = optional(string, "3600s")
+    }), {})
+    forwarder_log_type_silence = optional(object({
+      enabled               = optional(bool, true)
+      notifications_enabled = optional(bool, false)
+      duration              = optional(string, "3600s")
+    }), {})
+    secops_normalized_events_drop = optional(object({
+      enabled               = optional(bool, true)
+      notifications_enabled = optional(bool, false)
+      threshold             = optional(number, 50)
+      duration              = optional(string, "3600s")
+    }), {})
+    high_latency = optional(object({
+      enabled               = optional(bool, true)
+      notifications_enabled = optional(bool, false)
+      threshold             = optional(number, 2000)
+    }), {})
+    high_error_rate = optional(object({
+      enabled               = optional(bool, true)
+      notifications_enabled = optional(bool, false)
+      threshold             = optional(number, 0.1)
+    }), {})
+    auth_failure = optional(object({
+      enabled               = optional(bool, true)
+      notifications_enabled = optional(bool, false)
+      threshold             = optional(number, 5.0)
+    }), {})
+    secops_ingestion_quota = optional(object({
+      enabled               = optional(bool, true)
+      notifications_enabled = optional(bool, false)
+      yearly_quota_tb       = optional(number, 1)
+    }), {})
+  })
+  default = {}
 }

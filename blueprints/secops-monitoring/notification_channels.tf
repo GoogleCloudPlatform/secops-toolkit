@@ -15,10 +15,10 @@
  */
 
 resource "google_monitoring_notification_channel" "channels" {
-  for_each = var.monitoring_config.enabled ? {
+  for_each = {
     for idx, channel in var.monitoring_config.notification_channels : "${channel.type}_${idx}" => channel
     if coalesce(channel.enabled, true)
-  } : {}
+  }
 
   project      = var.project_id
   display_name = each.value.display_name
