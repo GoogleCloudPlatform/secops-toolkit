@@ -1,0 +1,106 @@
+rule rule_01235_windows_ad_account_created_deleted_1day {
+   /*
+
+SOURCE: DEMO SOC
+
+PARAMETER:
+  - none
+
+ Dependencies:
+  - UDM fields: metadata.vendor_name, metadata.product_event_type, target.user.user_display_name, metadata.event_timestamp.seconds, target.group.windows_sid, target.user.windows_sid
+  - Windows Event IDs: 4720, 624 (account created); 4728, 4732, 4756, 632, 636, 660 (account added to group); 4726, 630 (account deleted).
+
+TUNING:
+  - Time window: The '36h' in the 'match' section defines the maximum time difference between the account creation, group addition, and deletion events. This can be adjusted based on organizational policies and observed threat actor behavior.
+  - Event IDs: Additional Windows Event IDs related to account creation, modification, or deletion can be added to the 'events' section to broaden or narrow the rule's scope.
+
+TESTING:
+  - Sample Logs: Use 'sample_logs/WINEVTLOG.log' to test the rule.
+  - Expected Behavior: The rule should trigger when a user account is created (Event ID 4720 or 624), then added to a security group (Event ID 4728, 4732, 4756, 632, 636, or 660), and subsequently deleted (Event ID 4726 or 630), all within a 36-hour period for the same user.
+  - Verification: Ensure that the sequence and timing of these events are correctly identified by the rule.
+
+DOCS:
+  - Description: This rule detects a suspicious sequence of events where a user account is created, added to a security group, and then deleted within a short timeframe (36 hours). This pattern can indicate malicious activity such as privilege escalation followed by an attempt to cover tracks.
+  - Title: User account created, added to group, and deleted in a short period (36 hours)
+  - MITRE ATT&CK:
+    - Tactic: TA0003 (Persistence)
+    - Technique: T1136.002 (Create Account: Domain Account)
+    - URL: https://attack.mitre.org/versions/v17/techniques/T1136.002/
+  - Data Source: Windows Active Directory
+  - Severity: High
+  - Reference: The rule monitors specific Windows Event IDs related to account lifecycle management in Active Directory.
+
+NOTES:
+   - This rule correlates three distinct Windows Active Directory events: account creation, account addition to a security group, and account deletion. The correlation is based on the same user display name and a configurable time window of 36 hours. This pattern is often indicative of an attacker creating temporary accounts for malicious purposes and then removing them to evade detection.
+
+*/
+
+  meta:
+
+
+    author = "Google Professional Services"
+    description = "Detects accounts that have been created, added to dedicated deleted within a day"
+    title = "User created and deleted  in short period (1 day)"
+    responsible = "SOC1"
+    creation_date = "08.06.2025"
+    last_rework_date = ""
+    old_ucid = "b123"
+    secops_ucid = "01235"
+    version = "0.5"
+    mitre_attack_tactic = "TA0003"
+    mitre_attack_technique = "T1136.002"
+    mitre_attack_url = "https://attack.mitre.org/versions/v17/techniques/T1136.002/"
+    mitre_attack_version = "17"
+    type = "Alert"
+    data_source = "Windows"
+    severity = "High"
+    status = "prototype"
+
+  events:
+    $account_created.metadata.vendor_name = "Microsoft"
+    (
+    $account_created.metadata.product_event_type = "4720" or //A user account was created
+    $account_created.metadata.product_event_type = "624"
+    )
+    $account_created.target.user.user_display_name  = $displayname
+
+    $account_created.metadata.event_timestamp.seconds < $account_added.metadata.event_timestamp.seconds
+
+    $account_added.metadata.vendor_name = "Microsoft"
+    (
+    $account_added.metadata.product_event_type = "4728" or //A member was added to a security-enabled global group
+    $account_added.metadata.product_event_type = "4732" or //A member was added to a security-enabled domain local group.
+    $account_added.metadata.product_event_type = "4756" or //A member was added to a security-enabled universal group.
+
+    //Legacy (Pre-Vista/2008)
+    $account_added.metadata.product_event_type = "632" or //A member was added to a security-enabled global group
+    $account_added.metadata.product_event_type = "636" or //A member was added to a security-enabled domain local group.
+    $account_added.metadata.product_event_type = "660"    //A member was added to a security-enabled universal group.
+    )
+    $account_added.target.user.user_display_name  = $displayname
+    $account_added.target.group.windows_sid = $group
+
+    $account_added.metadata.event_timestamp.seconds < $account_deleted.metadata.event_timestamp.seconds
+
+    $account_deleted.metadata.vendor_name = "Microsoft"
+    (
+    $account_deleted.metadata.product_event_type = "4726" or //A user account was deleted
+    //Legacy (Pre-Vista/2008)
+    $account_deleted.metadata.product_event_type = "630" //A user account was deleted
+    )
+
+    $account_deleted.target.user.user_display_name  = $displayname
+    $account_deleted.target.user.windows_sid = $target_user
+
+
+  match:
+    $displayname over 36h
+
+
+  outcome:
+    $Source_user = array_distinct($displayname)
+    $Event_id = array_distinct($account_added.metadata.product_event_type)
+
+  condition:
+    $account_created and $account_added and $account_deleted
+}

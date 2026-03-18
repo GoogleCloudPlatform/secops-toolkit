@@ -1,0 +1,3 @@
+{"metadata":{"event_type":"USER_LOGIN"},"security_result":{"action":"BLOCK","detection_fields":{"riskState":"atRisk"}},"target":{"user":{"userid":"user1@example.com"}},"principal":{"location":{"city":"London"}}}
+{"metadata":{"event_type":"USER_LOGIN"},"security_result":{"action":"BLOCK","detection_fields":{"riskState":"COMPROMISED"}},"target":{"user":{"userid":"user2@example.com"}},"principal":{"location":{"city":"London"}}}
+{"metadata":{"event_type":"USER_LOGIN"},"security_result":{"action":"BLOCK","detection_fields":{"riskState":"atRisk"}},"target":{"user":{"userid":"user3@example.com"}},"principal":{"location":{"city":"London"}}}

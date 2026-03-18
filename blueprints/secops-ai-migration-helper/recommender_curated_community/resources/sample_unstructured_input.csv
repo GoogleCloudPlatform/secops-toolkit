@@ -1,0 +1,58 @@
+Rule Conditions
+"//ucid: 9901
+// Title of Detection:   Rare Scripting Software Detected 
+// Authorship & Contact: https://allthingscomputers.medium.com  https://twitter.com/allthingshandle  https://allthingscomputersblog.wordpress.com/ 
+// Description of the Detection: Because powershell and cmd prompt are so closely watched and have so many alarms put up to catch misuse, hackers are starting to avoid using them. This detects scripting tools that are utilised and found in the Event log that aren't approved software by your environment.
+// References (if available): 
+// The Logic of the Detection or Query Begins Below This Line
+// Source https://github.com/AllThingsComputers/Sentinel-Rules/blob/main/Event%20Logs/Rare%20Scripting%20Software%20Detected.txt
+Event
+| where (RenderedDescription matches regex@'(?i)(command|shell|execute|script|console|terminal)' or RenderedDescription matches regex @(?i)(Bash|Ksh|Fish|Korn|ZOC|Cmder|ConEmu|Mintty)') and not(RenderedDescription matches regex (Use a regex of your expected tools in your environment to remove false positives))" 
+"//ucid: 9902
+// Title of Detection:  Rare or Never Seen Events EventID Logged
+// Authorship & Contact: https://allthingscomputers.medium.com  https://twitter.com/allthingshandle  https://allthingscomputersblog.wordpress.com/ 
+// Description of the Detection:  This requires a watchlist of every event ID from this table and one of  rare event IDs
+// References (if available): 
+// The Logic of the Detection or Query Begins Below This Line
+// Source https://github.com/AllThingsComputers/Sentinel-Rules/blob/main/Event%20Logs/Rare%20or%20Never%20Seen%20Events%20EventID%20Logged.txt
+let time_until = 1d;
+let SentinelWatchlistOfEveryEIDEver = (_GetWatchlist('AllSeenEventIDsFromEventsLog') | project SearchKey);
+let rarewatchlist = (_GetWatchlist('WatchlistOfRareEventsEventIDs') | project SearchKey);
+let EveryEventIDSinceWatchlistCreation = (Event
+| where TimeGenerated between (datetime(2022-07-19T20:00:00)..ago(time_until))
+| summarize by EventID);
+let RecentRareEventIDs = (Event
+| where TimeGenerated between (ago(90d)..ago(time_until))
+| summarize count() by EventID
+| where count_ <= 1); // Adjust sensitivity
+Event
+| where TimeGenerated >= ago(1h)
+| extend NewEvent = iff(EventID !in (SentinelWatchlistOfEveryEIDEver.SearchKey) 
+    and EventID !in (EveryEventIDSinceWatchlistCreation.EventID), ""EID is New"", ""EID is Not New"")
+| extend RareEvent = iff(EventID in (rarewatchlist.SearchKey) 
+    or EventID in (RecentRareEventIDs.EventID), ""EID is Rare"", ""EID is Not Rare"")
+| where NewEvent == ""EID is New"" or RareEvent == ""EID is Rare""
+| project TimeGenerated, EventID, NewEvent, RareEvent
+| project-reorder NewEvent, RareEvent" 
+"//ucid: 9903
+// Title of Detection:   New Run/RunOnce Scheduled Task
+// Authorship & Contact: https://allthingscomputers.medium.com  https://twitter.com/allthingshandle  https://allthingscomputersblog.wordpress.com/ 
+// Description of the Detection:  Shell-Core EventID 9706/9707/9708 
+// References (if available):  https://blog.menasec.net/2019/02/threat-hunting-20-runrunonce-EventID.html 
+// The Logic of the Detection or Query Begins Below This Line
+// Source https://github.com/AllThingsComputers/Sentinel-Rules/blob/main/Event%20Logs/New%20Run%20or%20RunOnce%20Scheduled%20Task.txt
+Event
+| where EventID in (12, 13)
+| where ParameterXml matches regex @""(?i)HK(LM|CU)\\.*(\\Run\\|\\RunOnce\\).*?<""
+| extend RunRunonce = trim_end('<', extract(@""(?i)(HK(LM|CU)\\.*(\\Run\\|\\RunOnce\\).*?)<"", 1, ParameterXml))
+| where not(RunRunonce matches regex @""(?i)\{[\w-]{36}\}exclusions"")" 
+"//ucid: 9904
+// Title of Detection:  Unusual binary shutting down endpoint
+// Authorship & Contact: https://allthingscomputers.medium.com  https://twitter.com/allthingshandle  https://allthingscomputersblog.wordpress.com/ 
+// Description of the Detection: Malware may cause shutdowns on this EID as well as EventID 6006 too
+// References (if available):    https://attack.mitre.org/techniques/T1529/
+// The Logic of the Detection or Query Begins Below This Line
+Event
+| where EventID == 1074
+| where Description contains ""has initiated the shutdown""
+| where not(Description matches regex @""(expected Process Shutting Down Computer)"")" 

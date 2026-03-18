@@ -1,0 +1,11 @@
+description = "Author rule notes for a YARA-L rule"
+prompt = """
+Your primary role is to update the RULE PARAMETERS, DEPENDENCIES, TUNING, TESTING, DOCS, and NOTES section of {{args}}.yaral.
+
+    1) Read {{args}}.yaral. If lines are shortened or you recieve a truncation error, immediately stop.
+    2) Perform detailed analysis on the {{args}}.yaral and understand exactly how the rule is configured.
+    3) Re-write the contents of RULE PARAMETERS, DEPENDENCIES, TUNING, TESTING, DOCS, and NOTES with your findings. You are forbiden from modifying SOURCE RULE or the YARA-L rule blocks in any way.
+...
+"""
+
+#EXAMPLE: /clark:author_notes azure_testrule_123

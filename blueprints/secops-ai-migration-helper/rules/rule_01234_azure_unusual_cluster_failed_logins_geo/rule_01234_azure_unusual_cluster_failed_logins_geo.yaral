@@ -1,0 +1,103 @@
+rule rule_01234_azure_unusual_cluster_failed_logins_geo {
+    /*
+SOURCE: DEMO SOC
+
+PARAMETER: 
+  - none
+
+ Dependencies: 
+  - UDM fields: principal.location.city, security_result.action, security_result.detection_fields["riskState"]
+
+TUNING:
+  - Time window for clustering: The '24h' in the 'match' section can be adjusted to change the time window for clustering failed logins by city.
+  - Risk State: The regex '/atRisk|COMPROMISED/' in the 'events' section can be modified to include or exclude specific risk states.
+
+TESTING:
+  - Sample Logs: Use 'sample_logs/AZURE_AD_SIGNIN.log' to test the rule.
+  - Expected Behavior: The rule should trigger when there are multiple failed login attempts from the same city within a 24-hour period, where the login attempts have a 'riskState' of 'atRisk' or 'COMPROMISED'.
+  - Verification: Ensure that the 'principal.location.city' field is correctly mapped in the UDM events from the sample logs.
+  
+DOCS:
+   - MITRE ATT&CK:
+    - Tactic: TA0001 (Initial Access)
+    - Technique: T1003.002 (OS Credential Dumping: Security Account Manager)
+    - URL: https://attack.mitre.org/versions/v17/techniques/T1003/
+NOTES:
+   - Original KQL rule:
+            "//ucid: 01234
+            //author: Test Musterman
+            //title: Cluster of Failed Logins from same Geo
+            //severity: Medium
+            //description: This rule looks for multiple logins from single geo like City
+            //technique: T1003.002
+            //contributor:
+
+            //3 or more different account risky/failed logins from a single geo location
+            //and where those accounts haven't logged in successfully from that geo location in the last week
+            //CityWhitelist is pre-identified list of cities where there is high levels of legitimate traffic
+            let CityWhitelistDyn = CityWhitelist
+            | summarize make_set(CityName);
+            let FailedLogins = SigninLogs
+            | where TimeGenerated > ago(1d)
+            | where RiskState in~ (\"confirmedCompromised\", \"atRisk\")
+            | extend City = tostring(LocationDetails.city)
+            | where City !in (CityWhitelistDyn)
+            | summarize Users=make_set(tostring(Identity)), count() by City
+            | where isnotempty(City)
+            | where array_length(Users) > 3
+            ;//FailedLogins
+            //below query dynamically creates list of additional cities that can be excluded
+            SigninLogs
+            | where TimeGenerated > ago(1d)
+            | where ResultType == \"0\"
+            | summarize Users=make_set(tostring(Identity)), CityCount = count() by City=tostring(LocationDetails.city)
+            | where isnotempty(City)
+            | where CityCount > 50 or array_length(Users) > 10
+            | join kind=rightanti FailedLogins on City
+            | project City, tostring(atRiskUsers=Users), UserCount=array_length(Users)
+
+            Summarize this table
+
+   - Current YARA-L implementation focuses on clustering failed login events by `principal.location.city` and filtering by `security_result.action = "BLOCK"` and `security_result.detection_fields["riskState"]` matching 'atRisk' or 'COMPROMISED'.
+  */
+    
+
+    meta:
+    author = "Google Professional Services"
+    description = "This rule looks for multiple logins from single geo like City
+    title = "Cluster of Failed Logins from same Geo"
+    responsible = "SOC1"
+    creation_date = "16.07.2025" 
+    last_rework_date = "16.07.2025"
+    old_ucid = "21c1233" 
+    secops_ucid = "01234"
+    version = "0.5"
+    mitre_attack_tactic = "2.2"
+    mitre_attack_technique = "T1003.002"
+    mitre_attack_url = "https://attack.mitre.org/versions/v17/techniques/T1003/"
+    mitre_attack_version = ""
+    type = "Alert"
+    data_source = "Azure"
+    severity = "Medium"
+    status = "prototype"
+
+  events:
+    $failure.metadata.event_type = "USER_LOGIN"
+    $failure.security_result.action = "BLOCK"
+    $uid = $failure.target.user.userid
+    $failure.security_result.detection_fields["riskState"] = /atRisk|COMPROMISED/ nocase
+    $city = $failure.principal.location.city
+
+  match:
+    $city over 24h
+
+  outcome:
+    $risk_score = 35
+    $Count_logs = count_distinct($failure.metadata.id)
+    $Source_user = array_distinct($failure.target.user.userid)
+    $Location = array_distinct($failure.principal.location.city)
+
+  condition:
+    $failure
+
+}

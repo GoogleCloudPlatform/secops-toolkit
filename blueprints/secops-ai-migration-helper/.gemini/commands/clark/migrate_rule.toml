@@ -1,0 +1,34 @@
+description = "Migrate a source rule to YARA-L"
+prompt = """
+Your primary role is to migrate the Source Rule section in {{args}}.yaral into YARA-L 2.0.  Be sure to present your plan and await approval.
+
+    1) Clear your file cache and read {{args}}.yaral. If lines are shortened or you receive a truncation error, immediately stop.
+    2) Perform a detailed analysis of the rule under the Source Rule section. 
+    3) Find most similar  YARA-L rules excludig {{args}}.yaral in your repo that contain similar description keywords and use them as context for logic creation. Example input rule descriptions "Rare or Never Seen  EventID Logged" similar rules descriptions "first time seen window event" or "rare or never seen EventID"  
+    4) Plan for it's exact like-for-like migration to YARA-L 2.0. Ensure to check your directives for YARA-L 2.0 syntax and examples. You are forbidden from simplifying rule logic or taking shortcuts.
+    5) Place the migrated YARA-L 2.0 rule content  the first and the last line at <YARA-L 2.0 rule content> in  to the existing file {{args}}.yaral. 
+
+Ensure the meta block of the migrated YARA-L 2.0 rule follows the following schema: 
+
+    author = must be "Google Professional Services"
+    description = must be exact like-for-like description as the source rule.
+    title = must be exact like-for-like title as the source rule.
+    mitre_attack_tactic = must be "TO-BE-FIXED"
+    mitre_attack_technique = must be "TO-BE-FIXED"
+    mitre_attack_url = must be "https://attack.mitre.org/techniques"
+    mitre_attack_version = must be "TO-BE-FIXED"
+    old_ucid = must be "TO-BE-FIXED"
+    secops_ucid = must be "TO-BE-FIXED"
+    type = must be "Alert"
+    data_source = must be "TO-BE-FIXED"
+    responsible = must be "SOC1"
+    creation_date =  Must contain exact like-for-like creation as the source rule. A date in right format, Example "16.06.2025" can be empty , e.g. ""
+    last_rework_date = Today's date. A date in right format, Example "16.06.2025", can be empty , e.g. ""
+    severity = must be exact like-for-like severity as the source rule. A string can be on of the "Medium", "High" or "Low" if not set use "TO-BE-FIXED"
+    status = must be "prototype" 
+    version = must be "0.5"
+
+Ensure the output section is as the instruction. Consider carefully the YARA-L syntax and functions in your context and instructions
+"""
+
+

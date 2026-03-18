@@ -1,0 +1,117 @@
+rule demo_arcsight_7004 {
+/*
+
+SOURCE: Intergalactic SOC
+RULE PARAMETERS:
+    - Target Log Type: NETWORK_CONNECTION (e.g., FIREWALL, PROXY, WAF)
+    - Target Activity: Detects inbound network traffic originating from known Tor exit nodes.
+
+DEPENDENCIES:
+    - Log Source: Firewall, Proxy, or WAF logs providing network connection data.
+    - UDM Fields:
+        - metadata.event_type
+        - network.direction
+        - principal.ip
+        - target.ip
+        - target.port
+        - network.application_protocol
+        - metadata.product_name
+        - metadata.vendor_name
+        - metadata.product_event_type
+
+TUNING:
+    - Potential False Positives: Legitimate traffic from Tor users accessing company services or applications.
+    - Further Tuning: Adjust the 'Tor_Exit_Nodes' reference list for currency, or add exclusions for known-good internal or external source IPs if necessary.
+
+TESTING:
+    - Simulate Alert: Generate network traffic logs where 'network.direction' is 'INBOUND' and the 'principal.ip' exists in the 'Tor_Exit_Nodes' reference list.
+
+DOCS:
+    - External Reference: https://attack.mitre.org/techniques/T1090/003/
+
+NOTES:
+    - Rationale for Severity: Tor is often used by threat actors for anonymization. Inbound traffic from Tor exit nodes is anomalous and warrants immediate investigation to determine intent.
+
+SOURCE RULE: 
+        ```
+            # Rule: Correlating Tor Sources in Events 
+
+        This is a rule that detects incoming network traffic where the source IP address matches a known Tor exit node stored in an Active List.
+
+        ## RuleId
+
+        7004
+
+
+        ## Matching
+
+        1 event 
+
+        ## Conditions
+
+        (InZone(
+        event1.,/All Filters/Default Filters/Network/Perimeter/Inbound Traffic))
+        And
+        (InActiveList(
+        event1.sourceAddress,/All Active Lists/Tor/Tor Exit Nodes))
+
+        ## Grouped By:
+
+        event1.sourceAddress, event1.destinationAddress, event1.deviceProduct, event1.deviceVendor, event1.destinationPort, event1.applicationProtocol, event1.deviceEventClassId
+
+        ## Execute actions
+        ### On First Event
+        · SendToConsole( )
+        · Set Severity High
+        · SetEventField( name, Anonymizer Traffic - Tor Exit Node Detected)
+        · SetEventField( categoryBehavior, /Communicate/Anonymized)
+
+        ## Source 
+
+        [https://medium.com/analytics-vidhya/correlating-tor-sources-in-arcsight-siem-events-using-python-92750617227a](https://medium.com/analytics-vidhya/correlating-tor-sources-in-arcsight-siem-events-using-python-92750617227a)
+        ```
+*/
+  meta:
+    author = "Google Professional Services"
+    description = "This is a rule that detects incoming network traffic where the source IP address matches a known Tor exit node stored in an Active List."
+    title = "Correlating Tor Sources in Events"
+    mitre_attack_tactic = "TA0001" // Initial Access - assuming Tor is used for initial access
+    mitre_attack_technique = "T1090.003" // Proxy: Multi-hop Proxy - Tor is a multi-hop proxy
+    mitre_attack_url = "https://attack.mitre.org/techniques/T1090/003/"
+    mitre_attack_version = "v14.1"
+    old_ucid = "7004"
+    secops_ucid = "7004"
+    type = "Alert"
+    data_source = "IIS" // Depends on what log source provides network events
+    responsible = "SOC1"
+    creation_date = "" // Source rule does not specify a creation date
+    last_rework_date = "18.03.2026"
+    severity = "High"
+    status = "prototype"
+    version = "0.5"
+
+  events:
+    // This rule looks for inbound network traffic from a source IP that is in the Tor exit node list.
+    // The Arcsight 'InZone' condition for inbound traffic is represented here by checking network direction.
+    // The 'InActiveList' is represented by a check against a reference in 'Tor_Exit_Nodes'.
+    $e.metadata.event_type = "NETWORK_CONNECTION"
+    $e.network.direction = "INBOUND"
+    $e.principal.ip in %Tor_Exit_Nodes.ip
+
+  match:
+    // The grouping from the Arcsight rule is used for the match condition.
+    $sourceAddress over 5m
+
+  outcome:
+    // The outcome variables are based on the grouping fields in the Arcsight rule.
+    $Source_ip = array_distinct($e.principal.ip)
+    $Target_ip = array_distinct($e.target.ip)
+    $Product_name = array_distinct($e.metadata.product_name)
+    $Vendor_name = array_distinct($e.metadata.vendor_name)
+    $Target_port = array_distinct($e.target.port)
+    $Protocol = array_distinct($e.network.application_protocol)
+    $Event_id = array_distinct($e.metadata.product_event_type)
+
+  condition:
+    $e
+}

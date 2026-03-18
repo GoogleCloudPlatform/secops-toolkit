@@ -1,0 +1,40 @@
+    description = "Extract and format unstructured rules in proper JSON. Argument is file containing customer rules in loose text format"
+prompt = """
+
+You goal is to extract values from file, provide the values in JSON format 
+
+Instructions: 
+
+1. Load the file {{args}} and process record by record the rule and consider rule syntax can different. 
+2. Understand the file and provide for each rule the title, ucid, description and logic. If values not present in rule, analyst the rule and suggest. Put N/A if not sure. Do. no use RegEx scripts 
+3. Write values to JSON file in ./recommender_curated_community/work_dir/<input_rules_YYYYMMDD>, example  ./recommender_curated_community/work_dir/input_rules_20250901.json.  It is mission critical to provide the valid JSON and escape string properly
+
+[
+    {
+        "ucid": "<Case or rule ID>",
+        "title": "<Title of the rule, one sentence  of the rule>",
+        "description": "<Description>",
+        "rule": "< Original input rule logic without amy modification" 
+    },
+ ..
+]
+
+4. Validate JSON 
+5. Print the file where you have saved the results 
+
+Example: 
+
+INPUT: 
+
+"//ucid: 9901\n// Title of Detection:   Rare Scripting Software Detected \n// Authorship & Contact: https://allthingscomputers.medium.com  https://twitter.com/allthingshandle  https://allthingscomputersblog.wordpress.com/ \n// Description of the Detection: Because powershell and cmd prompt are so closely watched and have so many alarms put up to catch misuse, hackers are starting to avoid using them. This detects scripting tools that are utilised and found in the Event log that arent approved software by your environment.\n// References (if available): \n// The Logic of the Detection or Query Begins Below This Line\n// Source https://github.com/AllThingsComputers/Sentinel-Rules/blob/main/Event%20Logs/Rare%20Scripting%20Software%20Detected.txt\nEvent\n| where (RenderedDescription matches regex@(?i)(command|shell|execute|script|console|terminal) or RenderedDescription matches regex @(?i)(Bash|Ksh|Fish|Korn|ZOC|Cmder|ConEmu|Mintty)) and not(RenderedDescription matches regex (Use a regex of your expected tools in your environment to remove false positives))"
+
+OUTPUT:
+
+[
+    {
+        "ucid": "9901",
+        "title": "Rare Scripting Software Detected",
+        "description": "Because powershell and cmd prompt are so closely watched and have so many alarms put up to catch misuse, hackers are starting to avoid using them. This detects scripting tools that are utilised and found in the Event log that arent approved software by your environment.",
+        "rule": "//ucid: 9901\n// Title of Detection:   Rare Scripting Software Detected \n// Authorship & Contact: https://allthingscomputers.medium.com  https://twitter.com/allthingshandle  https://allthingscomputersblog.wordpress.com/ \n// Description of the Detection: Because powershell and cmd prompt are so closely watched and have so many alarms put up to catch misuse, hackers are starting to avoid using them. This detects scripting tools that are utilised and found in the Event log that arent approved software by your environment.\n// References (if available): \n// The Logic of the Detection or Query Begins Below This Line\n// Source https://github.com/AllThingsComputers/Sentinel-Rules/blob/main/Event%20Logs/Rare%20Scripting%20Software%20Detected.txt\nEvent\n| where (RenderedDescription matches regex@(?i)(command|shell|execute|script|console|terminal) or RenderedDescription matches regex @(?i)(Bash|Ksh|Fish|Korn|ZOC|Cmder|ConEmu|Mintty)) and not(RenderedDescription matches regex (Use a regex of your expected tools in your environment to remove false positives))"
+    } ]
+"""

@@ -1,0 +1,11 @@
+/.idea/
+/venv/
+**/.terraform/*
+.vscode/**
+.gemini/settings.json
+**/work_dir/*
+!**/work_dir/.gitkeep
+**/__pycache__
+**/.venv/**
+**/script_output.log
+**/script_pid.txt
