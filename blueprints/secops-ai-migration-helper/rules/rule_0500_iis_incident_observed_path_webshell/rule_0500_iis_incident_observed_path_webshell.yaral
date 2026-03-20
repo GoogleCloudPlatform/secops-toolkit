@@ -8,7 +8,7 @@ PARAMETER:
    - This rule doesn't have time-based `match` section parameters to adjust. Its detection relies on web server access logs.
    - Known Web Shell Paths (`KnownWebShells`): The rule relies on a static list of known webshell paths (`KnownWebShells`). Regular maintenance of this list is vital to ensure it remains up-to-date with new threats.
 
-Dependencies:
+Dependencies: 
 
    - W3C IIS Log files.
    - Ensure `csUriStem` and `csMethod` fields are consistently populated in your IIS logs.

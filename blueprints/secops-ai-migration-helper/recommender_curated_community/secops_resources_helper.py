@@ -23,26 +23,28 @@ import subprocess
 
 
 def get_chronicle_client(project_id, location, instance_id):
-    print("Attempting to authenticate using Application Default Credentials with secops SDK...")
+    print(
+        "Attempting to authenticate using Application Default Credentials with secops SDK..."
+    )
 
     try:
         client = SecOpsClient()
-        chronicle = client.chronicle(
-            customer_id=instance_id,
-            project_id=project_id,
-            region=location
-        )
+        chronicle = client.chronicle(customer_id=instance_id,
+                                     project_id=project_id,
+                                     region=location)
         print("Successfully obtained credentials.")
         return chronicle
     except DefaultCredentialsError:
         print("\n--- Authentication Failed ---")
-        print("Please run the following command in your terminal to authenticate:")
+        print(
+            "Please run the following command in your terminal to authenticate:"
+        )
         print("gcloud auth application-default login")
         return None
     except Exception as e:
         print(f"Error: {e}")
         return None
-        
+
 
 def get_curated_rule_sets(chronicle_client):
     print(f"\nFetching curated rule sets using secops SDK...")
