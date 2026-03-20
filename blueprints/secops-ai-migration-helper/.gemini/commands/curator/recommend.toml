@@ -1,26 +1,10 @@
 description = "Generates recommendations for SecOps curated and community rules based on an input JSON file of customer rules."
 prompt = """
-Your objective is to run the SecOps AI rule recommendation script using the provided input rules file `{{args}}`. 
+Your objective is to execute interactive script using the provided input rules file `{{args}}`  
 
 Please follow these instructions sequentially:
 
-### 1. Verification & Setup
-- Set the working directory to `./recommender_curated_community`.
-- Ask the user to confirm they have authenticated to Google Cloud (which is required for Vertex AI and SecOps Content Hub). If they haven't, advise them to run `gcloud auth application-default login`.
-- Check if a default GCP project is configured by running `gcloud config get-value project`. If it is not set, prompt the user to set it.
-- Check if the required environment variables are set: `CONTENTHUB_PROJECT_ID`, `CONTENTHUB_LOCATION`, and `CONTENTHUB_INSTANCE_ID`. If any are missing, ask the user for the values and export them.
-- Ensure that the packages in `requirements.txt` are installed in the user's Python virtual environment.
-
-### 2. Execution Preparation
-- If the `{{args}}` variable is empty, stop and ask the user to provide the path to the JSON file containing their customer rules.
-- Set the environment variable `CUSTOMER_RULES_TO_EVALUATE` to the provided file path (`{{args}}`). 
-
-### 3. Execution
-- Execute the script using `python3 recommender_curated_community.py`. 
-- Stream the script output directly to the user so they can monitor the process.
-
-### 4. Completion
-- When the script finishes, inform the user that the operation is complete and provide the default paths for the final recommendations:
-  - **JSON Recommendations:** `./work_dir/recommendation_curated_community_rules.json`
-  - **CSV Recommendations:** `./work_dir/recommendation_curated_community_rules.csv`
+1) If the `{{args}}` variable is empty, stop and ask the user to provide the path to the JSON file containing their customer rules.
+2) Execute the script using `run_recommender.sh {{args}}`. Stream the script output directly to the user so they can monitor the process and interactive input. Inform the user to use TAB to focus on the script 
+3)  When the script finishes, inform the user that the operation is complete and provide the paths for the final CSV and JSON recommendations in the output of the script.
 """

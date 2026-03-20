@@ -17,3 +17,4 @@ google-auth
 google-genai
 requests
 secops
+google-cloud-aiplatform
