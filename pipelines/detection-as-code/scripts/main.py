@@ -113,11 +113,15 @@ def pull_rules(ctx: AppContext):
         rules_data = ctx.chronicle_client.list_rules().get("rules", [])
         _LOGGER.info("Retrieved %d rules.", len(rules_data))
 
-        deployments_data = ctx.chronicle_client.list_rule_deployments().get("ruleDeployments", [])
+        deployments_data = ctx.chronicle_client.list_rule_deployments().get(
+            "ruleDeployments", [])
         _LOGGER.info("Retrieved %d rule deployments.", len(deployments_data))
 
         # Build a mapping of ruleId -> deployment details
-        deployments_map = {d.get("name"): d for d in deployments_data if d.get("name")}
+        deployments_map = {
+            d.get("name"): d
+            for d in deployments_data if d.get("name")
+        }
 
         yaml = ruamel.yaml.YAML()
         yaml.preserve_quotes = True
@@ -138,7 +142,9 @@ def pull_rules(ctx: AppContext):
             # Extract rule name from text
             match = re.search(r"rule\s+([a-zA-Z0-9_]+)\s*\{", rule_text)
             if not match:
-                _LOGGER.warning("Could not extract rule name for rule ID %s. Skipping.", rule_id)
+                _LOGGER.warning(
+                    "Could not extract rule name for rule ID %s. Skipping.",
+                    rule_id)
                 continue
 
             rule_name = match.group(1)
@@ -148,24 +154,30 @@ def pull_rules(ctx: AppContext):
             rule_file_path.write_text(rule_text, encoding="utf-8")
 
             # Update secops_rules_config
-            dep = deployments_map.get(f"{rule.get("name")}/deployment", {})
+            dep = deployments_map.get(rule_id, {})
             if rule_name not in rules_config:
                 rules_config[rule_name] = {}
-                
+
             rules_config[rule_name]["enabled"] = dep.get("enabled", False)
             rules_config[rule_name]["alerting"] = dep.get("alerting", False)
             rules_config[rule_name]["archived"] = dep.get("archived", False)
-            rules_config[rule_name]["run_frequency"] = dep.get("runFrequency", "LIVE")
+            rules_config[rule_name]["run_frequency"] = dep.get(
+                "runFrequency", "LIVE")
 
             # Generate terraform import commands
             tf_parent = f"projects/{PROJECT_ID}/locations/{REGION}/instances/{CUSTOMER_ID}/rules/{rule_id}"
-            import_commands.append(f"terraform import 'google_chronicle_rule.rule[\"{rule_name}\"]' {tf_parent}")
-            import_commands.append(f"terraform import 'google_chronicle_rule_deployment.rule_deployment[\"{rule_name}\"]' {tf_parent}/deployment")
+            import_commands.append(
+                f"terraform import 'google_chronicle_rule.rule[\"{rule_name}\"]' {tf_parent}"
+            )
+            import_commands.append(
+                f"terraform import 'google_chronicle_rule_deployment.rule_deployment[\"{rule_name}\"]' {tf_parent}/deployment"
+            )
 
         with open(SECOPS_RULES_CONFIG_PATH, "w", encoding="utf-8") as f:
             yaml.dump(rules_config, f)
 
-        _LOGGER.info("Successfully pulled rules and updated %s.", SECOPS_RULES_CONFIG_PATH.name)
+        _LOGGER.info("Successfully pulled rules and updated %s.",
+                     SECOPS_RULES_CONFIG_PATH.name)
 
         if import_commands:
             click.echo("\n--- Terraform Import Commands ---")
