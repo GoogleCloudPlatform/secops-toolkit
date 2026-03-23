@@ -30,9 +30,69 @@ Follow [Gemini CLI](https://github.com/google-gemini/gemini-cli)
 
 #### MCP SecOps setup 
 
-Follow [MCP Security](https://github.com/google/mcp-security)
+Run the following commands:
 
-Add settings file `.gemini/settings.json` for MCP server integration you c an find more detail on [Using Google SecOps with Gemini CLI and Hosted MCP] https://medium.com/@thatsiemguy/using-google-secops-with-gemini-cli-and-hosted-mcp-6400ec8aa99e
+```bash
+gcloud config set project your-gcp-project
+gcloud beta services mcp enable chronicle.googleapis.com --project=your-gcp-project
+```
+
+Configure GCP IAM for **SecOps MCP Access**
+
+In order to access a Google Cloud Hosted MCP Server the principal (a user, service account, or group) will require the MCP Tool User IAM Role:
+- MCP tool user
+
+To use Google SecOps, the principal requires appropriate IAM permissions. A standard admin setup includes:
+
+- Chronicle API Admin
+- Chronicle SOAR Admin
+- Service Usage Consumer
+- Vertex AI User
+
+Before using gemini-cli please issue the following command to set the environment variable required for Vertex AI:
+
+```bash
+export GOOGLE_CLOUD_PROJECT="<your_gcp_project_id>"
+export GOOGLE_CLOUD_LOCATION="global"
+```
+
+Before accessing the Gemini CLI, make sure to configure the ~/.gemini/settings.json file leveraging the built in generate-settings.sh bash script. Execute such a script with the following parameters:
+
+```bash
+./generate_settings.sh <secops_project_id> <secops_region>
+```
+
+The script will generate a settings.json file in the ~/.gemini/ directory.
+
+Before using gemini-cli please update the GEMINI.md file in the .gemini folder replacing the following placeholder with your tenant configuration:
+
+```
+# Google SecOps Configuration
+My Google SecOps environment details are:
+- Customer ID: <SECOPS_CUSTOMER_ID>
+- Region: <SECOPS_REGION>
+- Project ID: <GCP_PROJECT_ID>
+**Rule:** Always use these exact parameters for EVERY SecOps tool request.
+```
+
+Then when you run the gemini command for the first time you might be asked to log in. When asked "How would you like to authenticate for this project?" choose "Vertex AI".
+
+Please then run the following command to verify the MCP server integration:
+
+```bash
+/mcp list
+```
+
+It should return the Google SecOps MCP server in the list of available MCP servers. To try configuration of the SecOps MCP server, please use the following command:
+
+```bash
+"Please use the SecOps MCP to list my rules."
+```
+
+If successful, you should see a list of rules returned. If that is the case, you can proceed to the next step.
+
+
+More information on how to configure gemini-cli with Google SecOps hosted MCP server integration available in the [Using Google SecOps with Gemini CLI and Hosted MCP](https://medium.com/@thatsiemguy/using-google-secops-with-gemini-cli-and-hosted-mcp-6400ec8aa99e)
 
 ---
 ## Usage
