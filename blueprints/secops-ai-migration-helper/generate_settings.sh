@@ -14,14 +14,15 @@
 
 #!/bin/bash
 
-# Check if exactly 2 arguments are provided
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <secops_project_id> <secops_region>"
+# Check if exactly 3 arguments are provided
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 <secops_project_id> <secops_region> <secops_instance>"
     exit 1
 fi
 
 SECOPS_PROJECT="$1"
 SECOPS_REGION="$2"
+SECOPS_INSTANCE="$3"
 
 # Get directory of the script
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
@@ -37,6 +38,7 @@ fi
 # Replace variables in the template and output to settings.json
 sed -e "s/\${SECOPS_PROJECT}/$SECOPS_PROJECT/g" \
     -e "s/\${SECOPS_REGION}/$SECOPS_REGION/g" \
+    -e "s/\${SECOPS_INSTANCE}/$SECOPS_INSTANCE/g" \
     "$TEMPLATE_FILE" > "$OUTPUT_FILE"
 
 echo "Successfully generated $OUTPUT_FILE"

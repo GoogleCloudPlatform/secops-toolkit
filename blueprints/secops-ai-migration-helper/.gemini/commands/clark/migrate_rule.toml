@@ -13,8 +13,8 @@ Ensure the meta block of the migrated YARA-L 2.0 rule follows the following sche
     author = must be "Google Professional Services"
     description = must be exact like-for-like description as the source rule.
     title = must be exact like-for-like title as the source rule.
-    mitre_attack_tactic = must be "TO-BE-FIXED"
-    mitre_attack_technique = must be "TO-BE-FIXED"
+    tactic = must be "TO-BE-FIXED"
+    technique = must be "TO-BE-FIXED"
     mitre_attack_url = must be "https://attack.mitre.org/techniques"
     mitre_attack_version = must be "TO-BE-FIXED"
     old_ucid = must be "TO-BE-FIXED"

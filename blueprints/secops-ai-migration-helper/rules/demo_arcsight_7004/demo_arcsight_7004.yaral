@@ -75,8 +75,8 @@ SOURCE RULE:
     author = "Google Professional Services"
     description = "This is a rule that detects incoming network traffic where the source IP address matches a known Tor exit node stored in an Active List."
     title = "Correlating Tor Sources in Events"
-    mitre_attack_tactic = "TA0001" // Initial Access - assuming Tor is used for initial access
-    mitre_attack_technique = "T1090.003" // Proxy: Multi-hop Proxy - Tor is a multi-hop proxy
+    tactic = "TA0001" // Initial Access - assuming Tor is used for initial access
+    technique = "T1090.003" // Proxy: Multi-hop Proxy - Tor is a multi-hop proxy
     mitre_attack_url = "https://attack.mitre.org/techniques/T1090/003/"
     mitre_attack_version = "v14.1"
     old_ucid = "7004"
