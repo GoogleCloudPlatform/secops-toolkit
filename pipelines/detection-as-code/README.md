@@ -15,30 +15,17 @@ these articles:
 
 A brief workflow description:
 
-1. **Code Commit and Testing (Optional)**: A SOC engineer makes changes to the Terraform configuration (might be an
-   update to the YARA-L rule or its configuration in the YAML file) in their local development environment. They may
-   optionally test these changes locally with a local terraform plan command.
+1. **Code Commit and Testing (Optional)**: A SOC engineer makes changes to the Terraform configuration (might be an update to the YARA-L rule or its configuration in the YAML file) in their local development environment. They may optionally test these changes locally with a local terraform plan command. Same applies for Data Tables.
 
-2. **Create Merge Request**: The engineer commits the changes and pushes them to a feature branch in the GitLab
-   repository. Then creates a merge request (MR) in GitLab, which will trigger the CI/CD pipeline.
+2. **Create Merge Request**: The engineer commits the changes and pushes them to a feature branch in the Gitlab or Github repository. Then creates a merge/pull request (MR/PR) in Gitlab or Github, which will trigger the CI/CD pipeline.
 
-3. **GitLab Plan Pipeline**: The first pipeline executing when a new MR is open is responsible for setting up
-   authentication, initializes Terraform (terraform init), validates the configuration files (terraform validate) to
-   ensure they are syntactically correct and then generates an execution plan (terraform plan) outlining the changes
-   that will be made to the SecOps rules. The plan is then attached as a report to the MR.
+3. **Gitlab/Github Plan Pipeline**: The first pipeline executing when a new MR/PR is open is responsible for setting up authentication, initializes Terraform (terraform init), validates the configuration files (terraform validate) to ensure they are syntactically correct and then generates an execution plan (terraform plan) outlining the changes that will be made to the SecOps rules. The plan is then attached as a report to the MR/PR.
 
+4. **Review and Approval**: Another SOC engineer (or a predefined set of reviewers) reviews the report generated from the Terraform plan and the proposed chages. If the plan is approved, the approver will approve and merge the MR, while if the changes need adjustments, the approver might request changes, requiring the original developer to update the code and push new commits to the feature branch, restarting the pipeline from step 3.
 
-4. **Review and Approval**: Another SOC engineer (or a predefined set of reviewers) reviews the report generated from
-   the Terraform plan and the proposed chages. If the plan is approved, the approver will approve and merge the MR,
-   while if the changes need adjustments, the approver might request changes, requiring the original developer to update
-   the code and push new commits to the feature branch, restarting the pipeline from step 3.
+5. **GitLab/Github Apply Pipeline**: Merging the MR/PR triggers a new pipeline run on the main branch. The pipeline will still first initialize authentication and Terraform (terraform init). But then it will applly the proposed changes using terraform apply, deploying the updated or new YARA-L rules and data tables to Google SecOps.
 
-5. **GitLab Apply Pipeline**: Merging the MR triggers a new pipeline run on the main branch. The pipeline will still
-   first initialize authentication and Terraform (terraform init). But then it will applly the proposed changes using
-   terraform apply, deploying the updated or new YARA-L rules to Google SecOps.
-
-6. **Report Results**: The pipeline might then optionally reports the results of the deployment (success or failure) to
-   the SOC engineers team, where the SOC team might just have to do some operations in case of a failure.
+6. **Report Results**: The pipeline might then optionally report the results of the deployment (success or failure) to the SOC engineers team, where the SOC team might just have to do some operations in case of a failure.
 
 
 ## Prerequisites
@@ -97,12 +84,12 @@ SECOPS_REGION="your-chronicle-region"
 If you want to deploy from your Cloud Shell, click on the image below, sign in
 if required and when the prompt appears, click on “confirm”.
 
-[![Open Cloudshell](./images/cloud-shell-button.png)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2FGoogleCloudPlatform%2Fcloud-foundation-fabric&cloudshell_workspace=blueprints%2Fthird-party-solutions%2Fwordpress%2Fcloudrun)
+[![Open Cloudshell](./images/cloud-shell-button.png)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2FGoogleCloudPlatform%2Fsecops-toolkit&cloudshell_workspace=pipelines%2Fdetection-as-code)
 
 Otherwise, in your console of choice:
 
 ```bash
-git clone https://github.com/GoogleCloudPlatform/cloud-foundation-fabric.git
+git clone https://github.com/GoogleCloudPlatform/secops-toolkit.git
 ```
 
 Before you deploy the architecture, you will need at least the following
@@ -118,7 +105,7 @@ information/configurations in place (for more precise configuration see the Vari
 > #### Authentication and Authorization
 > The Terraform script used to manage rules and reference lists leverages [Application Default Credentials (ADC)](https://cloud.google.com/docs/authentication/application-default-credentials) for authenticating with the SecOps API.
 > This means that the user executing Terraform must have the necessary IAM permissions on the GCP project associated to SecOps.
-> Specifically, the user requires either the **Chronicle API Editor** role or a custom role that includes the following permissions, at a minimum, to successfully manage rules and reference lists:
+> Specifically, the user requires either the **Chronicle API Editor** role or a custom role that includes the following permissions, at a minimum, to successfully manage rules, data tables and reference lists (update only):
 > * `chronicle.instances.get`
 > * `chronicle.instances.report`
 > * `chronicle.ruleDeployments.get`
@@ -134,6 +121,40 @@ information/configurations in place (for more precise configuration see the Vari
 > * `chronicle.referenceLists.list`
 > * `chronicle.referenceLists.create`
 > * `chronicle.referenceLists.update`
+> * `chronicle.dataTableRows.bulkAppendAsync`
+> * `chronicle.dataTableRows.bulkCreate`
+> * `chronicle.dataTableRows.bulkCreateAsync`
+> * `chronicle.dataTableRows.bulkGet`
+> * `chronicle.dataTableRows.bulkReplace`
+> * `chronicle.dataTableRows.bulkReplaceAsync`
+> * `chronicle.dataTableRows.bulkUpdate`
+> * `chronicle.dataTableRows.bulkUpdateAsync`
+> * `chronicle.dataTableRows.create`
+> * `chronicle.dataTableRows.delete`
+> * `chronicle.dataTableRows.get`
+> * `chronicle.dataTableRows.list`
+> * `chronicle.dataTableRows.update`
+> * `chronicle.dataTables.bulkCreateAsync`
+> * `chronicle.dataTables.create`
+> * `chronicle.dataTables.delete`
+> * `chronicle.dataTables.get`
+> * `chronicle.dataTables.list`
+> * `chronicle.dataTables.update`
+> * `chronicle.dataTableRows.bulkReplace`
+> * `chronicle.dataTableRows.bulkReplaceAsync`
+> * `chronicle.dataTableRows.bulkUpdate`
+> * `chronicle.dataTableRows.bulkUpdateAsync`
+> * `chronicle.dataTableRows.create`
+> * `chronicle.dataTableRows.delete`
+> * `chronicle.dataTableRows.get`
+> * `chronicle.dataTableRows.list`
+> * `chronicle.dataTableRows.update`
+> * `chronicle.dataTables.bulkCreateAsync`
+> * `chronicle.dataTables.create`
+> * `chronicle.dataTables.delete`
+> * `chronicle.dataTables.get`
+> * `chronicle.dataTables.list`
+> * `chronicle.dataTables.update`
 
 Ensure your Google Cloud environment is properly configured with ADC and that the user has the appropriate roles assigned before running this Terraform configuration. Refer to the [Google Cloud IAM documentation](https://cloud.google.com/iam/docs) for more information on managing roles and permissions.
 
@@ -187,10 +208,10 @@ possibly on GCS) before adopting the pipeline (of course).
 
 | name | description | type | required | default |
 |---|---|:---:|:---:|:---:|
-| [secops_customer_id](variables.tf#L29) | SecOps customer ID. | <code>string</code> | ✓ |  |
-| [secops_project_id](variables.tf#L34) | SecOps GCP Project ID. | <code>string</code> | ✓ |  |
-| [secops_content_config](variables.tf#L17) | Path to SecOps rules and reference lists deployment YAML config files. | <code title="object&#40;&#123;&#10;  reference_lists &#61; string&#10;  rules           &#61; string&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code title="&#123;&#10;  reference_lists &#61; &#34;secops_reference_lists.yaml&#34;&#10;  rules           &#61; &#34;secops_rules.yaml&#34;&#10;&#125;">&#123;&#8230;&#125;</code> |
-| [secops_region](variables.tf#L39) | SecOps region. | <code>string</code> |  | <code>&#34;eu&#34;</code> |
+| [secops_customer_id](variables.tf#L31) | SecOps customer ID. | <code>string</code> | ✓ |  |
+| [secops_project_id](variables.tf#L36) | SecOps GCP Project ID. | <code>string</code> | ✓ |  |
+| [secops_content_config](variables.tf#L17) | Path to SecOps rules and reference lists deployment YAML config files. | <code title="object&#40;&#123;&#10;  reference_lists &#61; string&#10;  rules           &#61; string&#10;  data_tables     &#61; optional&#40;string, &#34;secops_data_tables.yaml&#34;&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code title="&#123;&#10;  reference_lists &#61; &#34;secops_reference_lists.yaml&#34;&#10;  rules           &#61; &#34;secops_rules.yaml&#34;&#10;  data_tables     &#61; &#34;secops_data_tables.yaml&#34;&#10;&#125;">&#123;&#8230;&#125;</code> |
+| [secops_region](variables.tf#L41) | SecOps region. | <code>string</code> |  | <code>&#34;eu&#34;</code> |
 <!-- END TFDOC -->
 ## Test
 
@@ -201,7 +222,7 @@ module "test" {
   secops_project_id  = var.project_id
   secops_region      = "eu"
 }
-# tftest modules=1 resources=4 files=rule,config
+# tftest modules=1 resources=3 files=rule,config,data_table,data_table_config
 ```
 
 ```
@@ -264,7 +285,28 @@ network_traffic_to_specific_country:
   run_frequency: "DAILY"
 ```
 
+```
+# tftest-file id=data_table path=data_tables/sample_data_table_domains.csv
+1,google.com
+2,www.google.com
+```
+
+```
+# tftest-file id=data_table_config path=secops_data_tables.yaml
+sample_data_table_domains:
+  columns:
+    - column_type: STRING
+      key_column: null
+      mapped_column_path: null
+      original_column: rank
+    - column_type: STRING
+      key_column: null
+      mapped_column_path: null
+      original_column: domain
+  description: Sample Data Table for domains
+```
+
 ## License
 
-Copyright 2025 Google. This software is provided as-is, without warranty or representation for any use or purpose. Your
+Copyright 2026 Google. This software is provided as-is, without warranty or representation for any use or purpose. Your
 use of it is subject to your agreement with Google.  

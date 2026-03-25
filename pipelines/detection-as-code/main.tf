@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 
 locals {
+  data_tables     = try(yamldecode(file(var.secops_content_config.data_tables)), {})
   reference_lists = try(yamldecode(file("${path.module}/${var.secops_content_config.reference_lists}")), toset([]))
   reference_list_type_mapping = {
     STRING = "REFERENCE_LIST_SYNTAX_TYPE_PLAIN_TEXT_STRING"
@@ -24,7 +25,7 @@ locals {
   secops_rules = {
     for file_name in fileset("${path.module}/rules", "*.yaral") : replace(file_name, ".yaral", "") => file("${path.module}/rules/${file_name}")
   }
-  secops_rule_deployment = yamldecode(file("${path.module}/${var.secops_content_config.rules}"))
+  secops_rule_deployment = yamldecode(file(var.secops_content_config.rules))
   secops_parent          = "projects/${var.secops_project_id}/locations/${var.secops_region}/instances/${var.secops_customer_id}"
 }
 
@@ -61,7 +62,8 @@ resource "google_chronicle_rule" "rule" {
   text            = local.secops_rules[each.key]
   scope           = try("${local.secops_parent}/dataAccessScopes/${each.value.scope}", null)
   depends_on = [
-    google_chronicle_reference_list.reference_list
+    google_chronicle_reference_list.reference_list,
+    google_chronicle_data_table.data_table
   ]
 }
 
@@ -75,4 +77,33 @@ resource "google_chronicle_rule_deployment" "rule_deployment" {
   alerting      = each.value.alerting
   archived      = each.value.archived
   run_frequency = each.value.run_frequency
+}
+
+resource "google_chronicle_data_table" "data_table" {
+  provider      = google-beta
+  for_each      = local.data_tables
+  project       = var.secops_project_id
+  location      = var.secops_region
+  instance      = var.secops_customer_id
+  data_table_id = each.key
+  description   = each.value.description
+
+  dynamic "scope_info" {
+    for_each = length(try(each.value.scopes, [])) > 0 ? [""] : []
+    content {
+      data_access_scopes = [for scope in each.value.scopes : "${local.secops_parent}/dataAccessScopes/${scope}"]
+    }
+  }
+
+  dynamic "column_info" {
+    for_each = try(each.value.columns, [])
+    content {
+      column_index       = index(each.value.columns, column_info.value)
+      column_type        = try(column_info.value.column_type, null)
+      key_column         = try(column_info.value.key_column, null)
+      mapped_column_path = try(column_info.value.mapped_column_path, null)
+      original_column    = column_info.value.original_column
+      repeated_values    = try(column_info.value.repeated_values, null)
+    }
+  }
 }
