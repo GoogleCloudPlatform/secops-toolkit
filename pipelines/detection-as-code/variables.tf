@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,12 @@ variable "secops_content_config" {
   type = object({
     reference_lists = string
     rules           = string
+    data_tables     = optional(string, "secops_data_tables.yaml")
   })
   default = {
     reference_lists = "secops_reference_lists.yaml"
     rules           = "secops_rules.yaml"
+    data_tables     = "secops_data_tables.yaml"
   }
 }
 
