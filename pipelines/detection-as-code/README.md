@@ -222,7 +222,7 @@ module "test" {
   secops_project_id  = var.project_id
   secops_region      = "eu"
 }
-# tftest modules=1 resources=5 files=rule,config
+# tftest modules=1 resources=3 files=rule,config,data_table,data_table_config
 ```
 
 ```
@@ -283,6 +283,27 @@ network_traffic_to_specific_country:
   alerting: true
   archived: false
   run_frequency: "DAILY"
+```
+
+```
+# tftest-file id=data_table path=data_tables/sample_data_table_domains.csv
+1,google.com
+2,www.google.com
+```
+
+```
+# tftest-file id=data_table_config path=secops_data_tables.yaml
+sample_data_table_domains:
+  columns:
+    - column_type: STRING
+      key_column: null
+      mapped_column_path: null
+      original_column: rank
+    - column_type: STRING
+      key_column: null
+      mapped_column_path: null
+      original_column: domain
+  description: Sample Data Table for domains
 ```
 
 ## License
