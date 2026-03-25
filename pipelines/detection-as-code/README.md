@@ -203,16 +203,15 @@ Please first set up Workload Identity Federation and then replace the following 
 according to the WIF configuration. The service account the pipeline will impersonate must have Chronicle API Admin role
 or equivalent custom role for dealing with SecOps Rule Management APIs. It is important to setup a remote backend (
 possibly on GCS) before adopting the pipeline (of course).
-
 <!-- BEGIN TFDOC -->
 ## Variables
 
 | name | description | type | required | default |
 |---|---|:---:|:---:|:---:|
-| [secops_customer_id](variables.tf#L29) | SecOps customer ID. | <code>string</code> | ✓ |  |
-| [secops_project_id](variables.tf#L34) | SecOps GCP Project ID. | <code>string</code> | ✓ |  |
-| [secops_content_config](variables.tf#L17) | Path to SecOps rules and reference lists deployment YAML config files. | <code title="object&#40;&#123;&#10;  reference_lists &#61; string&#10;  rules           &#61; string&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code title="&#123;&#10;  reference_lists &#61; &#34;secops_reference_lists.yaml&#34;&#10;  rules           &#61; &#34;secops_rules.yaml&#34;&#10;&#125;">&#123;&#8230;&#125;</code> |
-| [secops_region](variables.tf#L39) | SecOps region. | <code>string</code> |  | <code>&#34;eu&#34;</code> |
+| [secops_customer_id](variables.tf#L31) | SecOps customer ID. | <code>string</code> | ✓ |  |
+| [secops_project_id](variables.tf#L36) | SecOps GCP Project ID. | <code>string</code> | ✓ |  |
+| [secops_content_config](variables.tf#L17) | Path to SecOps rules and reference lists deployment YAML config files. | <code title="object&#40;&#123;&#10;  reference_lists &#61; string&#10;  rules           &#61; string&#10;  data_tables     &#61; optional&#40;string, &#34;secops_data_tables.yaml&#34;&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code title="&#123;&#10;  reference_lists &#61; &#34;secops_reference_lists.yaml&#34;&#10;  rules           &#61; &#34;secops_rules.yaml&#34;&#10;  data_tables     &#61; &#34;secops_data_tables.yaml&#34;&#10;&#125;">&#123;&#8230;&#125;</code> |
+| [secops_region](variables.tf#L41) | SecOps region. | <code>string</code> |  | <code>&#34;eu&#34;</code> |
 <!-- END TFDOC -->
 ## Test
 
