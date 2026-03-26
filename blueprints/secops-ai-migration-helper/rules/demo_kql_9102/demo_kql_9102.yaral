@@ -1,0 +1,119 @@
+rule demo_kql_9102 {
+/*
+
+SOURCE: Intergalactic SOC
+RULE PARAMETERS:
+    - Target Log Type: Windows Event Logs
+    - Target Activity: Detection of newly seen or rare Windows event IDs based on established watchlists.
+
+DEPENDENCIES:
+    - Log Source: Windows Event Log (WINEVTLOG)
+    - UDM Fields:
+        - metadata.product_event_type
+        - metadata.vendor_name
+        - metadata.product_name
+        - principal.hostname
+        - principal.user.userid
+
+TUNING:
+    - Potential False Positives: New legitimate event IDs resulting from system updates or new application deployments.
+    - Further Tuning: Regularly update the '%AllSeenEventIDsFromEventsLog' data table to include common, non-malicious event IDs.
+
+TESTING:
+    - Simulate Alert: Generate a Windows event with an Event ID that is not present in the '%AllSeenEventIDsFromEventsLog' data table or one that is explicitly added to the '%WatchlistOfRareEventsEventIDs' table.
+
+DOCS:
+    - External Reference: https://github.com/AllThingsComputers/Sentinel-Rules/blob/main/Event%20Logs/Rare%20or%20Never%20Seen%20Events%20EventID%20Logged.txt
+
+NOTES:
+    - Rationale for Severity: The detection of unobserved or rare event IDs can indicate defensive evasion or unauthorized activity, but it also has a high potential for false positives in dynamic environments, hence a "Medium" severity.
+
+SOURCE RULE: 
+    // ucid: 9102
+    // Title of Detection: Rare or Never Seen Events EventID Logged
+    // Authorship & Contact: https://allthingscomputers.medium.com https://twitter.com/allthingshandle https://allthingscomputersblog.wordpress.com/ 
+    // Description of the Detection: This requires a watchlist of every event ID from this table and one of rare event IDs
+    // References (if available): 
+    // The Logic of the Detection or Query Begins Below This Line
+    // Source https://github.com/AllThingsComputers/Sentinel-Rules/blob/main/Event%20Logs/Rare%20or%20Never%20Seen%20Events%20EventID%20Logged.txt
+    
+    let time_until = 1d;
+    let SentinelWatchlistOfEveryEIDEver = (_GetWatchlist('AllSeenEventIDsFromEventsLog') | project SearchKey);
+    let rarewatchlist = (_GetWatchlist('WatchlistOfRareEventsEventIDs') | project SearchKey);
+    
+    let EveryEventIDSinceWatchlistCreation = (
+        Event
+        | where TimeGenerated between (datetime(2022-07-19T20:00:00)..ago(time_until))
+        | summarize by EventID
+    );
+    
+    let RecentRareEventIDs = (
+        Event
+        | where TimeGenerated between (ago(90d)..ago(time_until))
+        | summarize count() by EventID
+        | where count_ <= 1
+    ); // Adjust sensitivity
+    
+    Event
+    | where TimeGenerated >= ago(1h)
+    | extend NewEvent = iff(
+        EventID !in (SentinelWatchlistOfEveryEIDEver.SearchKey) 
+        and EventID !in (EveryEventIDSinceWatchlistCreation.EventID), 
+        "EID is New", 
+        "EID is Not New"
+    )
+    | extend RareEvent = iff(
+        EventID in (rarewatchlist.SearchKey) 
+        or EventID in (RecentRareEventIDs.EventID), 
+        "EID is Rare", 
+        "EID is Not Rare"
+    )
+    | where NewEvent == "EID is New" or RareEvent == "EID is Rare"
+    | project TimeGenerated, EventID, NewEvent, RareEvent
+    | project-reorder NewEvent, RareEvent
+*/
+  meta:
+    author = "Google Professional Services"
+    description = "Detects Windows Event IDs that are either newly seen or exist in a rare event ID watchlist."
+    title = "Rare or Never Seen Windows Event ID Logged"
+    tactic = "TA0005"
+    technique = "T1070"
+    mitre_attack_url = "https://attack.mitre.org/techniques/T1070/"
+    mitre_attack_version = "v1.0"
+    old_ucid = "9102"
+    secops_ucid = "9102"
+    version = "1.0"
+    type = "Alert"
+    data_source = "Windows"
+    severity = "Medium"
+    status = "prototype"
+    responsible = "SOC1"
+    creation_date = "2026-03-17"
+    last_rework_date = ""
+
+  events:
+    $e.metadata.vendor_name = "Microsoft"
+    $e.metadata.product_name = "Windows"
+    $event_id = $e.metadata.product_event_type
+
+    // Logic: Trigger if Event ID is NOT in the 'all seen' list OR IS in the 'rare' list
+    (
+      not $event_id in %AllSeenEventIDsFromEventsLog.SearchKey
+      or
+      $event_id in %WatchlistOfRareEventsEventIDs.SearchKey
+    )
+
+  match:
+    $event_id over 1h
+
+  outcome:
+    $Count_logs = count_distinct($e.metadata.id)
+    $Source_user = array_distinct($e.principal.user.userid)
+    $Source_hostname = array_distinct($e.principal.hostname)
+    $Event_id = array_distinct($e.metadata.product_event_type)
+    $Product_name = array_distinct($e.metadata.product_name)
+    $Vendor_name = array_distinct($e.metadata.vendor_name)
+
+  condition:
+    $e
+}

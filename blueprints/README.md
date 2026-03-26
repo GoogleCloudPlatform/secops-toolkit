@@ -49,3 +49,9 @@ This repository provides a collection of Terraform blueprints designed to automa
 <a href="./secops-tenant-factory/" title="SecOps Tenant Factory"><img src="./secops-tenant-factory/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./secops-tenant-factory/) implements end-to-end configuration of new projects and SecOps SIEM tenants via YAML data configurations and [secops-tenant](./secops-tenant) blueprint code. </p>
 
 <br clear="left">
+
+## SecOps AI Migration Helper 
+
+<a href="./secops-ai-migration-helper/" title="SecOps AI Migraiton  Helper"><img src="./secops-ai-migration-helper/misc/yaral/images/steps_overview.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./secops-ai-migration-helper/) is a tool that helps you migrate rules from a SIEM to Google SecOps and reduce the migration time significantly. It uses GenAI to help you migrate the rules in multiple steps.  </p>
+
+<br clear="left">

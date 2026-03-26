@@ -1,0 +1,4 @@
+2025-07-09 10:00:00 192.168.1.100 POST /owa/auth/current/themes/resource.aspx - 80 - 10.0.0.5 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.88 Safari/537.36" - 200 0 0 150
+2025-07-09 10:05:00 192.168.1.101 POST /test.aspx/upload/shell.php - 80 - 10.0.0.6 "curl/7.81.0" - 200 0 0 75
+2025-07-09 10:10:00 192.168.1.102 POST /autodiscover/global.aspx - 80 - 10.0.0.7 "Python/3.9 aiohttp/3.8.1" - 200 0 0 200
+2025-07-09 10:15:00 192.168.1.103 POST /owa/auth/current/scripts/premium/flogon.aspx - 80 - 10.0.0.8 "Mozilla/5.0" - 200 0 0 100

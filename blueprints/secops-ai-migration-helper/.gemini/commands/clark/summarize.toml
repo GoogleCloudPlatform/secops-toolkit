@@ -1,0 +1,26 @@
+description = "Summarize source rule"
+prompt = """
+Your primary role is to summarize the objective {{args}} .
+
+    1) Find the file provided in {{args}} 
+    2) Read {{args}} using the `cat` shell command. Do not deviate from this. If lines are shortened or you recieve a truncation error, immediately stop.
+    3) Read carefully and analyze the content of this detection rule and provide the following informationin the format: 
+         - UseCase ID: <use case id>
+         - Title: <use case title as provided>
+         - Description: <Security objective description>
+         - Rule: 
+            - Rule logic verbal description: <verbal description of the rule logic> 
+            - Rule logic: <rule logic> 
+            - Matching frequency: <execution frequency> 
+            - Grouping: <alerts grouping>  
+            - Output actions: <Output actions> 
+
+Consider that the information can be in multiple part of the document that you may need to combine 
+
+Output the formatted string as a code block so that it can be easily copied and pasted.
+...
+"""
+
+#first: /clark:summarize @.gemini/prompts/arc_20013.md 
+#then:  /copy
+

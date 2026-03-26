@@ -1,0 +1,27 @@
+<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+  <System>
+    <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-A5BA-3E3B0328C30D}" />
+    <EventID>9102</EventID>
+    <Version>0</Version>
+    <Level>4</Level>
+    <Task>12290</Task>
+    <Opcode>0</Opcode>
+    <Keywords>0x8020000000000000</Keywords>
+    <TimeCreated SystemTime="2026-03-17T10:15:30.9876543Z" />
+    <EventRecordID>123456</EventRecordID>
+    <Correlation />
+    <Execution ProcessID="4" ThreadID="100" />
+    <Channel>Security</Channel>
+    <Computer>WIN-DC-01.example.com</Computer>
+    <Security />
+  </System>
+  <EventData>
+    <Data Name="SubjectUserSid">S-1-5-18</Data>
+    <Data Name="SubjectUserName">WIN-DC-01$</Data>
+    <Data Name="SubjectDomainName">EXAMPLE</Data>
+    <Data Name="SubjectLogonId">0x3e7</Data>
+    <Data Name="TargetUserName">rareuser</Data>
+    <Data Name="TargetDomainName">EXAMPLE</Data>
+    <Data Name="TargetSid">S-1-5-21-123456789-012345678-901234567-5000</Data>
+  </EventData>
+</Event>

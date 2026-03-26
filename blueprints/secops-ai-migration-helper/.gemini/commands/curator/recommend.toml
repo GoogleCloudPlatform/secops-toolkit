@@ -1,0 +1,10 @@
+description = "Generates recommendations for SecOps curated and community rules based on an input JSON file of customer rules."
+prompt = """
+Your objective is to execute interactive script using the provided input rules file `{{args}}`  
+
+Please follow these instructions sequentially:
+
+1) If the `{{args}}` variable is empty, stop and ask the user to provide the path to the JSON file containing their customer rules.
+2) Execute the script using `run_recommender.sh {{args}}`. Stream the script output directly to the user so they can monitor the process and interactive input. Inform the user to use TAB to focus on the script 
+3)  When the script finishes, inform the user that the operation is complete and provide the paths for the final CSV and JSON recommendations in the output of the script.
+"""

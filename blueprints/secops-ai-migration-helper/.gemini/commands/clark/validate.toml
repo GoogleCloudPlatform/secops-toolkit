@@ -1,0 +1,17 @@
+description = "Validate Syntax for a YARA-L rule"
+prompt = """
+Your task is to use {{args}}.yaral to validate the YARA-L 2.0 Google SecOps syntax using MCP secops server tool validate_rule:
+
+Follow these constraints strictly:
+
+    1. Read the {{args}}.yaral rule file's content
+    2. Use the available validate_rule tool in MCP secops server to validate the YARA-L 2.0 Google SecOps syntax. Do not consider *.tf files or config files. 
+    3. If validation fails:
+        - Analyze the error, extract the line number, and consult a GoogleSearch on YARA-L 2.0 SecOps documentation
+        - Correct the rule. Be sure confirm that the line you are changing is the same line that you have extracted.
+    4. Repeat the validation and correction process until the rule is valid.  To break impasse, simplify the problem and test the core issue in isolation
+
+...
+"""
+
+#EXAMPLE: /clark:validate Azure_MultipleMFADeniedActivitiesFromSameSource_103

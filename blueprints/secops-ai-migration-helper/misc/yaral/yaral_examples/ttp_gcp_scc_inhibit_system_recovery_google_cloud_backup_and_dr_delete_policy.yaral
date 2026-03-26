@@ -1,0 +1,49 @@
+rule ttp_gcp_scc_inhibit_system_recovery_google_cloud_backup_and_dr_delete_policy {
+  meta:
+    rule_name = "SCC: Inhibit System Recovery: Google Cloud Backup and DR delete policy"
+    description = "A Backup and DR policy, which defines how a backup is taken and where it is stored, was deleted. Future backups that use the policy might fail."
+    severity = "Low"
+    tactic = "TA0040"
+    technique = "T1490"
+    reference = "https://cloud.google.com/security-command-center/docs/how-to-investigate-threats"
+
+  events:
+    $e1.metadata.product_name = "Security Command Center"
+    $e1.metadata.product_event_type = "Inhibit System Recovery: Google Cloud Backup and DR delete policy"
+    $e1.security_result.detection_fields["mute"] != "MUTED"
+    $resource_name = $e1.target.resource.name
+    $rule_name = $e1.metadata.product_event_type
+
+  match:
+    $rule_name over 1h
+
+  outcome:
+    $resource_names = array_distinct($resource_name)
+    $cloud_projects = array_distinct(if($e1.target.resource_ancestors.resource_type = "CLOUD_PROJECT",$e1.target.resource_ancestors.name, ""))
+    $vendor_name = array_distinct($e1.metadata.vendor_name)
+    $product_name = array_distinct($e1.metadata.product_name)
+    $risk_score = max(0 +
+      if(any $e1.security_result.severity = "CRITICAL", 95, 0) +
+      if(any $e1.security_result.severity = "HIGH", 85, 0) +
+      if(any $e1.security_result.severity = "MEDIUM", 65, 0) +
+      if(any $e1.security_result.severity = "LOW", 35, 0) +
+      if(any $e1.security_result.severity = "INFORMATIONAL", 10, 0)
+    )
+    $threat_category = array_distinct($e1.metadata.product_event_type)
+    $scc_product = array_distinct($e1.metadata.description)
+    $severity = array_distinct($e1.security_result.severity)
+    $url_back_to_product = array_distinct($e1.security_result.url_back_to_product)
+    $event_count = count_distinct($e1.metadata.id)
+
+    $result_time = min($e1.metadata.event_timestamp.seconds)
+    $tmp1 = max(
+      if($e1.security_result.action != "BLOCK" and $e1.security_result.action != "UNKNOWN_ACTION", 2)
+    )
+    $tmp2 = max(
+      if($e1.security_result.action = "BLOCK", 1)
+    )
+    $result = arrays.index_to_str(strings.split("attempted,failed,succeeded,succeeded"), $tmp1 + $tmp2)
+
+  condition:
+    $e1
+}

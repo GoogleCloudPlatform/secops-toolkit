@@ -1,0 +1,17 @@
+description = "Initialiaze a Rule Directory"
+prompt = """
+Your primary role is to create a new directory {{args}} in the existing repository and initialize the .yaral file with the rule_template. Use absolute paths when creating folders & files. Be sure to present your plan and await approval.
+
+Add the following structure to the working repository:
+
+├── rules
+│ ├── {{args}}
+│ │    └── {{args}}.yaral
+  |── sample_logs
+
+
+Create {{args}}.yaral with contents of .gemini/commands/clark/templates/rule_template.md. Ensure to replace the rule name with {{args}}
+...
+"""
+
+#EXAMPLE: /clark:init azure_testrule_123

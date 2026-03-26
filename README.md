@@ -62,6 +62,14 @@ This section details the available Terraform blueprints for deploying and managi
 
 <br clear="left">
 
+## SecOps AI Migration Helper 
+
+<a href="./blueprints/secops-ai-migration-helper/" title="SecOps AI Migraiton  Helper"><img src="./blueprints/secops-ai-migration-helper/misc/yaral/images/steps_overview.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/secops-ai-migration-helper/) is a tool that helps you migrate rules from a SIEM to Google SecOps and reduce the migration time significantly. It uses GenAI to help you migrate the rules in multiple steps.  </p>
+
+<br clear="left">
+
+
+
 # Modules
 
 This folder contains a suite of Terraform modules for Google SecOps automation. These modules are designed to be composed together and can be forked and modified where the use of third-party code and sources is not allowed.

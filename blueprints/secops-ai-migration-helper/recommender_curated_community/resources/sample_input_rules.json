@@ -1,0 +1,26 @@
+[
+    {
+        "ucid": "9901",
+        "title": "Rare Scripting Software Detected",
+        "description": "Because powershell and cmd prompt are so closely watched and have so many alarms put up to catch misuse, hackers are starting to avoid using them. This detects scripting tools that are utilised and found in the Event log that aren't approved software by your environment.",
+        "rule": "//ucid: 9901\n// Title of Detection:   Rare Scripting Software Detected \n// Authorship & Contact: https://allthingscomputers.medium.com  https://twitter.com/allthingshandle  https://allthingscomputersblog.wordpress.com/ \n// Description of the Detection: Because powershell and cmd prompt are so closely watched and have so many alarms put up to catch misuse, hackers are starting to avoid using them. This detects scripting tools that are utilised and found in the Event log that aren't approved software by your environment.\n// References (if available): \n// The Logic of the Detection or Query Begins Below This Line\n// Source https://github.com/AllThingsComputers/Sentinel-Rules/blob/main/Event%20Logs/Rare%20Scripting%20Software%20Detected.txt\nEvent\n| where (RenderedDescription matches regex@'(?i)(command|shell|execute|script|console|terminal)' or RenderedDescription matches regex @(?i)(Bash|Ksh|Fish|Korn|ZOC|Cmder|ConEmu|Mintty)') and not(RenderedDescription matches regex (Use a regex of your expected tools in your environment to remove false positives))"
+    },
+    {
+        "ucid": "9902",
+        "title": "Rare or Never Seen Events EventID Logged",
+        "description": "This requires a watchlist of every event ID from this table and one of  rare event IDs",
+        "rule": "//ucid: 9902\n// Title of Detection:  Rare or Never Seen Events EventID Logged\n// Authorship & Contact: https://allthingscomputers.medium.com  https://twitter.com/allthingshandle  https://allthingscomputersblog.wordpress.com/ \n// Description of the Detection:  This requires a watchlist of every event ID from this table and one of  rare event IDs\n// References (if available): \n// The Logic of the Detection or Query Begins Below This Line\n// Source https://github.com/AllThingsComputers/Sentinel-Rules/blob/main/Event%20Logs/Rare%20or%20Never%20Seen%20Events%20EventID%20Logged.txt\nlet time_until = 1d;\nlet SentinelWatchlistOfEveryEIDEver = (_GetWatchlist('AllSeenEventIDsFromEventsLog') | project SearchKey);\nlet rarewatchlist = (_GetWatchlist('WatchlistOfRareEventsEventIDs') | project SearchKey);\nlet EveryEventIDSinceWatchlistCreation = (Event\n| where TimeGenerated between (datetime(2022-07-19T20:00:00)..ago(time_until))\n| summarize by EventID);\nlet RecentRareEventIDs = (Event\n| where TimeGenerated between (ago(90d)..ago(time_until))\n| summarize count() by EventID\n| where count_ <= 1); // Adjust sensitivity\nEvent\n| where TimeGenerated >= ago(1h)\n| extend NewEvent = iff(EventID !in (SentinelWatchlistOfEveryEIDEver.SearchKey) \n    and EventID !in (EveryEventIDSinceWatchlistCreation.EventID), \"EID is New\", \"EID is Not New\")\n| extend RareEvent = iff(EventID in (rarewatchlist.SearchKey) \n    or EventID in (RecentRareEventIDs.EventID), \"EID is Rare\", \"EID is Not Rare\")\n| where NewEvent == \"EID is New\" or RareEvent == \"EID is Rare\"\n| project TimeGenerated, EventID, NewEvent, RareEvent\n| project-reorder NewEvent, RareEvent"
+    },
+    {
+        "ucid": "9903",
+        "title": "New Run/RunOnce Scheduled Task",
+        "description": "Shell-Core EventID 9706/9707/9708",
+        "rule": "//ucid: 9903\n// Title of Detection:   New Run/RunOnce Scheduled Task\n// Authorship & Contact: https://allthingscomputers.medium.com  https://twitter.com/allthingshandle  https://allthingscomputersblog.wordpress.com/ \n// Description of the Detection:  Shell-Core EventID 9706/9707/9708 \n// References (if available):  https://blog.menasec.net/2019/02/threat-hunting-20-runrunonce-EventID.html \n// The Logic of the Detection or Query Begins Below This Line\n// Source https://github.com/AllThingsComputers/Sentinel-Rules/blob/main/Event%20Logs/New%20Run%20or%20RunOnce%20Scheduled%20Task.txt\nEvent\n| where EventID in (12, 13)\n| where ParameterXml matches regex @\"(?i)HK(LM|CU)\\\\.*(\\\\Run\\\\|\\\\RunOnce\\\\).*?<\"\n| extend RunRunonce = trim_end('<', extract(@\"(?i)(HK(LM|CU)\\\\.*(\\\\Run\\\\|\\\\RunOnce\\\\).*?)<\", 1, ParameterXml))\n| where not(RunRunonce matches regex @\"(?i)\\\\{[\\w-]{36}\\\\}exclusions\")"
+    },
+    {
+        "ucid": "9904",
+        "title": "Unusual binary shutting down endpoint",
+        "description": "Malware may cause shutdowns on this EID as well as EventID 6006 too",
+        "rule": "//ucid: 9904\n// Title of Detection:  Unusual binary shutting down endpoint\n// Authorship & Contact: https://allthingscomputers.medium.com  https://twitter.com/allthingshandle  https://allthingscomputersblog.wordpress.com/ \n// Description of the Detection: Malware may cause shutdowns on this EID as well as EventID 6006 too\n// References (if available):    https://attack.mitre.org/techniques/T1529/\n// The Logic of the Detection or Query Begins Below This Line\nEvent\n| where EventID == 1074\n| where Description contains \"has initiated the shutdown\"\n| where not(Description matches regex @\"(expected Process Shutting Down Computer)\")"
+    }
+]

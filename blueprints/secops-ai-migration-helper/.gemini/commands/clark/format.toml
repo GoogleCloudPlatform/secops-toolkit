@@ -1,0 +1,17 @@
+description = "Format a source rule and place it into a specific template."
+
+prompt = """
+Your task is to take the rule content provided in {{args1}} and insert it into the template structure of {{args2}}.
+
+Follow these constraints strictly:
+1) CONTENT INTEGRITY: You are forbidden from shortening, trimming, or modifying the logic/code within {{args1}}. Every character must be preserved.
+2) FORMATTING: Improve the indentation and spacing of {{args1}} for maximum readability before insertion.
+3) PLACEMENT: Locate the placeholder `<original formated source rule>` within {{args2}} and replace it with the formatted content from {{args1}}.
+4) ERROR HANDLING: If the input in {{args1}} appears truncated or incomplete, stop immediately and alert the user. 
+
+Output the final, merged result as a single code block.
+"""
+
+#first: /clark:format @./migraiton_rules/demo_kql_9101.md rule_9904_audit_log_deleted_dc.yaral
+#then:  /copy
+

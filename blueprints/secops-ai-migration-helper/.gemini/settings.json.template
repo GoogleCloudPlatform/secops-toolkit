@@ -1,0 +1,84 @@
+{
+  "security": {
+    "auth": {
+      "selectedType": "vertex-ai"
+    }
+  },
+  "ui": {
+    "theme": "Atom One"
+  },
+  "mcpServers": {
+    "GoogleSecOps": {
+      "httpUrl": "https://${SECOPS_REGION}-chronicle.googleapis.com/mcp",
+      "authProviderType": "google_credentials",
+      "oauth": {
+        "scopes": [
+          "https://www.googleapis.com/auth/cloud-platform"
+        ]
+      },
+      "timeout": 30000,
+      "headers": {
+        "x-goog-user-project": "${SECOPS_PROJECT}"
+      },
+      "includeTools": [
+        "create_case_comment",
+        "execute_manual_action",
+        "get_alert_latest_investigation",
+        "get_case",
+        "get_case_alert",
+        "get_connector_event",
+        "get_investigation_by_id",
+        "get_involved_entity",
+        "get_ioc_match",
+        "get_reference_list",
+        "get_rule",
+        "get_security_alert",
+        "list_case_alerts",
+        "list_case_comments",
+        "list_cases",
+        "list_connector_events",
+        "list_data_table_rows",
+        "list_data_tables",
+        "list_feeds",
+        "list_integration_actions",
+        "list_integration_instances",
+        "list_integrations",
+        "list_involved_entities",
+        "list_log_types",
+        "list_parsers",
+        "list_playbook_instances",
+        "list_playbooks",
+        "list_rule_detections",
+        "list_rule_errors",
+        "list_rules",
+        "list_security_alerts",
+        "search_entity",
+        "summarize_entity",
+        "translate_udm_query",
+        "trigger_investigation",
+        "udm_search",
+        "update_case",
+        "update_case_alert", 
+        "validate_rule"
+      ],
+      "trust": true, 
+      "env": {
+        "CHRONICLE_PROJECT_ID": "${SECOPS_PROJECT}",
+        "CHRONICLE_CUSTOMER_ID": "${SECOPS_INSTANCE}",
+        "CHRONICLE_REGION": "${SECOPS_REGION}"
+      }
+    }
+  },
+  "general": {
+    "previewFeatures": true,
+    "vimMode": true,
+    "sessionRetention": {
+      "enabled": true,
+      "maxAge": "30d",
+      "warningAcknowledged": true
+    }
+  },
+  "experimental": {
+    "skills": true
+  }
+}
