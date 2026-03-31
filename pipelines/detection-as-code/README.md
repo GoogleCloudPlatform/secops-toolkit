@@ -1,13 +1,39 @@
 # Detection as Code in Terraform for Google SecOps
 
-This blueprint is a sample terraform repository to implementing a Detection as code pipeline for managing Google SecOps
-rules based on Terraform code.
-For more information of the code available and how to use it to deploy rules in SecOps please refer to
-these articles:
+![Detection as Code in Terraform for Google SecOps](./images/dac.png)
+
+This blueprint provides a comprehensive "Detection as Code" framework to automate the management and deployment of Detection Rules, Data Tables and Reference Lists to Google SecOps. By leveraging Terraform and Python utilities, this repository enables a scalable and reliable workflow for security operations.
+
+### Automation Scope
+
+The pipeline automates the following key components:
+
+- **Detection Rule Management**: Automated lifecycle management (CRUD) of YARA-L rules, including state tracking and versioning through Terraform.
+- **Data Table Management**: Management of both the schema and content (CSV) of Google SecOps data tables, allowing for automated updates to enrichment data.
+- **Reference List Management**: Unified management of reference lists using YAML configurations and associated text files for list entries.
+- **Rule Verification**: A built-in syntax and logic verification tool (`main.py verify-rules`) that validates rules both locally and against the Google SecOps API.
+- **Existing Rule Synchronization**: Ability to pull existing rules and deployments from Google SecOps (`main.py pull-rules`) to synchronize local configurations with the cloud environment.
+- **CI/CD Integration**: Pre-configured pipelines for GitHub Actions and GitLab CI/CD, enabling automated testing and deployment on every commit.
+
+For more information, please refer to these articles:
 - [Detection as Code in Google SecOps with Terraform — Part 1](https://medium.com/p/646de8967278)
 - [Detection as Code in Google SecOps with Terraform — Part 2](https://medium.com/p/907a5cffe3d8)
 
-### GitLab / GitHub CICD Pipeline design
+### File Structure
+
+The repository is organized as follows:
+
+- `rules/`: Directory containing YARA-L rule files (`.yaral`). Each rule is managed as a Terraform resource.
+- `reference_lists/`: Contains text files (`.txt`) with entries for each reference list.
+- `data_tables/`: Contains CSV files providing the content for Google SecOps data tables.
+- `scripts/`: Python scripts for rule verification (`verify-rules`), data table updates (`update-data-tables`), and rule synchronization (`pull-rules`).
+- `secops_rules.yaml`: Configuration file for rule deployment settings (enabled, alerting, run frequency, etc.).
+- `secops_reference_lists.yaml`: Configuration file defining reference lists and their syntax types (STRING, REGEX, CIDR).
+- `secops_data_tables.yaml`: Configuration file defining data table schemas and descriptions.
+- `main.tf`, `variables.tf`: Terraform configuration files for infrastructure deployment.
+- `.github/`, `.gitlab-ci.yml`: CI/CD pipeline definitions for GitHub and GitLab.
+
+### Detection As Code Pipeline design
 
 ![GitLab / GitHub CICD Pipeline](./images/diagram.png)
 
@@ -15,67 +41,12 @@ these articles:
 
 A brief workflow description:
 
-1. **Code Commit and Testing (Optional)**: A SOC engineer makes changes to the Terraform configuration (might be an update to the YARA-L rule or its configuration in the YAML file) in their local development environment. They may optionally test these changes locally with a local terraform plan command. Same applies for Data Tables.
-
-2. **Create Merge Request**: The engineer commits the changes and pushes them to a feature branch in the Gitlab or Github repository. Then creates a merge/pull request (MR/PR) in Gitlab or Github, which will trigger the CI/CD pipeline.
-
-3. **Gitlab/Github Plan Pipeline**: The first pipeline executing when a new MR/PR is open is responsible for setting up authentication, initializes Terraform (terraform init), validates the configuration files (terraform validate) to ensure they are syntactically correct and then generates an execution plan (terraform plan) outlining the changes that will be made to the SecOps rules. The plan is then attached as a report to the MR/PR.
-
-4. **Review and Approval**: Another SOC engineer (or a predefined set of reviewers) reviews the report generated from the Terraform plan and the proposed chages. If the plan is approved, the approver will approve and merge the MR, while if the changes need adjustments, the approver might request changes, requiring the original developer to update the code and push new commits to the feature branch, restarting the pipeline from step 3.
-
-5. **GitLab/Github Apply Pipeline**: Merging the MR/PR triggers a new pipeline run on the main branch. The pipeline will still first initialize authentication and Terraform (terraform init). But then it will applly the proposed changes using terraform apply, deploying the updated or new YARA-L rules and data tables to Google SecOps.
-
-6. **Report Results**: The pipeline might then optionally report the results of the deployment (success or failure) to the SOC engineers team, where the SOC team might just have to do some operations in case of a failure.
-
-
-## Prerequisites
-
-- Python 3.8 or higher
-- `pip` for installing packages
-
-## Installation
-
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository-url>
-    cd <repository-directory>
-    ```
-
-2.  **Create and activate a virtual environment:**
-   -   **macOS/Linux:**
-       ```bash
-       python3 -m venv venv
-       source venv/bin/activate
-       ```
-   -   **Windows:**
-       ```bash
-       python -m venv venv
-       .\venv\Scripts\activate
-       ```
-
-3.  **Install the required dependencies:**
-    ```bash
-    pip install -r scripts/requirements.txt
-    ```
-
-
-## Configuration
-
-The script uses environment variables for configuration. You can set them in your shell or create a `.env` file in the project's root directory.
-
-**Required Environment Variables:**
-
--   `SECOPS_CUSTOMER_ID`: Your Chronicle SecOps customer ID.
--   `SECOPS_PROJECT_ID`: Your Google Cloud project ID.
--   `SECOPS_REGION`: The region where your Chronicle instance is hosted (e.g., `us`).
-
-**Example `.env` file:**
-
-```
-SECOPS_CUSTOMER_ID="your-customer-id"
-SECOPS_PROJECT_ID="your-gcp-project-id"
-SECOPS_REGION="your-chronicle-region"
-```
+1. **Rule Development & Local Verification**: A SOC engineer develops a YARA-L rule in the `rules/` directory. They can verify the syntax and logic locally using the `verify-rules` script before committing.
+2. **Commit & Pull Request**: The engineer commits the changes (including updates to YAML configurations if necessary) and creates a Pull Request (GitHub) or Merge Request (GitLab).
+3. **Automated Plan & Validation**: The CI/CD pipeline is triggered. It performs a `terraform plan` to show proposed changes and runs the `verify-rules` script to ensure all YARA-L rules are valid. The plan is attached to the PR/MR for review.
+4. **Peer Review & Approval**: Another engineer reviews the YARA-L code and the Terraform plan. Once approved, the PR/MR is merged into the main branch.
+5. **Automated Deployment (Apply)**: Merging to main triggers the "Apply" pipeline, which executes `terraform apply`. This deploys the rules, reference lists, and data tables to the Google SecOps production environment.
+6. **Confirmation & Monitoring**: The pipeline reports the deployment status. SOC engineers can then monitor the newly deployed rules in the Google SecOps console.
 
 ### Deployment
 
@@ -90,6 +61,7 @@ Otherwise, in your console of choice:
 
 ```bash
 git clone https://github.com/GoogleCloudPlatform/secops-toolkit.git
+cd pipelines/detection-as-code
 ```
 
 Before you deploy the architecture, you will need at least the following
@@ -140,21 +112,6 @@ information/configurations in place (for more precise configuration see the Vari
 > * `chronicle.dataTables.get`
 > * `chronicle.dataTables.list`
 > * `chronicle.dataTables.update`
-> * `chronicle.dataTableRows.bulkReplace`
-> * `chronicle.dataTableRows.bulkReplaceAsync`
-> * `chronicle.dataTableRows.bulkUpdate`
-> * `chronicle.dataTableRows.bulkUpdateAsync`
-> * `chronicle.dataTableRows.create`
-> * `chronicle.dataTableRows.delete`
-> * `chronicle.dataTableRows.get`
-> * `chronicle.dataTableRows.list`
-> * `chronicle.dataTableRows.update`
-> * `chronicle.dataTables.bulkCreateAsync`
-> * `chronicle.dataTables.create`
-> * `chronicle.dataTables.delete`
-> * `chronicle.dataTables.get`
-> * `chronicle.dataTables.list`
-> * `chronicle.dataTables.update`
 
 Ensure your Google Cloud environment is properly configured with ADC and that the user has the appropriate roles assigned before running this Terraform configuration. Refer to the [Google Cloud IAM documentation](https://cloud.google.com/iam/docs) for more information on managing roles and permissions.
 
@@ -164,13 +121,13 @@ Once you have the required information, head back to your cloned repository.
 Make sure you’re in the directory of this tutorial (where this README is in).
 
 Configure the Terraform variables in your `terraform.tfvars` file.
-Rename the existing `terrafomr.tfvars.sample` as starting pointand then see the variables
+Rename the existing `terrafomr.tfvars.sample` as starting point and then see the variables
 documentation below.
 
 For the pipeline to work properly it is mandatory to keep the terraform state in a remote location.
 We recommend a Cloud Storage bucket for storing the state file, we provided a sample backend.tf file
 named `backend.tf.sample` you can rename to backend.tf and replace the name of the Cloud Storage bucket where to store
-state file. It is important for the accoung running the terraform script to have access to such a Cloud Storage bucket.
+state file. It is important for the account running the terraform script to have access to such a Cloud Storage bucket.
 
 #### Step 3: Deploy resources
 
@@ -203,6 +160,84 @@ Please first set up Workload Identity Federation and then replace the following 
 according to the WIF configuration. The service account the pipeline will impersonate must have Chronicle API Admin role
 or equivalent custom role for dealing with SecOps Rule Management APIs. It is important to setup a remote backend (
 possibly on GCS) before adopting the pipeline (of course).
+
+## Prerequisites (Optional for Rule Verification and Rules Synchronization)
+
+The following prerequisites are mandatory for full deployment, but optional if you only intend to use the `verify-rules` or `pull-rules` script (note: some operations still require valid Google Cloud authentication).
+
+- Python 3.8 or higher
+- `pip` for installing packages
+
+### Installation
+
+1.  **Clone the repository:**
+    ```bash
+    git clone <repository-url>
+    cd <repository-directory>
+    ```
+
+2.  **Create and activate a virtual environment:**
+   -   **macOS/Linux:**
+       ```bash
+       python3 -m venv venv
+       source venv/bin/activate
+       ```
+   -   **Windows:**
+       ```bash
+       python -m venv venv
+       .\venv\Scripts\activate
+       ```
+
+3.  **Install the required dependencies:**
+    ```bash
+    pip install -r scripts/requirements.txt
+    ```
+
+## Configuration (Optional for Rule Verification)
+
+The script uses environment variables for configuration. You can set them in your shell or create a `.env` file in the project's root directory.
+
+**Required Environment Variables:**
+
+-   `SECOPS_CUSTOMER_ID`: Your Chronicle SecOps customer ID.
+-   `SECOPS_PROJECT_ID`: Your Google Cloud project ID.
+-   `SECOPS_REGION`: The region where your Chronicle instance is hosted (e.g., `us`).
+
+**Example `.env` file:**
+
+```
+SECOPS_CUSTOMER_ID="your-customer-id"
+SECOPS_PROJECT_ID="your-gcp-project-id"
+SECOPS_REGION="your-chronicle-region"
+```
+
+## Rule Verification
+
+The `verify-rules` script is a powerful tool to validate your YARA-L rules before deployment. It performs several checks:
+- **Local Validation**: Ensures the rule name in the `.yaral` file matches the filename and follows basic structure rules.
+- **Remote Validation**: Calls the Google SecOps API to verify the rule syntax against the platform's compiler.
+- **Dependency Check**: Verifies that any Reference Lists or Data Tables referenced in the rule exist either locally in your repository or in the SecOps environment.
+
+To run the verification:
+```bash
+python scripts/main.py verify-rules
+```
+
+## Rule Synchronization
+
+If you have existing rules in Google SecOps that are not yet in your local repository, or if you want to ensure your local `secops_rules.yaml` configuration is up to date, you can use the `pull-rules` command.
+
+This script will:
+1. Fetch all rules and their deployment status from Google SecOps.
+2. Create or update `.yaral` files in the `rules/` directory.
+3. Update `secops_rules.yaml` with the current `enabled`, `alerting`, and `run_frequency` settings.
+4. Output `terraform import` commands to help you bring these rules into your Terraform state.
+
+To synchronize rules:
+```bash
+python scripts/main.py pull-rules
+```
+
 <!-- BEGIN TFDOC -->
 ## Variables
 
