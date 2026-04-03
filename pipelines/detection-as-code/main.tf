@@ -15,7 +15,23 @@
  */
 
 locals {
-  data_tables     = try(yamldecode(file(var.secops_content_config.data_tables)), {})
+  data_tables = try(yamldecode(file(var.secops_content_config.data_tables)), {})
+  data_tables_csv = {
+    for k, v in local.data_tables : k => csvdecode(file("${path.module}/data_tables/${k}.csv"))
+    if fileexists("${path.module}/data_tables/${k}.csv")
+  }
+  flattened_rows = flatten([
+    for table_id, rows in local.data_tables_csv : [
+      for i, row in rows : {
+        key      = "${table_id}_${i}"
+        table_id = table_id
+        ttl      = try(local.data_tables[table_id].row_time_to_live, null)
+        values = [
+          for col in local.data_tables[table_id].columns : row[col.original_column]
+        ]
+      }
+    ]
+  ])
   reference_lists = try(yamldecode(file("${path.module}/${var.secops_content_config.reference_lists}")), toset([]))
   reference_list_type_mapping = {
     STRING = "REFERENCE_LIST_SYNTAX_TYPE_PLAIN_TEXT_STRING"
@@ -105,5 +121,21 @@ resource "google_chronicle_data_table" "data_table" {
       original_column    = column_info.value.original_column
       repeated_values    = try(column_info.value.repeated_values, null)
     }
+  }
+}
+
+resource "google_chronicle_data_table_row" "data_table_row" {
+  provider         = google-beta
+  for_each         = { for r in local.flattened_rows : r.key => r }
+  project          = var.secops_project_id
+  location         = var.secops_region
+  instance         = var.secops_customer_id
+  data_table_id    = each.value.table_id
+  values           = each.value.values
+  row_time_to_live = each.value.ttl
+
+  depends_on = [google_chronicle_data_table.data_table]
+  lifecycle {
+    ignore_changes = all
   }
 }

@@ -9,7 +9,7 @@ This blueprint provides a comprehensive "Detection as Code" framework to automat
 The pipeline automates the following key components:
 
 - **Detection Rule Management**: Automated lifecycle management (CRUD) of YARA-L rules, including state tracking and versioning through Terraform.
-- **Data Table Management**: Management of both the schema and content (CSV) of Google SecOps data tables, allowing for automated updates to enrichment data.
+- **Data Table Management**: Automated lifecycle management of Google SecOps data tables, including schema definitions and population of rows from CSV files.
 - **Reference List Management**: Unified management of reference lists using YAML configurations and associated text files for list entries.
 - **Rule Verification**: A built-in syntax and logic verification tool (`main.py verify-rules`) that validates rules both locally and against the Google SecOps API.
 - **Existing Rule Synchronization**: Ability to pull existing rules and deployments from Google SecOps (`main.py pull-rules`) to synchronize local configurations with the cloud environment.
@@ -257,7 +257,7 @@ module "test" {
   secops_project_id  = var.project_id
   secops_region      = "eu"
 }
-# tftest modules=1 resources=3 files=rule,config,data_table,data_table_config
+# tftest modules=1 resources=5 files=rule,config,data_table,data_table_config
 ```
 
 ```
@@ -321,9 +321,10 @@ network_traffic_to_specific_country:
 ```
 
 ```
-# tftest-file id=data_table path=data_tables/sample_data_table_domains.csv
+rank,domain
 1,google.com
 2,www.google.com
+# tftest-file id=data_table path=data_tables/sample_data_table_domains.csv ,_
 ```
 
 ```

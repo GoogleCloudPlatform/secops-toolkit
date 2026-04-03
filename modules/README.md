@@ -20,6 +20,12 @@ The recommended approach to working with SecOps modules is the following:
 
 <br clear="left">
 
+### SecOps Data Tables
+
+<a href="./secops-data-tables/" title="SecOps Data Tables"><img src="./secops-data-tables/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px"> <p style="margin-left: 340px">This [module](./secops-data-tables) allows configuration of Data Tables in Google SecOps.</p>
+
+<br clear="left">
+
 ### SecOps Rules and Reference lists
 
 <a href="./secops-rules/" title="SecOps Rules"><img src="./secops-rules/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [module](./secops-rules) allows creation and management of custom rules as well as reference lists in Google SecOps.</p>
