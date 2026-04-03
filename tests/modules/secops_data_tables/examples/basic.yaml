@@ -1,0 +1,76 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+values:
+  module.secops.google_chronicle_data_table.default["sample_data_table_domains"]:
+    column_info:
+    - column_index: 0
+      column_type: STRING
+      key_column: false
+      mapped_column_path: null
+      original_column: rank
+      repeated_values: null
+    - column_index: 1
+      column_type: STRING
+      key_column: false
+      mapped_column_path: null
+      original_column: domain
+      repeated_values: null
+    data_table_id: sample_data_table_domains
+    deletion_policy: DEFAULT
+    description: Sample data table
+    instance: xxxxxxxxxxxxx
+    location: europe
+    project: project-id
+    row_time_to_live: null
+    scope_info: []
+    timeouts: null
+  module.secops.google_chronicle_data_table_row.default["sample_data_table_domains_0"]:
+    data_table_id: sample_data_table_domains
+    instance: xxxxxxxxxxxxx
+    location: europe
+    project: project-id
+    row_time_to_live: null
+    timeouts: null
+    values:
+    - '1'
+    - google.com
+  module.secops.google_chronicle_data_table_row.default["sample_data_table_domains_1"]:
+    data_table_id: sample_data_table_domains
+    instance: xxxxxxxxxxxxx
+    location: europe
+    project: project-id
+    row_time_to_live: null
+    timeouts: null
+    values:
+    - '2'
+    - www.google.com
+  module.secops.google_chronicle_data_table_row.default["sample_data_table_domains_2"]:
+    data_table_id: sample_data_table_domains
+    instance: xxxxxxxxxxxxx
+    location: europe
+    project: project-id
+    row_time_to_live: null
+    timeouts: null
+    values:
+    - '# tftest-file id=data_table_content path=data_tables/sample_data_table_domains.csv '
+    - _
+
+counts:
+  google_chronicle_data_table: 1
+  google_chronicle_data_table_row: 3
+  modules: 1
+  resources: 4
+
+outputs: {}
