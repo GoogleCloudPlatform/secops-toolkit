@@ -12,16 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-variable "factories_config" {
-  description = "Paths to YAML config expected in 'data_tables'. Path to folder containing data tables content (csv files) for the corresponding _defs keys."
-  type = object({
-    data_tables      = optional(string)
-    data_tables_defs = optional(string, "data_tables")
-  })
-  nullable = false
-  default  = {}
-}
-
 variable "data_tables_config" {
   description = "SecOps Data Tables configuration."
   type = map(object({
@@ -35,6 +25,16 @@ variable "data_tables_config" {
     row_time_to_live = optional(string)
   }))
   default = {}
+}
+
+variable "factories_config" {
+  description = "Paths to YAML config expected in 'data_tables'. Path to folder containing data tables content (csv files) for the corresponding _defs keys."
+  type = object({
+    data_tables      = optional(string)
+    data_tables_defs = optional(string, "data_tables")
+  })
+  nullable = false
+  default  = {}
 }
 
 variable "secops_config" {
