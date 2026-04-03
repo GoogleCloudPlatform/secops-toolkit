@@ -154,3 +154,76 @@ variable "webhook_feeds_config" {
   default  = {}
   nullable = false
 }
+
+variable "secops_envs" {
+  description = "A map of SecOps environments to provision. Optional fields fall back to these built-in defaults if omitted."
+  type = map(object({
+    display_name       = string
+    description        = string
+    aliases            = optional(list(string), [])
+    contact            = string
+    contact_email      = string
+    contact_phone      = string
+    retention_duration = number
+    instance_uri       = optional(string, null)
+  }))
+}
+
+variable "secops_case_stages" {
+  description = "A map of SecOps Case Stages to provision. Both display_name and order are immutable."
+  type = map(object({
+    display_name = string
+    order        = number
+  }))
+  default = {}
+}
+
+variable "secops_case_close_definitions" {
+  description = "A map of SecOps Case Close Definitions to provision."
+  type = map(object({
+    close_reason = string
+    root_cause   = string
+  }))
+  default = {}
+
+  validation {
+    condition = alltrue([
+      for k, v in var.secops_case_close_definitions : contains([
+        "CLOSE_REASON_UNSPECIFIED",
+        "MALICIOUS",
+        "NOT_MALICIOUS",
+        "MAINTENANCE",
+        "INCONCLUSIVE"
+      ], v.close_reason)
+    ])
+    error_message = "Invalid close_reason. Allowed values are: CLOSE_REASON_UNSPECIFIED, MALICIOUS, NOT_MALICIOUS, MAINTENANCE, INCONCLUSIVE."
+  }
+}
+
+variable "secops_custom_logtypes" {
+  description = "A map of custom LogType IDs to their configurations. Note: LogTypes cannot be natively updated or destroyed after creation."
+  type = map(object({
+    log_type_label    = string
+    display_name      = string
+    product_source    = string
+    is_custom         = optional(bool, true)
+    has_custom_parser = optional(bool, true)
+  }))
+  default = {}
+
+  validation {
+    # Check that every log_type_label matches the required SecOps format
+    condition = alltrue([
+      for k, v in var.secops_custom_logtypes : can(regex("^[A-Z0-9_]+_CUSTOM$", v.log_type_label))
+    ])
+    error_message = "Every log_type_label must consist of only uppercase letters, numbers, and underscores, and must strictly end with the suffix '_CUSTOM' (e.g., 'FIREWALL_LOGS_CUSTOM')."
+  }
+
+  validation {
+    # Check that every product_source ends with ' Custom'
+    condition = alltrue([
+      for k, v in var.secops_custom_logtypes : can(regex(" Custom$", v.product_source))
+    ])
+    error_message = "Every product_source must strictly end with the suffix ' Custom' (e.g., 'Internal Firewall Appliance Custom')."
+  }
+}

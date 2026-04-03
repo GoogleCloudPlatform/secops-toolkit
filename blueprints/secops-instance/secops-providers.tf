@@ -19,7 +19,7 @@ data "google_client_config" "default" {
 }
 
 provider "restful" {
-  base_url = "https://${var.secops_tenant_config.region}-chronicle.googleapis.com/v1alpha/"
+  base_url = "https://chronicle.${var.secops_tenant_config.region}.rep.googleapis.com/v1alpha"
   security = {
     http = {
       token = {
