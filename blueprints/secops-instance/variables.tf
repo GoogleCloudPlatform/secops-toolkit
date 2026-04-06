@@ -167,6 +167,7 @@ variable "secops_envs" {
     retention_duration = number
     instance_uri       = optional(string, null)
   }))
+  default = {}
 }
 
 variable "secops_case_stages" {
