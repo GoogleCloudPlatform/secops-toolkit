@@ -82,6 +82,12 @@ Modules aim to stay close to the low-level provider resources they encapsulate a
 
 <br clear="left">
 
+### SecOps Data Tables
+
+<a href="./modules/secops-data-tables/" title="SecOps Data Tables"><img src="./modules/secops-data-tables/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [module](./modules/secops-data-tables) allows creation and management of custom data tables in Google SecOps.</p>
+
+<br clear="left">
+
 ### SecOps Rules and Reference lists
 
 <a href="./modules/secops-rules/" title="SecOps Rules"><img src="./modules/secops-rules/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [module](./modules/secops-rules) allows creation and management of custom rules as well as reference lists in Google SecOps.</p>
