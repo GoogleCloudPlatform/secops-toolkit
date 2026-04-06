@@ -234,13 +234,21 @@ Please be aware the Service Account Client ID needed during domain wide delegati
 
 This blueprint allows further tailoring of the SecOps instance to match specific operational workflows:
 
-- **Environments:** Define custom environments for log routing and RBAC scoping using the `environments` variable.
-- **SOAR Case Management:** Configure `case_stages` and `case_closure_codes` variables to standardize incident response workflows.
+* **Environments:** Define custom environments for log routing and RBAC scoping using the `environments` variable. 
+    * **Parameters:** Accepts configurations such as `display_name`, `description`, `aliases`, `contact` (name, email, phone), and `retention_duration`. Optional fields will fall back to built-in defaults if omitted.
+* **SOAR Case Management:** Configure `case_stages` and `case_closure_codes` variables to standardize incident response workflows.
+    * **Case Stages:** Defines the `display_name` and `order` of stages. Both fields are immutable.
+        * **Limitation:** Before creating case stages, ensure that no other stage exists with the same name or order. You must delete all but one existing stage, set its order to `20` before applying Terraform, and then natively delete this placeholder stage afterward.
+    * **Case Closure Codes:** Defines the `close_reason` and `root_cause` for case resolution.
+        * **Limitation:** Allowed `close_reason` values are strictly limited to: `CLOSE_REASON_UNSPECIFIED`, `MALICIOUS`, `NOT_MALICIOUS`, `MAINTENANCE`, or `INCONCLUSIVE`.
 
 ### SIEM Custom Log Types
 
-- **Custom Log Types:** Register new parser log types using the `custom_log_types` variable to support bespoke data sources.
-- **Rate Limits:** The SecOps API strictly limits deployments to a maximum of **8 custom log types per hour**. You must batch your deployments accordingly to avoid rate-limiting errors.
+* **Custom Log Types:** Register new parser log types using the `custom_log_types` variable to support bespoke data sources. 
+    * **Parameters:** Requires `log_type_label`, `display_name`, and `product_source`.
+    * **Limitation:** The `log_type_label` must end in `_CUSTOM` and the `product_source` must end in ` Custom`.
+* **Rate Limits:** The SecOps API strictly limits deployments to a maximum of **8 custom log types per hour**. You must batch your deployments accordingly to avoid rate-limiting errors.
+* **Immutable Infrastructure (Create-Only):** The API only supports the creation of Custom Log Types. It does **not** support updates (`PATCH`) or deletions (`DELETE`). The Terraform module enforces this by preventing destruction and ignoring changes to the body after creation.
 
 <!-- TFDOC OPTS files:1 show_extra:1 exclude:3-secops-dev-providers.tf -->
 <!-- BEGIN TFDOC -->
