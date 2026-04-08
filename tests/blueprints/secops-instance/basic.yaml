@@ -1,4 +1,4 @@
-# Copyright 2025 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,48 +11,49 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 values:
   google_apikeys_key.feed_api_key[0]:
     display_name: SecOps Feeds API Key
     name: secops-feeds-key
     project: test-project
     restrictions:
-      - android_key_restrictions: []
-        api_targets:
-          - methods: null
-            service: chronicle.googleapis.com
-        browser_key_restrictions: []
-        ios_key_restrictions: []
-        server_key_restrictions: []
+    - android_key_restrictions: []
+      api_targets:
+      - methods: null
+        service: chronicle.googleapis.com
+      browser_key_restrictions: []
+      ios_key_restrictions: []
+      server_key_restrictions: []
     service_account_email: null
     timeouts: null
   google_monitoring_alert_policy.chronicle_ingestion_alert[0]:
     alert_strategy: []
     combiner: OR
     conditions:
-      - condition_absent: []
-        condition_matched_log: []
-        condition_monitoring_query_language: []
-        condition_prometheus_query_language:
-          - alert_rule: null
-            disable_metric_validation: null
-            duration: 120s
-            evaluation_interval: 60s
-            labels: null
-            query: 100 * sum(rate(chronicle_googleapis_com:ingestion_log_bytes_count{monitored_resource="chronicle.googleapis.com/Collector"}[10m]))
-              / min(min_over_time(chronicle_googleapis_com:ingestion_quota_limit{monitored_resource="chronicle.googleapis.com/Collector"}[10m]))
-              > 80
-            rule_group: null
-        condition_sql: []
-        condition_threshold: []
-        display_name: SecOps ingestion is over 80% of the quota
+    - condition_absent: []
+      condition_matched_log: []
+      condition_monitoring_query_language: []
+      condition_prometheus_query_language:
+      - alert_rule: null
+        disable_metric_validation: null
+        duration: 120s
+        evaluation_interval: 60s
+        labels: null
+        query: 100 * sum(rate(chronicle_googleapis_com:ingestion_log_bytes_count{monitored_resource="chronicle.googleapis.com/Collector"}[10m]))
+          / min(min_over_time(chronicle_googleapis_com:ingestion_quota_limit{monitored_resource="chronicle.googleapis.com/Collector"}[10m]))
+          > 80
+        rule_group: null
+      condition_sql: []
+      condition_threshold: []
+      display_name: SecOps ingestion is over 80% of the quota
     display_name: SecOps Ingestion Rate close to ingestion limit.
     documentation:
-      - content: The SecOps data ingestion rate has exceeded 80% of the provisioned
-          quota. Please investigate the data sources to prevent potential data loss.
-        links: []
-        mime_type: text/markdown
-        subject: null
+    - content: The SecOps data ingestion rate has exceeded 80% of the provisioned
+        quota. Please investigate the data sources to prevent potential data loss.
+      links: []
+      mime_type: text/markdown
+      subject: null
     enabled: true
     project: test-project
     severity: null
@@ -61,38 +62,38 @@ values:
       severity: warning
   google_monitoring_alert_policy.secops_forwarder_silence[0]:
     alert_strategy:
-      - auto_close: 604800s
-        notification_channel_strategy: []
-        notification_prompts: null
-        notification_rate_limit: []
+    - auto_close: 604800s
+      notification_channel_strategy: []
+      notification_prompts: null
+      notification_rate_limit: []
     combiner: OR
     conditions:
-      - condition_absent:
-          - aggregations:
-              - alignment_period: 3600s
-                cross_series_reducer: REDUCE_MEAN
-                group_by_fields:
-                  - resource.label.collector_id
-                per_series_aligner: ALIGN_MEAN
-            duration: 3600s
-            filter: metric.type="chronicle.googleapis.com/ingestion/log/record_count"
-              resource.type="chronicle.googleapis.com/Collector"
-            trigger:
-              - count: 1
-                percent: null
-        condition_matched_log: []
-        condition_monitoring_query_language: []
-        condition_prometheus_query_language: []
-        condition_sql: []
-        condition_threshold: []
-        display_name: No logs received from a SecOps forwarder for 60 minutes
+    - condition_absent:
+      - aggregations:
+        - alignment_period: 3600s
+          cross_series_reducer: REDUCE_MEAN
+          group_by_fields:
+          - resource.label.collector_id
+          per_series_aligner: ALIGN_MEAN
+        duration: 3600s
+        filter: metric.type="chronicle.googleapis.com/ingestion/log/record_count"
+          resource.type="chronicle.googleapis.com/Collector"
+        trigger:
+        - count: 1
+          percent: null
+      condition_matched_log: []
+      condition_monitoring_query_language: []
+      condition_prometheus_query_language: []
+      condition_sql: []
+      condition_threshold: []
+      display_name: No logs received from a SecOps forwarder for 60 minutes
     display_name: Detect Silent Google SecOps Forwarders
     documentation:
-      - content: 'This policy triggers an alert when a Google SecOps forwarder (collector_id:
+    - content: 'This policy triggers an alert when a Google SecOps forwarder (collector_id:
         ${resource.label.collector_id}) has not sent any logs for 60 minutes.'
-        links: []
-        mime_type: text/markdown
-        subject: null
+      links: []
+      mime_type: text/markdown
+      subject: null
     enabled: true
     project: test-project
     severity: null
@@ -101,38 +102,38 @@ values:
       severity: warning
   google_monitoring_alert_policy.secops_normalized_events_drop[0]:
     alert_strategy:
-      - auto_close: 604800s
-        notification_channel_strategy: []
-        notification_prompts: null
-        notification_rate_limit: []
+    - auto_close: 604800s
+      notification_channel_strategy: []
+      notification_prompts: null
+      notification_rate_limit: []
     combiner: OR
     conditions:
-      - condition_absent: []
-        condition_matched_log: []
-        condition_monitoring_query_language: []
-        condition_prometheus_query_language:
-          - alert_rule: null
-            disable_metric_validation: null
-            duration: 3600s
-            evaluation_interval: 3600s
-            labels: null
-            query: 100 * abs(sum by (log_type) (chronicle_googleapis_com:ingestion_log_record_count{monitored_resource="chronicle.googleapis.com/Collector"})
-              - sum by (log_type) (chronicle_googleapis_com:normalizer_event_record_count{monitored_resource="chronicle.googleapis.com/Collector"}))
-              / sum by (log_type) (chronicle_googleapis_com:ingestion_log_record_count{monitored_resource="chronicle.googleapis.com/Collector"})
-              > 50
-            rule_group: null
-        condition_sql: []
-        condition_threshold: []
-        display_name: Decrease in ration between ingested raw logs and events normalized
-          per log type for 60 minutes
+    - condition_absent: []
+      condition_matched_log: []
+      condition_monitoring_query_language: []
+      condition_prometheus_query_language:
+      - alert_rule: null
+        disable_metric_validation: null
+        duration: 3600s
+        evaluation_interval: 3600s
+        labels: null
+        query: 100 * abs(sum by (log_type) (chronicle_googleapis_com:ingestion_log_record_count{monitored_resource="chronicle.googleapis.com/Collector"})
+          - sum by (log_type) (chronicle_googleapis_com:normalizer_event_record_count{monitored_resource="chronicle.googleapis.com/Collector"}))
+          / sum by (log_type) (chronicle_googleapis_com:ingestion_log_record_count{monitored_resource="chronicle.googleapis.com/Collector"})
+          > 50
+        rule_group: null
+      condition_sql: []
+      condition_threshold: []
+      display_name: Decrease in ration between ingested raw logs and events normalized
+        per log type for 60 minutes
     display_name: Detect drop in events normalized per raw loogs ingested in Google
       SecOps
     documentation:
-      - content: 'This policy triggers an alert when a Google SecOps forwarder (log_type:
+    - content: 'This policy triggers an alert when a Google SecOps forwarder (log_type:
         ${resource.label.log_type}) has not sent any logs for 60 minutes.'
-        links: []
-        mime_type: text/markdown
-        subject: null
+      links: []
+      mime_type: text/markdown
+      subject: null
     enabled: true
     project: test-project
     severity: null
@@ -163,15 +164,15 @@ values:
     name: projects/test-project/policies/iam.disableServiceAccountKeyCreation
     parent: projects/test-project
     spec:
-      - inherit_from_parent: null
-        reset: null
-        rules:
-          - allow_all: null
-            condition: []
-            deny_all: null
-            enforce: 'FALSE'
-            parameters: null
-            values: []
+    - inherit_from_parent: null
+      reset: null
+      rules:
+      - allow_all: null
+        condition: []
+        deny_all: null
+        enforce: 'FALSE'
+        parameters: null
+        values: []
     timeouts: null
   module.project.google_project.project[0]:
     auto_create_network: false
@@ -191,211 +192,211 @@ values:
   module.project.google_project_iam_binding.authoritative["roles/chronicle.viewer"]:
     condition: []
     members:
-      - group:gcp-secops-admins@example.com
+    - group:gcp-secops-admins@example.com
     project: test-project
     role: roles/chronicle.viewer
   module.project.google_project_iam_custom_role.roles["SecOpsDetectionEngineer"]:
     description: Terraform-managed.
     permissions:
-      - chronicle.ais.createFeedback
-      - chronicle.ais.translateUdmQuery
-      - chronicle.ais.translateYlRule
-      - chronicle.conversations.get
-      - chronicle.conversations.list
-      - chronicle.conversations.update
-      - chronicle.curatedRuleSetCategories.countAllCuratedRuleSetDetections
-      - chronicle.curatedRuleSetCategories.get
-      - chronicle.curatedRuleSetCategories.list
-      - chronicle.curatedRuleSetDeployments.batchUpdate
-      - chronicle.curatedRuleSetDeployments.get
-      - chronicle.curatedRuleSetDeployments.list
-      - chronicle.curatedRuleSetDeployments.update
-      - chronicle.curatedRuleSets.countCuratedRuleSetDetections
-      - chronicle.curatedRuleSets.get
-      - chronicle.curatedRuleSets.list
-      - chronicle.curatedRules.get
-      - chronicle.curatedRules.list
-      - chronicle.dashboardCharts.get
-      - chronicle.dashboardCharts.list
-      - chronicle.dashboardQueries.execute
-      - chronicle.dashboardQueries.get
-      - chronicle.dashboardQueries.list
-      - chronicle.dashboards.copy
-      - chronicle.dashboards.create
-      - chronicle.dashboards.delete
-      - chronicle.dashboards.edit
-      - chronicle.dashboards.get
-      - chronicle.dashboards.list
-      - chronicle.dashboards.schedule
-      - chronicle.dataAccessLabels.get
-      - chronicle.dataAccessLabels.list
-      - chronicle.dataAccessLabels.update
-      - chronicle.dataAccessScopes.get
-      - chronicle.dataAccessScopes.list
-      - chronicle.dataAccessScopes.permit
-      - chronicle.dataAccessScopes.update
-      - chronicle.dataTableOperationErrors.get
-      - chronicle.dataTableRows.asyncBulkCreate
-      - chronicle.dataTableRows.asyncBulkReplace
-      - chronicle.dataTableRows.asyncBulkUpdate
-      - chronicle.dataTableRows.bulkCreate
-      - chronicle.dataTableRows.bulkReplace
-      - chronicle.dataTableRows.bulkUpdate
-      - chronicle.dataTableRows.create
-      - chronicle.dataTableRows.delete
-      - chronicle.dataTableRows.get
-      - chronicle.dataTableRows.list
-      - chronicle.dataTableRows.update
-      - chronicle.dataTables.bulkCreateDataTableAsync
-      - chronicle.dataTables.create
-      - chronicle.dataTables.delete
-      - chronicle.dataTables.get
-      - chronicle.dataTables.list
-      - chronicle.dataTables.update
-      - chronicle.enrichmentControls.create
-      - chronicle.enrichmentControls.delete
-      - chronicle.enrichmentControls.get
-      - chronicle.enrichmentControls.list
-      - chronicle.entities.batchCreate
-      - chronicle.entities.batchDelete
-      - chronicle.entities.batchValidate
-      - chronicle.entities.create
-      - chronicle.entities.delete
-      - chronicle.entities.find
-      - chronicle.entities.findRelatedEntities
-      - chronicle.entities.get
-      - chronicle.entities.import
-      - chronicle.entities.list
-      - chronicle.entities.modifyEntityRiskScore
-      - chronicle.entities.queryEntityRiskScoreModifications
-      - chronicle.entities.searchEntities
-      - chronicle.entities.summarize
-      - chronicle.entities.summarizeFromQuery
-      - chronicle.events.batchGet
-      - chronicle.events.findUdmFieldValues
-      - chronicle.events.get
-      - chronicle.events.import
-      - chronicle.events.queryProductSourceStats
-      - chronicle.events.searchRawLogs
-      - chronicle.events.udmSearch
-      - chronicle.events.validateQuery
-      - chronicle.featuredContentRules.list
-      - chronicle.findingsGraphs.exploreNode
-      - chronicle.findingsGraphs.initializeGraph
-      - chronicle.findingsRefinementDeployments.get
-      - chronicle.findingsRefinementDeployments.list
-      - chronicle.findingsRefinementDeployments.update
-      - chronicle.findingsRefinements.computeActivity
-      - chronicle.findingsRefinements.computeAllActivities
-      - chronicle.findingsRefinements.create
-      - chronicle.findingsRefinements.get
-      - chronicle.findingsRefinements.list
-      - chronicle.findingsRefinements.test
-      - chronicle.findingsRefinements.update
-      - chronicle.globalDataAccessScopes.permit
-      - chronicle.instances.generateCollectionAgentAuth
-      - chronicle.instances.generateSoarAuthJwt
-      - chronicle.instances.generateWorkspaceConnectionToken
-      - chronicle.instances.get
-      - chronicle.instances.graduatePocInstance
-      - chronicle.instances.logTypeClassifier
-      - chronicle.instances.report
-      - chronicle.instances.update
-      - chronicle.instances.verifyNonce
-      - chronicle.iocMatches.get
-      - chronicle.iocMatches.list
-      - chronicle.iocState.get
-      - chronicle.iocState.update
-      - chronicle.iocs.batchGet
-      - chronicle.iocs.findFirstAndLastSeen
-      - chronicle.iocs.get
-      - chronicle.iocs.searchCuratedDetectionsForIoc
-      - chronicle.legacies.legacyBatchGetCollections
-      - chronicle.legacies.legacyFetchAlertsView
-      - chronicle.legacies.legacyFetchUdmSearchCsv
-      - chronicle.legacies.legacyFetchUdmSearchView
-      - chronicle.legacies.legacyFindAssetEvents
-      - chronicle.legacies.legacyFindRawLogs
-      - chronicle.legacies.legacyFindUdmEvents
-      - chronicle.legacies.legacyGetAlert
-      - chronicle.legacies.legacyGetCuratedRulesTrends
-      - chronicle.legacies.legacyGetDetection
-      - chronicle.legacies.legacyGetEventForDetection
-      - chronicle.legacies.legacyGetRuleCounts
-      - chronicle.legacies.legacyGetRulesTrends
-      - chronicle.legacies.legacyRunTestRule
-      - chronicle.legacies.legacySearchArtifactEvents
-      - chronicle.legacies.legacySearchArtifactIoCDetails
-      - chronicle.legacies.legacySearchAssetEvents
-      - chronicle.legacies.legacySearchCuratedDetections
-      - chronicle.legacies.legacySearchCustomerStats
-      - chronicle.legacies.legacySearchDetections
-      - chronicle.legacies.legacySearchDomainsRecentlyRegistered
-      - chronicle.legacies.legacySearchDomainsTimingStats
-      - chronicle.legacies.legacySearchEnterpriseWideAlerts
-      - chronicle.legacies.legacySearchEnterpriseWideIoCs
-      - chronicle.legacies.legacySearchFindings
-      - chronicle.legacies.legacySearchIngestionStats
-      - chronicle.legacies.legacySearchIoCInsights
-      - chronicle.legacies.legacySearchRawLogs
-      - chronicle.legacies.legacySearchRuleDetectionCountBuckets
-      - chronicle.legacies.legacySearchRuleDetectionEvents
-      - chronicle.legacies.legacySearchRuleResults
-      - chronicle.legacies.legacySearchRulesAlerts
-      - chronicle.legacies.legacySearchUserEvents
-      - chronicle.legacies.legacyStreamDetectionAlerts
-      - chronicle.legacies.legacyTestRuleStreaming
-      - chronicle.messages.get
-      - chronicle.messages.list
-      - chronicle.messages.update
-      - chronicle.nativeDashboards.create
-      - chronicle.nativeDashboards.delete
-      - chronicle.nativeDashboards.duplicate
-      - chronicle.nativeDashboards.get
-      - chronicle.nativeDashboards.list
-      - chronicle.nativeDashboards.update
-      - chronicle.operations.cancel
-      - chronicle.operations.delete
-      - chronicle.operations.get
-      - chronicle.operations.list
-      - chronicle.operations.streamSearch
-      - chronicle.operations.wait
-      - chronicle.preferenceSets.get
-      - chronicle.preferenceSets.update
-      - chronicle.referenceLists.create
-      - chronicle.referenceLists.get
-      - chronicle.referenceLists.list
-      - chronicle.referenceLists.update
-      - chronicle.referenceLists.verifyReferenceList
-      - chronicle.retrohunts.create
-      - chronicle.retrohunts.get
-      - chronicle.retrohunts.list
-      - chronicle.riskConfigs.get
-      - chronicle.riskConfigs.update
-      - chronicle.ruleDeployments.get
-      - chronicle.ruleDeployments.list
-      - chronicle.ruleDeployments.update
-      - chronicle.ruleExecutionErrors.list
-      - chronicle.rules.create
-      - chronicle.rules.delete
-      - chronicle.rules.get
-      - chronicle.rules.list
-      - chronicle.rules.listRevisions
-      - chronicle.rules.update
-      - chronicle.rules.verifyRuleText
-      - chronicle.searchQueries.get
-      - chronicle.searchQueries.list
-      - chronicle.searchQueries.update
-      - chronicle.threatCollections.fetchIocMatchMetadata
-      - chronicle.threatCollections.fetchRuleMetadata
-      - chronicle.threatCollections.get
-      - chronicle.threatCollections.list
-      - chronicle.watchlists.create
-      - chronicle.watchlists.delete
-      - chronicle.watchlists.get
-      - chronicle.watchlists.list
-      - chronicle.watchlists.update
-      - resourcemanager.projects.get
+    - chronicle.ais.createFeedback
+    - chronicle.ais.translateUdmQuery
+    - chronicle.ais.translateYlRule
+    - chronicle.conversations.get
+    - chronicle.conversations.list
+    - chronicle.conversations.update
+    - chronicle.curatedRuleSetCategories.countAllCuratedRuleSetDetections
+    - chronicle.curatedRuleSetCategories.get
+    - chronicle.curatedRuleSetCategories.list
+    - chronicle.curatedRuleSetDeployments.batchUpdate
+    - chronicle.curatedRuleSetDeployments.get
+    - chronicle.curatedRuleSetDeployments.list
+    - chronicle.curatedRuleSetDeployments.update
+    - chronicle.curatedRuleSets.countCuratedRuleSetDetections
+    - chronicle.curatedRuleSets.get
+    - chronicle.curatedRuleSets.list
+    - chronicle.curatedRules.get
+    - chronicle.curatedRules.list
+    - chronicle.dashboardCharts.get
+    - chronicle.dashboardCharts.list
+    - chronicle.dashboardQueries.execute
+    - chronicle.dashboardQueries.get
+    - chronicle.dashboardQueries.list
+    - chronicle.dashboards.copy
+    - chronicle.dashboards.create
+    - chronicle.dashboards.delete
+    - chronicle.dashboards.edit
+    - chronicle.dashboards.get
+    - chronicle.dashboards.list
+    - chronicle.dashboards.schedule
+    - chronicle.dataAccessLabels.get
+    - chronicle.dataAccessLabels.list
+    - chronicle.dataAccessLabels.update
+    - chronicle.dataAccessScopes.get
+    - chronicle.dataAccessScopes.list
+    - chronicle.dataAccessScopes.permit
+    - chronicle.dataAccessScopes.update
+    - chronicle.dataTableOperationErrors.get
+    - chronicle.dataTableRows.asyncBulkCreate
+    - chronicle.dataTableRows.asyncBulkReplace
+    - chronicle.dataTableRows.asyncBulkUpdate
+    - chronicle.dataTableRows.bulkCreate
+    - chronicle.dataTableRows.bulkReplace
+    - chronicle.dataTableRows.bulkUpdate
+    - chronicle.dataTableRows.create
+    - chronicle.dataTableRows.delete
+    - chronicle.dataTableRows.get
+    - chronicle.dataTableRows.list
+    - chronicle.dataTableRows.update
+    - chronicle.dataTables.bulkCreateDataTableAsync
+    - chronicle.dataTables.create
+    - chronicle.dataTables.delete
+    - chronicle.dataTables.get
+    - chronicle.dataTables.list
+    - chronicle.dataTables.update
+    - chronicle.enrichmentControls.create
+    - chronicle.enrichmentControls.delete
+    - chronicle.enrichmentControls.get
+    - chronicle.enrichmentControls.list
+    - chronicle.entities.batchCreate
+    - chronicle.entities.batchDelete
+    - chronicle.entities.batchValidate
+    - chronicle.entities.create
+    - chronicle.entities.delete
+    - chronicle.entities.find
+    - chronicle.entities.findRelatedEntities
+    - chronicle.entities.get
+    - chronicle.entities.import
+    - chronicle.entities.list
+    - chronicle.entities.modifyEntityRiskScore
+    - chronicle.entities.queryEntityRiskScoreModifications
+    - chronicle.entities.searchEntities
+    - chronicle.entities.summarize
+    - chronicle.entities.summarizeFromQuery
+    - chronicle.events.batchGet
+    - chronicle.events.findUdmFieldValues
+    - chronicle.events.get
+    - chronicle.events.import
+    - chronicle.events.queryProductSourceStats
+    - chronicle.events.searchRawLogs
+    - chronicle.events.udmSearch
+    - chronicle.events.validateQuery
+    - chronicle.featuredContentRules.list
+    - chronicle.findingsGraphs.exploreNode
+    - chronicle.findingsGraphs.initializeGraph
+    - chronicle.findingsRefinementDeployments.get
+    - chronicle.findingsRefinementDeployments.list
+    - chronicle.findingsRefinementDeployments.update
+    - chronicle.findingsRefinements.computeActivity
+    - chronicle.findingsRefinements.computeAllActivities
+    - chronicle.findingsRefinements.create
+    - chronicle.findingsRefinements.get
+    - chronicle.findingsRefinements.list
+    - chronicle.findingsRefinements.test
+    - chronicle.findingsRefinements.update
+    - chronicle.globalDataAccessScopes.permit
+    - chronicle.instances.generateCollectionAgentAuth
+    - chronicle.instances.generateSoarAuthJwt
+    - chronicle.instances.generateWorkspaceConnectionToken
+    - chronicle.instances.get
+    - chronicle.instances.graduatePocInstance
+    - chronicle.instances.logTypeClassifier
+    - chronicle.instances.report
+    - chronicle.instances.update
+    - chronicle.instances.verifyNonce
+    - chronicle.iocMatches.get
+    - chronicle.iocMatches.list
+    - chronicle.iocState.get
+    - chronicle.iocState.update
+    - chronicle.iocs.batchGet
+    - chronicle.iocs.findFirstAndLastSeen
+    - chronicle.iocs.get
+    - chronicle.iocs.searchCuratedDetectionsForIoc
+    - chronicle.legacies.legacyBatchGetCollections
+    - chronicle.legacies.legacyFetchAlertsView
+    - chronicle.legacies.legacyFetchUdmSearchCsv
+    - chronicle.legacies.legacyFetchUdmSearchView
+    - chronicle.legacies.legacyFindAssetEvents
+    - chronicle.legacies.legacyFindRawLogs
+    - chronicle.legacies.legacyFindUdmEvents
+    - chronicle.legacies.legacyGetAlert
+    - chronicle.legacies.legacyGetCuratedRulesTrends
+    - chronicle.legacies.legacyGetDetection
+    - chronicle.legacies.legacyGetEventForDetection
+    - chronicle.legacies.legacyGetRuleCounts
+    - chronicle.legacies.legacyGetRulesTrends
+    - chronicle.legacies.legacyRunTestRule
+    - chronicle.legacies.legacySearchArtifactEvents
+    - chronicle.legacies.legacySearchArtifactIoCDetails
+    - chronicle.legacies.legacySearchAssetEvents
+    - chronicle.legacies.legacySearchCuratedDetections
+    - chronicle.legacies.legacySearchCustomerStats
+    - chronicle.legacies.legacySearchDetections
+    - chronicle.legacies.legacySearchDomainsRecentlyRegistered
+    - chronicle.legacies.legacySearchDomainsTimingStats
+    - chronicle.legacies.legacySearchEnterpriseWideAlerts
+    - chronicle.legacies.legacySearchEnterpriseWideIoCs
+    - chronicle.legacies.legacySearchFindings
+    - chronicle.legacies.legacySearchIngestionStats
+    - chronicle.legacies.legacySearchIoCInsights
+    - chronicle.legacies.legacySearchRawLogs
+    - chronicle.legacies.legacySearchRuleDetectionCountBuckets
+    - chronicle.legacies.legacySearchRuleDetectionEvents
+    - chronicle.legacies.legacySearchRuleResults
+    - chronicle.legacies.legacySearchRulesAlerts
+    - chronicle.legacies.legacySearchUserEvents
+    - chronicle.legacies.legacyStreamDetectionAlerts
+    - chronicle.legacies.legacyTestRuleStreaming
+    - chronicle.messages.get
+    - chronicle.messages.list
+    - chronicle.messages.update
+    - chronicle.nativeDashboards.create
+    - chronicle.nativeDashboards.delete
+    - chronicle.nativeDashboards.duplicate
+    - chronicle.nativeDashboards.get
+    - chronicle.nativeDashboards.list
+    - chronicle.nativeDashboards.update
+    - chronicle.operations.cancel
+    - chronicle.operations.delete
+    - chronicle.operations.get
+    - chronicle.operations.list
+    - chronicle.operations.streamSearch
+    - chronicle.operations.wait
+    - chronicle.preferenceSets.get
+    - chronicle.preferenceSets.update
+    - chronicle.referenceLists.create
+    - chronicle.referenceLists.get
+    - chronicle.referenceLists.list
+    - chronicle.referenceLists.update
+    - chronicle.referenceLists.verifyReferenceList
+    - chronicle.retrohunts.create
+    - chronicle.retrohunts.get
+    - chronicle.retrohunts.list
+    - chronicle.riskConfigs.get
+    - chronicle.riskConfigs.update
+    - chronicle.ruleDeployments.get
+    - chronicle.ruleDeployments.list
+    - chronicle.ruleDeployments.update
+    - chronicle.ruleExecutionErrors.list
+    - chronicle.rules.create
+    - chronicle.rules.delete
+    - chronicle.rules.get
+    - chronicle.rules.list
+    - chronicle.rules.listRevisions
+    - chronicle.rules.update
+    - chronicle.rules.verifyRuleText
+    - chronicle.searchQueries.get
+    - chronicle.searchQueries.list
+    - chronicle.searchQueries.update
+    - chronicle.threatCollections.fetchIocMatchMetadata
+    - chronicle.threatCollections.fetchRuleMetadata
+    - chronicle.threatCollections.get
+    - chronicle.threatCollections.list
+    - chronicle.watchlists.create
+    - chronicle.watchlists.delete
+    - chronicle.watchlists.get
+    - chronicle.watchlists.list
+    - chronicle.watchlists.update
+    - resourcemanager.projects.get
     project: test-project
     role_id: SecOpsDetectionEngineer
     stage: GA
@@ -403,9 +404,9 @@ values:
   module.project.google_project_iam_custom_role.roles["SecOpsIngestionAPI"]:
     description: Terraform-managed.
     permissions:
-      - chronicle.entities.import
-      - chronicle.events.import
-      - chronicle.logs.import
+    - chronicle.entities.import
+    - chronicle.events.import
+    - chronicle.logs.import
     project: test-project
     role_id: SecOpsIngestionAPI
     stage: GA
@@ -413,166 +414,166 @@ values:
   module.project.google_project_iam_custom_role.roles["SecOpsOnboardingEngineer"]:
     description: Terraform-managed.
     permissions:
-      - chronicle.ais.createFeedback
-      - chronicle.ais.translateUdmQuery
-      - chronicle.ais.translateYlRule
-      - chronicle.collectors.create
-      - chronicle.collectors.delete
-      - chronicle.collectors.get
-      - chronicle.collectors.list
-      - chronicle.collectors.update
-      - chronicle.conversations.get
-      - chronicle.conversations.list
-      - chronicle.conversations.update
-      - chronicle.dashboardCharts.get
-      - chronicle.dashboardCharts.list
-      - chronicle.dashboardQueries.execute
-      - chronicle.dashboardQueries.get
-      - chronicle.dashboardQueries.list
-      - chronicle.dashboards.copy
-      - chronicle.dashboards.create
-      - chronicle.dashboards.delete
-      - chronicle.dashboards.edit
-      - chronicle.dashboards.get
-      - chronicle.dashboards.list
-      - chronicle.dashboards.schedule
-      - chronicle.dataAccessLabels.get
-      - chronicle.dataAccessLabels.list
-      - chronicle.dataAccessLabels.update
-      - chronicle.dataAccessScopes.get
-      - chronicle.dataAccessScopes.list
-      - chronicle.dataAccessScopes.permit
-      - chronicle.dataAccessScopes.update
-      - chronicle.enrichmentControls.get
-      - chronicle.enrichmentControls.list
-      - chronicle.entities.batchCreate
-      - chronicle.entities.batchDelete
-      - chronicle.entities.batchValidate
-      - chronicle.entities.find
-      - chronicle.entities.findRelatedEntities
-      - chronicle.entities.get
-      - chronicle.entities.import
-      - chronicle.entities.list
-      - chronicle.entities.modifyEntityRiskScore
-      - chronicle.entities.queryEntityRiskScoreModifications
-      - chronicle.entities.searchEntities
-      - chronicle.entities.summarize
-      - chronicle.entities.summarizeFromQuery
-      - chronicle.events.batchGet
-      - chronicle.events.findUdmFieldValues
-      - chronicle.events.get
-      - chronicle.events.import
-      - chronicle.events.queryProductSourceStats
-      - chronicle.events.searchRawLogs
-      - chronicle.events.udmSearch
-      - chronicle.events.validateQuery
-      - chronicle.extensionValidationReports.get
-      - chronicle.extensionValidationReports.list
-      - chronicle.feedPacks.get
-      - chronicle.feedPacks.list
-      - chronicle.feedServiceAccounts.fetch
-      - chronicle.feedSourceTypeSchemas.list
-      - chronicle.feeds.create
-      - chronicle.feeds.delete
-      - chronicle.feeds.disable
-      - chronicle.feeds.enable
-      - chronicle.feeds.generateSecret
-      - chronicle.feeds.get
-      - chronicle.feeds.list
-      - chronicle.feeds.update
-      - chronicle.findingsGraphs.exploreNode
-      - chronicle.findingsGraphs.initializeGraph
-      - chronicle.forwarders.create
-      - chronicle.forwarders.delete
-      - chronicle.forwarders.generate
-      - chronicle.forwarders.get
-      - chronicle.forwarders.list
-      - chronicle.forwarders.update
-      - chronicle.globalDataAccessScopes.permit
-      - chronicle.ingestionLogLabels.get
-      - chronicle.ingestionLogLabels.list
-      - chronicle.ingestionLogNamespaces.get
-      - chronicle.ingestionLogNamespaces.list
-      - chronicle.instances.generateCollectionAgentAuth
-      - chronicle.instances.generateSoarAuthJwt
-      - chronicle.instances.generateWorkspaceConnectionToken
-      - chronicle.instances.get
-      - chronicle.instances.graduatePocInstance
-      - chronicle.instances.logTypeClassifier
-      - chronicle.instances.report
-      - chronicle.instances.update
-      - chronicle.instances.verifyNonce
-      - chronicle.legacies.legacyFetchUdmSearchCsv
-      - chronicle.legacies.legacyFetchUdmSearchView
-      - chronicle.legacies.legacyFindAssetEvents
-      - chronicle.legacies.legacyFindRawLogs
-      - chronicle.legacies.legacyFindUdmEvents
-      - chronicle.legacies.legacySearchArtifactEvents
-      - chronicle.legacies.legacySearchArtifactIoCDetails
-      - chronicle.legacies.legacySearchAssetEvents
-      - chronicle.legacies.legacySearchCustomerStats
-      - chronicle.legacies.legacySearchEnterpriseWideIoCs
-      - chronicle.legacies.legacySearchIngestionStats
-      - chronicle.legacies.legacySearchIoCInsights
-      - chronicle.legacies.legacySearchRawLogs
-      - chronicle.legacies.legacySearchUserEvents
-      - chronicle.logTypeSchemas.list
-      - chronicle.logTypeSettings.get
-      - chronicle.logTypeSettings.list
-      - chronicle.logTypeSettings.update
-      - chronicle.logTypes.create
-      - chronicle.logTypes.get
-      - chronicle.logTypes.list
-      - chronicle.logTypes.update
-      - chronicle.logs.get
-      - chronicle.logs.list
-      - chronicle.messages.get
-      - chronicle.messages.list
-      - chronicle.messages.update
-      - chronicle.nativeDashboards.create
-      - chronicle.nativeDashboards.delete
-      - chronicle.nativeDashboards.duplicate
-      - chronicle.nativeDashboards.get
-      - chronicle.nativeDashboards.list
-      - chronicle.nativeDashboards.update
-      - chronicle.operations.cancel
-      - chronicle.operations.delete
-      - chronicle.operations.get
-      - chronicle.operations.list
-      - chronicle.operations.streamSearch
-      - chronicle.operations.wait
-      - chronicle.parserExtensions.activate
-      - chronicle.parserExtensions.create
-      - chronicle.parserExtensions.delete
-      - chronicle.parserExtensions.generateKeyValueMappings
-      - chronicle.parserExtensions.get
-      - chronicle.parserExtensions.legacySubmitParserExtension
-      - chronicle.parserExtensions.list
-      - chronicle.parserExtensions.removeSyslog
-      - chronicle.parsers.activate
-      - chronicle.parsers.activateReleaseCandidate
-      - chronicle.parsers.copyPrebuiltParser
-      - chronicle.parsers.create
-      - chronicle.parsers.deactivate
-      - chronicle.parsers.delete
-      - chronicle.parsers.generateEventTypesSuggestions
-      - chronicle.parsers.get
-      - chronicle.parsers.list
-      - chronicle.parsers.runParser
-      - chronicle.parsingErrors.list
-      - chronicle.preferenceSets.get
-      - chronicle.preferenceSets.update
-      - chronicle.riskConfigs.get
-      - chronicle.riskConfigs.update
-      - chronicle.searchQueries.get
-      - chronicle.searchQueries.list
-      - chronicle.searchQueries.update
-      - chronicle.validationErrors.list
-      - chronicle.validationReports.get
-      - chronicle.watchlists.get
-      - chronicle.watchlists.list
-      - chronicle.watchlists.update
-      - resourcemanager.projects.get
+    - chronicle.ais.createFeedback
+    - chronicle.ais.translateUdmQuery
+    - chronicle.ais.translateYlRule
+    - chronicle.collectors.create
+    - chronicle.collectors.delete
+    - chronicle.collectors.get
+    - chronicle.collectors.list
+    - chronicle.collectors.update
+    - chronicle.conversations.get
+    - chronicle.conversations.list
+    - chronicle.conversations.update
+    - chronicle.dashboardCharts.get
+    - chronicle.dashboardCharts.list
+    - chronicle.dashboardQueries.execute
+    - chronicle.dashboardQueries.get
+    - chronicle.dashboardQueries.list
+    - chronicle.dashboards.copy
+    - chronicle.dashboards.create
+    - chronicle.dashboards.delete
+    - chronicle.dashboards.edit
+    - chronicle.dashboards.get
+    - chronicle.dashboards.list
+    - chronicle.dashboards.schedule
+    - chronicle.dataAccessLabels.get
+    - chronicle.dataAccessLabels.list
+    - chronicle.dataAccessLabels.update
+    - chronicle.dataAccessScopes.get
+    - chronicle.dataAccessScopes.list
+    - chronicle.dataAccessScopes.permit
+    - chronicle.dataAccessScopes.update
+    - chronicle.enrichmentControls.get
+    - chronicle.enrichmentControls.list
+    - chronicle.entities.batchCreate
+    - chronicle.entities.batchDelete
+    - chronicle.entities.batchValidate
+    - chronicle.entities.find
+    - chronicle.entities.findRelatedEntities
+    - chronicle.entities.get
+    - chronicle.entities.import
+    - chronicle.entities.list
+    - chronicle.entities.modifyEntityRiskScore
+    - chronicle.entities.queryEntityRiskScoreModifications
+    - chronicle.entities.searchEntities
+    - chronicle.entities.summarize
+    - chronicle.entities.summarizeFromQuery
+    - chronicle.events.batchGet
+    - chronicle.events.findUdmFieldValues
+    - chronicle.events.get
+    - chronicle.events.import
+    - chronicle.events.queryProductSourceStats
+    - chronicle.events.searchRawLogs
+    - chronicle.events.udmSearch
+    - chronicle.events.validateQuery
+    - chronicle.extensionValidationReports.get
+    - chronicle.extensionValidationReports.list
+    - chronicle.feedPacks.get
+    - chronicle.feedPacks.list
+    - chronicle.feedServiceAccounts.fetch
+    - chronicle.feedSourceTypeSchemas.list
+    - chronicle.feeds.create
+    - chronicle.feeds.delete
+    - chronicle.feeds.disable
+    - chronicle.feeds.enable
+    - chronicle.feeds.generateSecret
+    - chronicle.feeds.get
+    - chronicle.feeds.list
+    - chronicle.feeds.update
+    - chronicle.findingsGraphs.exploreNode
+    - chronicle.findingsGraphs.initializeGraph
+    - chronicle.forwarders.create
+    - chronicle.forwarders.delete
+    - chronicle.forwarders.generate
+    - chronicle.forwarders.get
+    - chronicle.forwarders.list
+    - chronicle.forwarders.update
+    - chronicle.globalDataAccessScopes.permit
+    - chronicle.ingestionLogLabels.get
+    - chronicle.ingestionLogLabels.list
+    - chronicle.ingestionLogNamespaces.get
+    - chronicle.ingestionLogNamespaces.list
+    - chronicle.instances.generateCollectionAgentAuth
+    - chronicle.instances.generateSoarAuthJwt
+    - chronicle.instances.generateWorkspaceConnectionToken
+    - chronicle.instances.get
+    - chronicle.instances.graduatePocInstance
+    - chronicle.instances.logTypeClassifier
+    - chronicle.instances.report
+    - chronicle.instances.update
+    - chronicle.instances.verifyNonce
+    - chronicle.legacies.legacyFetchUdmSearchCsv
+    - chronicle.legacies.legacyFetchUdmSearchView
+    - chronicle.legacies.legacyFindAssetEvents
+    - chronicle.legacies.legacyFindRawLogs
+    - chronicle.legacies.legacyFindUdmEvents
+    - chronicle.legacies.legacySearchArtifactEvents
+    - chronicle.legacies.legacySearchArtifactIoCDetails
+    - chronicle.legacies.legacySearchAssetEvents
+    - chronicle.legacies.legacySearchCustomerStats
+    - chronicle.legacies.legacySearchEnterpriseWideIoCs
+    - chronicle.legacies.legacySearchIngestionStats
+    - chronicle.legacies.legacySearchIoCInsights
+    - chronicle.legacies.legacySearchRawLogs
+    - chronicle.legacies.legacySearchUserEvents
+    - chronicle.logTypeSchemas.list
+    - chronicle.logTypeSettings.get
+    - chronicle.logTypeSettings.list
+    - chronicle.logTypeSettings.update
+    - chronicle.logTypes.create
+    - chronicle.logTypes.get
+    - chronicle.logTypes.list
+    - chronicle.logTypes.update
+    - chronicle.logs.get
+    - chronicle.logs.list
+    - chronicle.messages.get
+    - chronicle.messages.list
+    - chronicle.messages.update
+    - chronicle.nativeDashboards.create
+    - chronicle.nativeDashboards.delete
+    - chronicle.nativeDashboards.duplicate
+    - chronicle.nativeDashboards.get
+    - chronicle.nativeDashboards.list
+    - chronicle.nativeDashboards.update
+    - chronicle.operations.cancel
+    - chronicle.operations.delete
+    - chronicle.operations.get
+    - chronicle.operations.list
+    - chronicle.operations.streamSearch
+    - chronicle.operations.wait
+    - chronicle.parserExtensions.activate
+    - chronicle.parserExtensions.create
+    - chronicle.parserExtensions.delete
+    - chronicle.parserExtensions.generateKeyValueMappings
+    - chronicle.parserExtensions.get
+    - chronicle.parserExtensions.legacySubmitParserExtension
+    - chronicle.parserExtensions.list
+    - chronicle.parserExtensions.removeSyslog
+    - chronicle.parsers.activate
+    - chronicle.parsers.activateReleaseCandidate
+    - chronicle.parsers.copyPrebuiltParser
+    - chronicle.parsers.create
+    - chronicle.parsers.deactivate
+    - chronicle.parsers.delete
+    - chronicle.parsers.generateEventTypesSuggestions
+    - chronicle.parsers.get
+    - chronicle.parsers.list
+    - chronicle.parsers.runParser
+    - chronicle.parsingErrors.list
+    - chronicle.preferenceSets.get
+    - chronicle.preferenceSets.update
+    - chronicle.riskConfigs.get
+    - chronicle.riskConfigs.update
+    - chronicle.searchQueries.get
+    - chronicle.searchQueries.list
+    - chronicle.searchQueries.update
+    - chronicle.validationErrors.list
+    - chronicle.validationReports.get
+    - chronicle.watchlists.get
+    - chronicle.watchlists.list
+    - chronicle.watchlists.update
+    - resourcemanager.projects.get
     project: test-project
     role_id: SecOpsOnboardingEngineer
     stage: GA
@@ -580,185 +581,185 @@ values:
   module.project.google_project_iam_custom_role.roles["SecOpsSOCAnalyst"]:
     description: Terraform-managed.
     permissions:
-      - chronicle.ais.createFeedback
-      - chronicle.ais.translateUdmQuery
-      - chronicle.ais.translateYlRule
-      - chronicle.conversations.get
-      - chronicle.conversations.list
-      - chronicle.conversations.update
-      - chronicle.curatedRuleSetCategories.countAllCuratedRuleSetDetections
-      - chronicle.curatedRuleSetCategories.get
-      - chronicle.curatedRuleSetCategories.list
-      - chronicle.curatedRuleSetDeployments.batchUpdate
-      - chronicle.curatedRuleSetDeployments.get
-      - chronicle.curatedRuleSetDeployments.list
-      - chronicle.curatedRuleSetDeployments.update
-      - chronicle.curatedRuleSets.countCuratedRuleSetDetections
-      - chronicle.curatedRuleSets.get
-      - chronicle.curatedRuleSets.list
-      - chronicle.curatedRules.get
-      - chronicle.curatedRules.list
-      - chronicle.dashboardCharts.get
-      - chronicle.dashboardCharts.list
-      - chronicle.dashboardQueries.execute
-      - chronicle.dashboardQueries.get
-      - chronicle.dashboardQueries.list
-      - chronicle.dashboards.copy
-      - chronicle.dashboards.edit
-      - chronicle.dashboards.get
-      - chronicle.dashboards.list
-      - chronicle.dashboards.schedule
-      - chronicle.dataAccessLabels.get
-      - chronicle.dataAccessLabels.list
-      - chronicle.dataAccessLabels.update
-      - chronicle.dataAccessScopes.get
-      - chronicle.dataAccessScopes.list
-      - chronicle.dataAccessScopes.permit
-      - chronicle.dataAccessScopes.update
-      - chronicle.dataTableOperationErrors.get
-      - chronicle.dataTableRows.asyncBulkCreate
-      - chronicle.dataTableRows.asyncBulkReplace
-      - chronicle.dataTableRows.asyncBulkUpdate
-      - chronicle.dataTableRows.bulkCreate
-      - chronicle.dataTableRows.bulkReplace
-      - chronicle.dataTableRows.bulkUpdate
-      - chronicle.dataTableRows.get
-      - chronicle.dataTableRows.list
-      - chronicle.dataTableRows.update
-      - chronicle.dataTables.bulkCreateDataTableAsync
-      - chronicle.dataTables.get
-      - chronicle.dataTables.list
-      - chronicle.dataTables.update
-      - chronicle.enrichmentControls.get
-      - chronicle.enrichmentControls.list
-      - chronicle.entities.batchCreate
-      - chronicle.entities.batchDelete
-      - chronicle.entities.batchValidate
-      - chronicle.entities.find
-      - chronicle.entities.findRelatedEntities
-      - chronicle.entities.get
-      - chronicle.entities.import
-      - chronicle.entities.list
-      - chronicle.entities.modifyEntityRiskScore
-      - chronicle.entities.queryEntityRiskScoreModifications
-      - chronicle.entities.searchEntities
-      - chronicle.entities.summarize
-      - chronicle.entities.summarizeFromQuery
-      - chronicle.events.batchGet
-      - chronicle.events.findUdmFieldValues
-      - chronicle.events.get
-      - chronicle.events.import
-      - chronicle.events.queryProductSourceStats
-      - chronicle.events.searchRawLogs
-      - chronicle.events.udmSearch
-      - chronicle.events.validateQuery
-      - chronicle.featuredContentRules.list
-      - chronicle.findingsGraphs.exploreNode
-      - chronicle.findingsGraphs.initializeGraph
-      - chronicle.findingsRefinementDeployments.get
-      - chronicle.findingsRefinementDeployments.list
-      - chronicle.findingsRefinementDeployments.update
-      - chronicle.findingsRefinements.computeActivity
-      - chronicle.findingsRefinements.computeAllActivities
-      - chronicle.findingsRefinements.get
-      - chronicle.findingsRefinements.list
-      - chronicle.findingsRefinements.test
-      - chronicle.findingsRefinements.update
-      - chronicle.globalDataAccessScopes.permit
-      - chronicle.instances.generateCollectionAgentAuth
-      - chronicle.instances.generateSoarAuthJwt
-      - chronicle.instances.generateWorkspaceConnectionToken
-      - chronicle.instances.get
-      - chronicle.instances.graduatePocInstance
-      - chronicle.instances.logTypeClassifier
-      - chronicle.instances.report
-      - chronicle.instances.update
-      - chronicle.instances.verifyNonce
-      - chronicle.iocMatches.get
-      - chronicle.iocMatches.list
-      - chronicle.iocState.get
-      - chronicle.iocState.update
-      - chronicle.iocs.batchGet
-      - chronicle.iocs.findFirstAndLastSeen
-      - chronicle.iocs.get
-      - chronicle.iocs.searchCuratedDetectionsForIoc
-      - chronicle.legacies.legacyBatchGetCollections
-      - chronicle.legacies.legacyFetchAlertsView
-      - chronicle.legacies.legacyFetchUdmSearchCsv
-      - chronicle.legacies.legacyFetchUdmSearchView
-      - chronicle.legacies.legacyFindAssetEvents
-      - chronicle.legacies.legacyFindRawLogs
-      - chronicle.legacies.legacyFindUdmEvents
-      - chronicle.legacies.legacyGetAlert
-      - chronicle.legacies.legacyGetCuratedRulesTrends
-      - chronicle.legacies.legacyGetDetection
-      - chronicle.legacies.legacyGetEventForDetection
-      - chronicle.legacies.legacyGetRuleCounts
-      - chronicle.legacies.legacyGetRulesTrends
-      - chronicle.legacies.legacyRunTestRule
-      - chronicle.legacies.legacySearchArtifactEvents
-      - chronicle.legacies.legacySearchArtifactIoCDetails
-      - chronicle.legacies.legacySearchAssetEvents
-      - chronicle.legacies.legacySearchCuratedDetections
-      - chronicle.legacies.legacySearchCustomerStats
-      - chronicle.legacies.legacySearchDetections
-      - chronicle.legacies.legacySearchDomainsRecentlyRegistered
-      - chronicle.legacies.legacySearchDomainsTimingStats
-      - chronicle.legacies.legacySearchEnterpriseWideAlerts
-      - chronicle.legacies.legacySearchEnterpriseWideIoCs
-      - chronicle.legacies.legacySearchFindings
-      - chronicle.legacies.legacySearchIngestionStats
-      - chronicle.legacies.legacySearchIoCInsights
-      - chronicle.legacies.legacySearchRawLogs
-      - chronicle.legacies.legacySearchRuleDetectionCountBuckets
-      - chronicle.legacies.legacySearchRuleDetectionEvents
-      - chronicle.legacies.legacySearchRuleResults
-      - chronicle.legacies.legacySearchRulesAlerts
-      - chronicle.legacies.legacySearchUserEvents
-      - chronicle.legacies.legacyStreamDetectionAlerts
-      - chronicle.legacies.legacyTestRuleStreaming
-      - chronicle.messages.get
-      - chronicle.messages.list
-      - chronicle.messages.update
-      - chronicle.nativeDashboards.duplicate
-      - chronicle.nativeDashboards.get
-      - chronicle.nativeDashboards.list
-      - chronicle.nativeDashboards.update
-      - chronicle.operations.cancel
-      - chronicle.operations.get
-      - chronicle.operations.list
-      - chronicle.operations.streamSearch
-      - chronicle.operations.wait
-      - chronicle.preferenceSets.get
-      - chronicle.preferenceSets.update
-      - chronicle.referenceLists.get
-      - chronicle.referenceLists.list
-      - chronicle.referenceLists.update
-      - chronicle.referenceLists.verifyReferenceList
-      - chronicle.retrohunts.get
-      - chronicle.retrohunts.list
-      - chronicle.riskConfigs.get
-      - chronicle.riskConfigs.update
-      - chronicle.ruleDeployments.get
-      - chronicle.ruleDeployments.list
-      - chronicle.ruleDeployments.update
-      - chronicle.ruleExecutionErrors.list
-      - chronicle.rules.get
-      - chronicle.rules.list
-      - chronicle.rules.listRevisions
-      - chronicle.rules.update
-      - chronicle.rules.verifyRuleText
-      - chronicle.searchQueries.get
-      - chronicle.searchQueries.list
-      - chronicle.searchQueries.update
-      - chronicle.threatCollections.fetchIocMatchMetadata
-      - chronicle.threatCollections.fetchRuleMetadata
-      - chronicle.threatCollections.get
-      - chronicle.threatCollections.list
-      - chronicle.watchlists.get
-      - chronicle.watchlists.list
-      - chronicle.watchlists.update
-      - resourcemanager.projects.get
+    - chronicle.ais.createFeedback
+    - chronicle.ais.translateUdmQuery
+    - chronicle.ais.translateYlRule
+    - chronicle.conversations.get
+    - chronicle.conversations.list
+    - chronicle.conversations.update
+    - chronicle.curatedRuleSetCategories.countAllCuratedRuleSetDetections
+    - chronicle.curatedRuleSetCategories.get
+    - chronicle.curatedRuleSetCategories.list
+    - chronicle.curatedRuleSetDeployments.batchUpdate
+    - chronicle.curatedRuleSetDeployments.get
+    - chronicle.curatedRuleSetDeployments.list
+    - chronicle.curatedRuleSetDeployments.update
+    - chronicle.curatedRuleSets.countCuratedRuleSetDetections
+    - chronicle.curatedRuleSets.get
+    - chronicle.curatedRuleSets.list
+    - chronicle.curatedRules.get
+    - chronicle.curatedRules.list
+    - chronicle.dashboardCharts.get
+    - chronicle.dashboardCharts.list
+    - chronicle.dashboardQueries.execute
+    - chronicle.dashboardQueries.get
+    - chronicle.dashboardQueries.list
+    - chronicle.dashboards.copy
+    - chronicle.dashboards.edit
+    - chronicle.dashboards.get
+    - chronicle.dashboards.list
+    - chronicle.dashboards.schedule
+    - chronicle.dataAccessLabels.get
+    - chronicle.dataAccessLabels.list
+    - chronicle.dataAccessLabels.update
+    - chronicle.dataAccessScopes.get
+    - chronicle.dataAccessScopes.list
+    - chronicle.dataAccessScopes.permit
+    - chronicle.dataAccessScopes.update
+    - chronicle.dataTableOperationErrors.get
+    - chronicle.dataTableRows.asyncBulkCreate
+    - chronicle.dataTableRows.asyncBulkReplace
+    - chronicle.dataTableRows.asyncBulkUpdate
+    - chronicle.dataTableRows.bulkCreate
+    - chronicle.dataTableRows.bulkReplace
+    - chronicle.dataTableRows.bulkUpdate
+    - chronicle.dataTableRows.get
+    - chronicle.dataTableRows.list
+    - chronicle.dataTableRows.update
+    - chronicle.dataTables.bulkCreateDataTableAsync
+    - chronicle.dataTables.get
+    - chronicle.dataTables.list
+    - chronicle.dataTables.update
+    - chronicle.enrichmentControls.get
+    - chronicle.enrichmentControls.list
+    - chronicle.entities.batchCreate
+    - chronicle.entities.batchDelete
+    - chronicle.entities.batchValidate
+    - chronicle.entities.find
+    - chronicle.entities.findRelatedEntities
+    - chronicle.entities.get
+    - chronicle.entities.import
+    - chronicle.entities.list
+    - chronicle.entities.modifyEntityRiskScore
+    - chronicle.entities.queryEntityRiskScoreModifications
+    - chronicle.entities.searchEntities
+    - chronicle.entities.summarize
+    - chronicle.entities.summarizeFromQuery
+    - chronicle.events.batchGet
+    - chronicle.events.findUdmFieldValues
+    - chronicle.events.get
+    - chronicle.events.import
+    - chronicle.events.queryProductSourceStats
+    - chronicle.events.searchRawLogs
+    - chronicle.events.udmSearch
+    - chronicle.events.validateQuery
+    - chronicle.featuredContentRules.list
+    - chronicle.findingsGraphs.exploreNode
+    - chronicle.findingsGraphs.initializeGraph
+    - chronicle.findingsRefinementDeployments.get
+    - chronicle.findingsRefinementDeployments.list
+    - chronicle.findingsRefinementDeployments.update
+    - chronicle.findingsRefinements.computeActivity
+    - chronicle.findingsRefinements.computeAllActivities
+    - chronicle.findingsRefinements.get
+    - chronicle.findingsRefinements.list
+    - chronicle.findingsRefinements.test
+    - chronicle.findingsRefinements.update
+    - chronicle.globalDataAccessScopes.permit
+    - chronicle.instances.generateCollectionAgentAuth
+    - chronicle.instances.generateSoarAuthJwt
+    - chronicle.instances.generateWorkspaceConnectionToken
+    - chronicle.instances.get
+    - chronicle.instances.graduatePocInstance
+    - chronicle.instances.logTypeClassifier
+    - chronicle.instances.report
+    - chronicle.instances.update
+    - chronicle.instances.verifyNonce
+    - chronicle.iocMatches.get
+    - chronicle.iocMatches.list
+    - chronicle.iocState.get
+    - chronicle.iocState.update
+    - chronicle.iocs.batchGet
+    - chronicle.iocs.findFirstAndLastSeen
+    - chronicle.iocs.get
+    - chronicle.iocs.searchCuratedDetectionsForIoc
+    - chronicle.legacies.legacyBatchGetCollections
+    - chronicle.legacies.legacyFetchAlertsView
+    - chronicle.legacies.legacyFetchUdmSearchCsv
+    - chronicle.legacies.legacyFetchUdmSearchView
+    - chronicle.legacies.legacyFindAssetEvents
+    - chronicle.legacies.legacyFindRawLogs
+    - chronicle.legacies.legacyFindUdmEvents
+    - chronicle.legacies.legacyGetAlert
+    - chronicle.legacies.legacyGetCuratedRulesTrends
+    - chronicle.legacies.legacyGetDetection
+    - chronicle.legacies.legacyGetEventForDetection
+    - chronicle.legacies.legacyGetRuleCounts
+    - chronicle.legacies.legacyGetRulesTrends
+    - chronicle.legacies.legacyRunTestRule
+    - chronicle.legacies.legacySearchArtifactEvents
+    - chronicle.legacies.legacySearchArtifactIoCDetails
+    - chronicle.legacies.legacySearchAssetEvents
+    - chronicle.legacies.legacySearchCuratedDetections
+    - chronicle.legacies.legacySearchCustomerStats
+    - chronicle.legacies.legacySearchDetections
+    - chronicle.legacies.legacySearchDomainsRecentlyRegistered
+    - chronicle.legacies.legacySearchDomainsTimingStats
+    - chronicle.legacies.legacySearchEnterpriseWideAlerts
+    - chronicle.legacies.legacySearchEnterpriseWideIoCs
+    - chronicle.legacies.legacySearchFindings
+    - chronicle.legacies.legacySearchIngestionStats
+    - chronicle.legacies.legacySearchIoCInsights
+    - chronicle.legacies.legacySearchRawLogs
+    - chronicle.legacies.legacySearchRuleDetectionCountBuckets
+    - chronicle.legacies.legacySearchRuleDetectionEvents
+    - chronicle.legacies.legacySearchRuleResults
+    - chronicle.legacies.legacySearchRulesAlerts
+    - chronicle.legacies.legacySearchUserEvents
+    - chronicle.legacies.legacyStreamDetectionAlerts
+    - chronicle.legacies.legacyTestRuleStreaming
+    - chronicle.messages.get
+    - chronicle.messages.list
+    - chronicle.messages.update
+    - chronicle.nativeDashboards.duplicate
+    - chronicle.nativeDashboards.get
+    - chronicle.nativeDashboards.list
+    - chronicle.nativeDashboards.update
+    - chronicle.operations.cancel
+    - chronicle.operations.get
+    - chronicle.operations.list
+    - chronicle.operations.streamSearch
+    - chronicle.operations.wait
+    - chronicle.preferenceSets.get
+    - chronicle.preferenceSets.update
+    - chronicle.referenceLists.get
+    - chronicle.referenceLists.list
+    - chronicle.referenceLists.update
+    - chronicle.referenceLists.verifyReferenceList
+    - chronicle.retrohunts.get
+    - chronicle.retrohunts.list
+    - chronicle.riskConfigs.get
+    - chronicle.riskConfigs.update
+    - chronicle.ruleDeployments.get
+    - chronicle.ruleDeployments.list
+    - chronicle.ruleDeployments.update
+    - chronicle.ruleExecutionErrors.list
+    - chronicle.rules.get
+    - chronicle.rules.list
+    - chronicle.rules.listRevisions
+    - chronicle.rules.update
+    - chronicle.rules.verifyRuleText
+    - chronicle.searchQueries.get
+    - chronicle.searchQueries.list
+    - chronicle.searchQueries.update
+    - chronicle.threatCollections.fetchIocMatchMetadata
+    - chronicle.threatCollections.fetchRuleMetadata
+    - chronicle.threatCollections.get
+    - chronicle.threatCollections.list
+    - chronicle.watchlists.get
+    - chronicle.watchlists.list
+    - chronicle.watchlists.update
+    - resourcemanager.projects.get
     project: test-project
     role_id: SecOpsSOCAnalyst
     stage: GA
@@ -766,204 +767,204 @@ values:
   module.project.google_project_iam_custom_role.roles["SecOpsScopedDetectionEngineer"]:
     description: Terraform-managed.
     permissions:
-      - chronicle.ais.createFeedback
-      - chronicle.ais.translateUdmQuery
-      - chronicle.ais.translateYlRule
-      - chronicle.conversations.get
-      - chronicle.conversations.list
-      - chronicle.conversations.update
-      - chronicle.curatedRuleSetCategories.countAllCuratedRuleSetDetections
-      - chronicle.curatedRuleSetCategories.get
-      - chronicle.curatedRuleSetCategories.list
-      - chronicle.curatedRuleSetDeployments.batchUpdate
-      - chronicle.curatedRuleSetDeployments.get
-      - chronicle.curatedRuleSetDeployments.list
-      - chronicle.curatedRuleSetDeployments.update
-      - chronicle.curatedRuleSets.countCuratedRuleSetDetections
-      - chronicle.curatedRuleSets.get
-      - chronicle.curatedRuleSets.list
-      - chronicle.curatedRules.get
-      - chronicle.curatedRules.list
-      - chronicle.dashboardCharts.get
-      - chronicle.dashboardCharts.list
-      - chronicle.dashboardQueries.execute
-      - chronicle.dashboardQueries.get
-      - chronicle.dashboardQueries.list
-      - chronicle.dashboards.copy
-      - chronicle.dashboards.create
-      - chronicle.dashboards.delete
-      - chronicle.dashboards.edit
-      - chronicle.dashboards.get
-      - chronicle.dashboards.list
-      - chronicle.dashboards.schedule
-      - chronicle.dataAccessLabels.get
-      - chronicle.dataAccessLabels.list
-      - chronicle.dataAccessLabels.update
-      - chronicle.dataAccessScopes.get
-      - chronicle.dataAccessScopes.list
-      - chronicle.dataAccessScopes.permit
-      - chronicle.dataAccessScopes.update
-      - chronicle.dataTableOperationErrors.get
-      - chronicle.dataTableRows.asyncBulkCreate
-      - chronicle.dataTableRows.asyncBulkReplace
-      - chronicle.dataTableRows.asyncBulkUpdate
-      - chronicle.dataTableRows.bulkCreate
-      - chronicle.dataTableRows.bulkReplace
-      - chronicle.dataTableRows.bulkUpdate
-      - chronicle.dataTableRows.create
-      - chronicle.dataTableRows.delete
-      - chronicle.dataTableRows.get
-      - chronicle.dataTableRows.list
-      - chronicle.dataTableRows.update
-      - chronicle.dataTables.bulkCreateDataTableAsync
-      - chronicle.dataTables.create
-      - chronicle.dataTables.delete
-      - chronicle.dataTables.get
-      - chronicle.dataTables.list
-      - chronicle.dataTables.update
-      - chronicle.enrichmentControls.create
-      - chronicle.enrichmentControls.delete
-      - chronicle.enrichmentControls.get
-      - chronicle.enrichmentControls.list
-      - chronicle.entities.batchCreate
-      - chronicle.entities.batchDelete
-      - chronicle.entities.batchValidate
-      - chronicle.entities.create
-      - chronicle.entities.delete
-      - chronicle.entities.find
-      - chronicle.entities.findRelatedEntities
-      - chronicle.entities.get
-      - chronicle.entities.import
-      - chronicle.entities.list
-      - chronicle.entities.modifyEntityRiskScore
-      - chronicle.entities.queryEntityRiskScoreModifications
-      - chronicle.entities.searchEntities
-      - chronicle.entities.summarize
-      - chronicle.entities.summarizeFromQuery
-      - chronicle.events.batchGet
-      - chronicle.events.findUdmFieldValues
-      - chronicle.events.get
-      - chronicle.events.import
-      - chronicle.events.queryProductSourceStats
-      - chronicle.events.searchRawLogs
-      - chronicle.events.udmSearch
-      - chronicle.events.validateQuery
-      - chronicle.featuredContentRules.list
-      - chronicle.findingsGraphs.exploreNode
-      - chronicle.findingsGraphs.initializeGraph
-      - chronicle.findingsRefinementDeployments.get
-      - chronicle.findingsRefinementDeployments.list
-      - chronicle.findingsRefinementDeployments.update
-      - chronicle.findingsRefinements.computeActivity
-      - chronicle.findingsRefinements.computeAllActivities
-      - chronicle.findingsRefinements.create
-      - chronicle.findingsRefinements.get
-      - chronicle.findingsRefinements.list
-      - chronicle.findingsRefinements.test
-      - chronicle.findingsRefinements.update
-      - chronicle.instances.generateCollectionAgentAuth
-      - chronicle.instances.generateSoarAuthJwt
-      - chronicle.instances.generateWorkspaceConnectionToken
-      - chronicle.instances.get
-      - chronicle.instances.graduatePocInstance
-      - chronicle.instances.logTypeClassifier
-      - chronicle.instances.report
-      - chronicle.instances.update
-      - chronicle.instances.verifyNonce
-      - chronicle.iocMatches.get
-      - chronicle.iocMatches.list
-      - chronicle.iocState.get
-      - chronicle.iocState.update
-      - chronicle.iocs.batchGet
-      - chronicle.iocs.findFirstAndLastSeen
-      - chronicle.iocs.get
-      - chronicle.iocs.searchCuratedDetectionsForIoc
-      - chronicle.legacies.legacyBatchGetCollections
-      - chronicle.legacies.legacyFetchAlertsView
-      - chronicle.legacies.legacyFetchUdmSearchCsv
-      - chronicle.legacies.legacyFetchUdmSearchView
-      - chronicle.legacies.legacyFindAssetEvents
-      - chronicle.legacies.legacyFindRawLogs
-      - chronicle.legacies.legacyFindUdmEvents
-      - chronicle.legacies.legacyGetAlert
-      - chronicle.legacies.legacyGetCuratedRulesTrends
-      - chronicle.legacies.legacyGetDetection
-      - chronicle.legacies.legacyGetEventForDetection
-      - chronicle.legacies.legacyGetRuleCounts
-      - chronicle.legacies.legacyGetRulesTrends
-      - chronicle.legacies.legacyRunTestRule
-      - chronicle.legacies.legacySearchArtifactEvents
-      - chronicle.legacies.legacySearchArtifactIoCDetails
-      - chronicle.legacies.legacySearchAssetEvents
-      - chronicle.legacies.legacySearchCuratedDetections
-      - chronicle.legacies.legacySearchCustomerStats
-      - chronicle.legacies.legacySearchDetections
-      - chronicle.legacies.legacySearchDomainsRecentlyRegistered
-      - chronicle.legacies.legacySearchDomainsTimingStats
-      - chronicle.legacies.legacySearchEnterpriseWideAlerts
-      - chronicle.legacies.legacySearchEnterpriseWideIoCs
-      - chronicle.legacies.legacySearchFindings
-      - chronicle.legacies.legacySearchIngestionStats
-      - chronicle.legacies.legacySearchIoCInsights
-      - chronicle.legacies.legacySearchRawLogs
-      - chronicle.legacies.legacySearchRuleDetectionCountBuckets
-      - chronicle.legacies.legacySearchRuleDetectionEvents
-      - chronicle.legacies.legacySearchRuleResults
-      - chronicle.legacies.legacySearchRulesAlerts
-      - chronicle.legacies.legacySearchUserEvents
-      - chronicle.legacies.legacyStreamDetectionAlerts
-      - chronicle.legacies.legacyTestRuleStreaming
-      - chronicle.messages.get
-      - chronicle.messages.list
-      - chronicle.messages.update
-      - chronicle.nativeDashboards.create
-      - chronicle.nativeDashboards.delete
-      - chronicle.nativeDashboards.duplicate
-      - chronicle.nativeDashboards.get
-      - chronicle.nativeDashboards.list
-      - chronicle.nativeDashboards.update
-      - chronicle.operations.cancel
-      - chronicle.operations.delete
-      - chronicle.operations.get
-      - chronicle.operations.list
-      - chronicle.operations.streamSearch
-      - chronicle.operations.wait
-      - chronicle.preferenceSets.get
-      - chronicle.preferenceSets.update
-      - chronicle.referenceLists.create
-      - chronicle.referenceLists.get
-      - chronicle.referenceLists.list
-      - chronicle.referenceLists.update
-      - chronicle.referenceLists.verifyReferenceList
-      - chronicle.retrohunts.create
-      - chronicle.retrohunts.get
-      - chronicle.retrohunts.list
-      - chronicle.riskConfigs.get
-      - chronicle.riskConfigs.update
-      - chronicle.ruleDeployments.get
-      - chronicle.ruleDeployments.list
-      - chronicle.ruleDeployments.update
-      - chronicle.ruleExecutionErrors.list
-      - chronicle.rules.create
-      - chronicle.rules.delete
-      - chronicle.rules.get
-      - chronicle.rules.list
-      - chronicle.rules.listRevisions
-      - chronicle.rules.update
-      - chronicle.rules.verifyRuleText
-      - chronicle.searchQueries.get
-      - chronicle.searchQueries.list
-      - chronicle.searchQueries.update
-      - chronicle.threatCollections.fetchIocMatchMetadata
-      - chronicle.threatCollections.fetchRuleMetadata
-      - chronicle.threatCollections.get
-      - chronicle.threatCollections.list
-      - chronicle.watchlists.create
-      - chronicle.watchlists.delete
-      - chronicle.watchlists.get
-      - chronicle.watchlists.list
-      - chronicle.watchlists.update
-      - resourcemanager.projects.get
+    - chronicle.ais.createFeedback
+    - chronicle.ais.translateUdmQuery
+    - chronicle.ais.translateYlRule
+    - chronicle.conversations.get
+    - chronicle.conversations.list
+    - chronicle.conversations.update
+    - chronicle.curatedRuleSetCategories.countAllCuratedRuleSetDetections
+    - chronicle.curatedRuleSetCategories.get
+    - chronicle.curatedRuleSetCategories.list
+    - chronicle.curatedRuleSetDeployments.batchUpdate
+    - chronicle.curatedRuleSetDeployments.get
+    - chronicle.curatedRuleSetDeployments.list
+    - chronicle.curatedRuleSetDeployments.update
+    - chronicle.curatedRuleSets.countCuratedRuleSetDetections
+    - chronicle.curatedRuleSets.get
+    - chronicle.curatedRuleSets.list
+    - chronicle.curatedRules.get
+    - chronicle.curatedRules.list
+    - chronicle.dashboardCharts.get
+    - chronicle.dashboardCharts.list
+    - chronicle.dashboardQueries.execute
+    - chronicle.dashboardQueries.get
+    - chronicle.dashboardQueries.list
+    - chronicle.dashboards.copy
+    - chronicle.dashboards.create
+    - chronicle.dashboards.delete
+    - chronicle.dashboards.edit
+    - chronicle.dashboards.get
+    - chronicle.dashboards.list
+    - chronicle.dashboards.schedule
+    - chronicle.dataAccessLabels.get
+    - chronicle.dataAccessLabels.list
+    - chronicle.dataAccessLabels.update
+    - chronicle.dataAccessScopes.get
+    - chronicle.dataAccessScopes.list
+    - chronicle.dataAccessScopes.permit
+    - chronicle.dataAccessScopes.update
+    - chronicle.dataTableOperationErrors.get
+    - chronicle.dataTableRows.asyncBulkCreate
+    - chronicle.dataTableRows.asyncBulkReplace
+    - chronicle.dataTableRows.asyncBulkUpdate
+    - chronicle.dataTableRows.bulkCreate
+    - chronicle.dataTableRows.bulkReplace
+    - chronicle.dataTableRows.bulkUpdate
+    - chronicle.dataTableRows.create
+    - chronicle.dataTableRows.delete
+    - chronicle.dataTableRows.get
+    - chronicle.dataTableRows.list
+    - chronicle.dataTableRows.update
+    - chronicle.dataTables.bulkCreateDataTableAsync
+    - chronicle.dataTables.create
+    - chronicle.dataTables.delete
+    - chronicle.dataTables.get
+    - chronicle.dataTables.list
+    - chronicle.dataTables.update
+    - chronicle.enrichmentControls.create
+    - chronicle.enrichmentControls.delete
+    - chronicle.enrichmentControls.get
+    - chronicle.enrichmentControls.list
+    - chronicle.entities.batchCreate
+    - chronicle.entities.batchDelete
+    - chronicle.entities.batchValidate
+    - chronicle.entities.create
+    - chronicle.entities.delete
+    - chronicle.entities.find
+    - chronicle.entities.findRelatedEntities
+    - chronicle.entities.get
+    - chronicle.entities.import
+    - chronicle.entities.list
+    - chronicle.entities.modifyEntityRiskScore
+    - chronicle.entities.queryEntityRiskScoreModifications
+    - chronicle.entities.searchEntities
+    - chronicle.entities.summarize
+    - chronicle.entities.summarizeFromQuery
+    - chronicle.events.batchGet
+    - chronicle.events.findUdmFieldValues
+    - chronicle.events.get
+    - chronicle.events.import
+    - chronicle.events.queryProductSourceStats
+    - chronicle.events.searchRawLogs
+    - chronicle.events.udmSearch
+    - chronicle.events.validateQuery
+    - chronicle.featuredContentRules.list
+    - chronicle.findingsGraphs.exploreNode
+    - chronicle.findingsGraphs.initializeGraph
+    - chronicle.findingsRefinementDeployments.get
+    - chronicle.findingsRefinementDeployments.list
+    - chronicle.findingsRefinementDeployments.update
+    - chronicle.findingsRefinements.computeActivity
+    - chronicle.findingsRefinements.computeAllActivities
+    - chronicle.findingsRefinements.create
+    - chronicle.findingsRefinements.get
+    - chronicle.findingsRefinements.list
+    - chronicle.findingsRefinements.test
+    - chronicle.findingsRefinements.update
+    - chronicle.instances.generateCollectionAgentAuth
+    - chronicle.instances.generateSoarAuthJwt
+    - chronicle.instances.generateWorkspaceConnectionToken
+    - chronicle.instances.get
+    - chronicle.instances.graduatePocInstance
+    - chronicle.instances.logTypeClassifier
+    - chronicle.instances.report
+    - chronicle.instances.update
+    - chronicle.instances.verifyNonce
+    - chronicle.iocMatches.get
+    - chronicle.iocMatches.list
+    - chronicle.iocState.get
+    - chronicle.iocState.update
+    - chronicle.iocs.batchGet
+    - chronicle.iocs.findFirstAndLastSeen
+    - chronicle.iocs.get
+    - chronicle.iocs.searchCuratedDetectionsForIoc
+    - chronicle.legacies.legacyBatchGetCollections
+    - chronicle.legacies.legacyFetchAlertsView
+    - chronicle.legacies.legacyFetchUdmSearchCsv
+    - chronicle.legacies.legacyFetchUdmSearchView
+    - chronicle.legacies.legacyFindAssetEvents
+    - chronicle.legacies.legacyFindRawLogs
+    - chronicle.legacies.legacyFindUdmEvents
+    - chronicle.legacies.legacyGetAlert
+    - chronicle.legacies.legacyGetCuratedRulesTrends
+    - chronicle.legacies.legacyGetDetection
+    - chronicle.legacies.legacyGetEventForDetection
+    - chronicle.legacies.legacyGetRuleCounts
+    - chronicle.legacies.legacyGetRulesTrends
+    - chronicle.legacies.legacyRunTestRule
+    - chronicle.legacies.legacySearchArtifactEvents
+    - chronicle.legacies.legacySearchArtifactIoCDetails
+    - chronicle.legacies.legacySearchAssetEvents
+    - chronicle.legacies.legacySearchCuratedDetections
+    - chronicle.legacies.legacySearchCustomerStats
+    - chronicle.legacies.legacySearchDetections
+    - chronicle.legacies.legacySearchDomainsRecentlyRegistered
+    - chronicle.legacies.legacySearchDomainsTimingStats
+    - chronicle.legacies.legacySearchEnterpriseWideAlerts
+    - chronicle.legacies.legacySearchEnterpriseWideIoCs
+    - chronicle.legacies.legacySearchFindings
+    - chronicle.legacies.legacySearchIngestionStats
+    - chronicle.legacies.legacySearchIoCInsights
+    - chronicle.legacies.legacySearchRawLogs
+    - chronicle.legacies.legacySearchRuleDetectionCountBuckets
+    - chronicle.legacies.legacySearchRuleDetectionEvents
+    - chronicle.legacies.legacySearchRuleResults
+    - chronicle.legacies.legacySearchRulesAlerts
+    - chronicle.legacies.legacySearchUserEvents
+    - chronicle.legacies.legacyStreamDetectionAlerts
+    - chronicle.legacies.legacyTestRuleStreaming
+    - chronicle.messages.get
+    - chronicle.messages.list
+    - chronicle.messages.update
+    - chronicle.nativeDashboards.create
+    - chronicle.nativeDashboards.delete
+    - chronicle.nativeDashboards.duplicate
+    - chronicle.nativeDashboards.get
+    - chronicle.nativeDashboards.list
+    - chronicle.nativeDashboards.update
+    - chronicle.operations.cancel
+    - chronicle.operations.delete
+    - chronicle.operations.get
+    - chronicle.operations.list
+    - chronicle.operations.streamSearch
+    - chronicle.operations.wait
+    - chronicle.preferenceSets.get
+    - chronicle.preferenceSets.update
+    - chronicle.referenceLists.create
+    - chronicle.referenceLists.get
+    - chronicle.referenceLists.list
+    - chronicle.referenceLists.update
+    - chronicle.referenceLists.verifyReferenceList
+    - chronicle.retrohunts.create
+    - chronicle.retrohunts.get
+    - chronicle.retrohunts.list
+    - chronicle.riskConfigs.get
+    - chronicle.riskConfigs.update
+    - chronicle.ruleDeployments.get
+    - chronicle.ruleDeployments.list
+    - chronicle.ruleDeployments.update
+    - chronicle.ruleExecutionErrors.list
+    - chronicle.rules.create
+    - chronicle.rules.delete
+    - chronicle.rules.get
+    - chronicle.rules.list
+    - chronicle.rules.listRevisions
+    - chronicle.rules.update
+    - chronicle.rules.verifyRuleText
+    - chronicle.searchQueries.get
+    - chronicle.searchQueries.list
+    - chronicle.searchQueries.update
+    - chronicle.threatCollections.fetchIocMatchMetadata
+    - chronicle.threatCollections.fetchRuleMetadata
+    - chronicle.threatCollections.get
+    - chronicle.threatCollections.list
+    - chronicle.watchlists.create
+    - chronicle.watchlists.delete
+    - chronicle.watchlists.get
+    - chronicle.watchlists.list
+    - chronicle.watchlists.update
+    - resourcemanager.projects.get
     project: test-project
     role_id: SecOpsScopedDetectionEngineer
     stage: GA
@@ -971,165 +972,165 @@ values:
   module.project.google_project_iam_custom_role.roles["SecOpsScopedOnboardingEngineer"]:
     description: Terraform-managed.
     permissions:
-      - chronicle.ais.createFeedback
-      - chronicle.ais.translateUdmQuery
-      - chronicle.ais.translateYlRule
-      - chronicle.collectors.create
-      - chronicle.collectors.delete
-      - chronicle.collectors.get
-      - chronicle.collectors.list
-      - chronicle.collectors.update
-      - chronicle.conversations.get
-      - chronicle.conversations.list
-      - chronicle.conversations.update
-      - chronicle.dashboardCharts.get
-      - chronicle.dashboardCharts.list
-      - chronicle.dashboardQueries.execute
-      - chronicle.dashboardQueries.get
-      - chronicle.dashboardQueries.list
-      - chronicle.dashboards.copy
-      - chronicle.dashboards.create
-      - chronicle.dashboards.delete
-      - chronicle.dashboards.edit
-      - chronicle.dashboards.get
-      - chronicle.dashboards.list
-      - chronicle.dashboards.schedule
-      - chronicle.dataAccessLabels.get
-      - chronicle.dataAccessLabels.list
-      - chronicle.dataAccessLabels.update
-      - chronicle.dataAccessScopes.get
-      - chronicle.dataAccessScopes.list
-      - chronicle.dataAccessScopes.permit
-      - chronicle.dataAccessScopes.update
-      - chronicle.enrichmentControls.get
-      - chronicle.enrichmentControls.list
-      - chronicle.entities.batchCreate
-      - chronicle.entities.batchDelete
-      - chronicle.entities.batchValidate
-      - chronicle.entities.find
-      - chronicle.entities.findRelatedEntities
-      - chronicle.entities.get
-      - chronicle.entities.import
-      - chronicle.entities.list
-      - chronicle.entities.modifyEntityRiskScore
-      - chronicle.entities.queryEntityRiskScoreModifications
-      - chronicle.entities.searchEntities
-      - chronicle.entities.summarize
-      - chronicle.entities.summarizeFromQuery
-      - chronicle.events.batchGet
-      - chronicle.events.findUdmFieldValues
-      - chronicle.events.get
-      - chronicle.events.import
-      - chronicle.events.queryProductSourceStats
-      - chronicle.events.searchRawLogs
-      - chronicle.events.udmSearch
-      - chronicle.events.validateQuery
-      - chronicle.extensionValidationReports.get
-      - chronicle.extensionValidationReports.list
-      - chronicle.feedPacks.get
-      - chronicle.feedPacks.list
-      - chronicle.feedServiceAccounts.fetch
-      - chronicle.feedSourceTypeSchemas.list
-      - chronicle.feeds.create
-      - chronicle.feeds.delete
-      - chronicle.feeds.disable
-      - chronicle.feeds.enable
-      - chronicle.feeds.generateSecret
-      - chronicle.feeds.get
-      - chronicle.feeds.list
-      - chronicle.feeds.update
-      - chronicle.findingsGraphs.exploreNode
-      - chronicle.findingsGraphs.initializeGraph
-      - chronicle.forwarders.create
-      - chronicle.forwarders.delete
-      - chronicle.forwarders.generate
-      - chronicle.forwarders.get
-      - chronicle.forwarders.list
-      - chronicle.forwarders.update
-      - chronicle.ingestionLogLabels.get
-      - chronicle.ingestionLogLabels.list
-      - chronicle.ingestionLogNamespaces.get
-      - chronicle.ingestionLogNamespaces.list
-      - chronicle.instances.generateCollectionAgentAuth
-      - chronicle.instances.generateSoarAuthJwt
-      - chronicle.instances.generateWorkspaceConnectionToken
-      - chronicle.instances.get
-      - chronicle.instances.graduatePocInstance
-      - chronicle.instances.logTypeClassifier
-      - chronicle.instances.report
-      - chronicle.instances.update
-      - chronicle.instances.verifyNonce
-      - chronicle.legacies.legacyFetchUdmSearchCsv
-      - chronicle.legacies.legacyFetchUdmSearchView
-      - chronicle.legacies.legacyFindAssetEvents
-      - chronicle.legacies.legacyFindRawLogs
-      - chronicle.legacies.legacyFindUdmEvents
-      - chronicle.legacies.legacySearchArtifactEvents
-      - chronicle.legacies.legacySearchArtifactIoCDetails
-      - chronicle.legacies.legacySearchAssetEvents
-      - chronicle.legacies.legacySearchCustomerStats
-      - chronicle.legacies.legacySearchEnterpriseWideIoCs
-      - chronicle.legacies.legacySearchIngestionStats
-      - chronicle.legacies.legacySearchIoCInsights
-      - chronicle.legacies.legacySearchRawLogs
-      - chronicle.legacies.legacySearchUserEvents
-      - chronicle.logTypeSchemas.list
-      - chronicle.logTypeSettings.get
-      - chronicle.logTypeSettings.list
-      - chronicle.logTypeSettings.update
-      - chronicle.logTypes.create
-      - chronicle.logTypes.get
-      - chronicle.logTypes.list
-      - chronicle.logTypes.update
-      - chronicle.logs.get
-      - chronicle.logs.list
-      - chronicle.messages.get
-      - chronicle.messages.list
-      - chronicle.messages.update
-      - chronicle.nativeDashboards.create
-      - chronicle.nativeDashboards.delete
-      - chronicle.nativeDashboards.duplicate
-      - chronicle.nativeDashboards.get
-      - chronicle.nativeDashboards.list
-      - chronicle.nativeDashboards.update
-      - chronicle.operations.cancel
-      - chronicle.operations.delete
-      - chronicle.operations.get
-      - chronicle.operations.list
-      - chronicle.operations.streamSearch
-      - chronicle.operations.wait
-      - chronicle.parserExtensions.activate
-      - chronicle.parserExtensions.create
-      - chronicle.parserExtensions.delete
-      - chronicle.parserExtensions.generateKeyValueMappings
-      - chronicle.parserExtensions.get
-      - chronicle.parserExtensions.legacySubmitParserExtension
-      - chronicle.parserExtensions.list
-      - chronicle.parserExtensions.removeSyslog
-      - chronicle.parsers.activate
-      - chronicle.parsers.activateReleaseCandidate
-      - chronicle.parsers.copyPrebuiltParser
-      - chronicle.parsers.create
-      - chronicle.parsers.deactivate
-      - chronicle.parsers.delete
-      - chronicle.parsers.generateEventTypesSuggestions
-      - chronicle.parsers.get
-      - chronicle.parsers.list
-      - chronicle.parsers.runParser
-      - chronicle.parsingErrors.list
-      - chronicle.preferenceSets.get
-      - chronicle.preferenceSets.update
-      - chronicle.riskConfigs.get
-      - chronicle.riskConfigs.update
-      - chronicle.searchQueries.get
-      - chronicle.searchQueries.list
-      - chronicle.searchQueries.update
-      - chronicle.validationErrors.list
-      - chronicle.validationReports.get
-      - chronicle.watchlists.get
-      - chronicle.watchlists.list
-      - chronicle.watchlists.update
-      - resourcemanager.projects.get
+    - chronicle.ais.createFeedback
+    - chronicle.ais.translateUdmQuery
+    - chronicle.ais.translateYlRule
+    - chronicle.collectors.create
+    - chronicle.collectors.delete
+    - chronicle.collectors.get
+    - chronicle.collectors.list
+    - chronicle.collectors.update
+    - chronicle.conversations.get
+    - chronicle.conversations.list
+    - chronicle.conversations.update
+    - chronicle.dashboardCharts.get
+    - chronicle.dashboardCharts.list
+    - chronicle.dashboardQueries.execute
+    - chronicle.dashboardQueries.get
+    - chronicle.dashboardQueries.list
+    - chronicle.dashboards.copy
+    - chronicle.dashboards.create
+    - chronicle.dashboards.delete
+    - chronicle.dashboards.edit
+    - chronicle.dashboards.get
+    - chronicle.dashboards.list
+    - chronicle.dashboards.schedule
+    - chronicle.dataAccessLabels.get
+    - chronicle.dataAccessLabels.list
+    - chronicle.dataAccessLabels.update
+    - chronicle.dataAccessScopes.get
+    - chronicle.dataAccessScopes.list
+    - chronicle.dataAccessScopes.permit
+    - chronicle.dataAccessScopes.update
+    - chronicle.enrichmentControls.get
+    - chronicle.enrichmentControls.list
+    - chronicle.entities.batchCreate
+    - chronicle.entities.batchDelete
+    - chronicle.entities.batchValidate
+    - chronicle.entities.find
+    - chronicle.entities.findRelatedEntities
+    - chronicle.entities.get
+    - chronicle.entities.import
+    - chronicle.entities.list
+    - chronicle.entities.modifyEntityRiskScore
+    - chronicle.entities.queryEntityRiskScoreModifications
+    - chronicle.entities.searchEntities
+    - chronicle.entities.summarize
+    - chronicle.entities.summarizeFromQuery
+    - chronicle.events.batchGet
+    - chronicle.events.findUdmFieldValues
+    - chronicle.events.get
+    - chronicle.events.import
+    - chronicle.events.queryProductSourceStats
+    - chronicle.events.searchRawLogs
+    - chronicle.events.udmSearch
+    - chronicle.events.validateQuery
+    - chronicle.extensionValidationReports.get
+    - chronicle.extensionValidationReports.list
+    - chronicle.feedPacks.get
+    - chronicle.feedPacks.list
+    - chronicle.feedServiceAccounts.fetch
+    - chronicle.feedSourceTypeSchemas.list
+    - chronicle.feeds.create
+    - chronicle.feeds.delete
+    - chronicle.feeds.disable
+    - chronicle.feeds.enable
+    - chronicle.feeds.generateSecret
+    - chronicle.feeds.get
+    - chronicle.feeds.list
+    - chronicle.feeds.update
+    - chronicle.findingsGraphs.exploreNode
+    - chronicle.findingsGraphs.initializeGraph
+    - chronicle.forwarders.create
+    - chronicle.forwarders.delete
+    - chronicle.forwarders.generate
+    - chronicle.forwarders.get
+    - chronicle.forwarders.list
+    - chronicle.forwarders.update
+    - chronicle.ingestionLogLabels.get
+    - chronicle.ingestionLogLabels.list
+    - chronicle.ingestionLogNamespaces.get
+    - chronicle.ingestionLogNamespaces.list
+    - chronicle.instances.generateCollectionAgentAuth
+    - chronicle.instances.generateSoarAuthJwt
+    - chronicle.instances.generateWorkspaceConnectionToken
+    - chronicle.instances.get
+    - chronicle.instances.graduatePocInstance
+    - chronicle.instances.logTypeClassifier
+    - chronicle.instances.report
+    - chronicle.instances.update
+    - chronicle.instances.verifyNonce
+    - chronicle.legacies.legacyFetchUdmSearchCsv
+    - chronicle.legacies.legacyFetchUdmSearchView
+    - chronicle.legacies.legacyFindAssetEvents
+    - chronicle.legacies.legacyFindRawLogs
+    - chronicle.legacies.legacyFindUdmEvents
+    - chronicle.legacies.legacySearchArtifactEvents
+    - chronicle.legacies.legacySearchArtifactIoCDetails
+    - chronicle.legacies.legacySearchAssetEvents
+    - chronicle.legacies.legacySearchCustomerStats
+    - chronicle.legacies.legacySearchEnterpriseWideIoCs
+    - chronicle.legacies.legacySearchIngestionStats
+    - chronicle.legacies.legacySearchIoCInsights
+    - chronicle.legacies.legacySearchRawLogs
+    - chronicle.legacies.legacySearchUserEvents
+    - chronicle.logTypeSchemas.list
+    - chronicle.logTypeSettings.get
+    - chronicle.logTypeSettings.list
+    - chronicle.logTypeSettings.update
+    - chronicle.logTypes.create
+    - chronicle.logTypes.get
+    - chronicle.logTypes.list
+    - chronicle.logTypes.update
+    - chronicle.logs.get
+    - chronicle.logs.list
+    - chronicle.messages.get
+    - chronicle.messages.list
+    - chronicle.messages.update
+    - chronicle.nativeDashboards.create
+    - chronicle.nativeDashboards.delete
+    - chronicle.nativeDashboards.duplicate
+    - chronicle.nativeDashboards.get
+    - chronicle.nativeDashboards.list
+    - chronicle.nativeDashboards.update
+    - chronicle.operations.cancel
+    - chronicle.operations.delete
+    - chronicle.operations.get
+    - chronicle.operations.list
+    - chronicle.operations.streamSearch
+    - chronicle.operations.wait
+    - chronicle.parserExtensions.activate
+    - chronicle.parserExtensions.create
+    - chronicle.parserExtensions.delete
+    - chronicle.parserExtensions.generateKeyValueMappings
+    - chronicle.parserExtensions.get
+    - chronicle.parserExtensions.legacySubmitParserExtension
+    - chronicle.parserExtensions.list
+    - chronicle.parserExtensions.removeSyslog
+    - chronicle.parsers.activate
+    - chronicle.parsers.activateReleaseCandidate
+    - chronicle.parsers.copyPrebuiltParser
+    - chronicle.parsers.create
+    - chronicle.parsers.deactivate
+    - chronicle.parsers.delete
+    - chronicle.parsers.generateEventTypesSuggestions
+    - chronicle.parsers.get
+    - chronicle.parsers.list
+    - chronicle.parsers.runParser
+    - chronicle.parsingErrors.list
+    - chronicle.preferenceSets.get
+    - chronicle.preferenceSets.update
+    - chronicle.riskConfigs.get
+    - chronicle.riskConfigs.update
+    - chronicle.searchQueries.get
+    - chronicle.searchQueries.list
+    - chronicle.searchQueries.update
+    - chronicle.validationErrors.list
+    - chronicle.validationReports.get
+    - chronicle.watchlists.get
+    - chronicle.watchlists.list
+    - chronicle.watchlists.update
+    - resourcemanager.projects.get
     project: test-project
     role_id: SecOpsScopedOnboardingEngineer
     stage: GA
@@ -1137,165 +1138,165 @@ values:
   module.project.google_project_iam_custom_role.roles["SecOpsScopedSOCAnalyst"]:
     description: Terraform-managed.
     permissions:
-      - chronicle.ais.createFeedback
-      - chronicle.ais.translateUdmQuery
-      - chronicle.ais.translateYlRule
-      - chronicle.conversations.get
-      - chronicle.conversations.list
-      - chronicle.curatedRuleSetCategories.countAllCuratedRuleSetDetections
-      - chronicle.curatedRuleSetCategories.get
-      - chronicle.curatedRuleSetCategories.list
-      - chronicle.curatedRuleSetDeployments.batchUpdate
-      - chronicle.curatedRuleSetDeployments.get
-      - chronicle.curatedRuleSetDeployments.list
-      - chronicle.curatedRuleSets.countCuratedRuleSetDetections
-      - chronicle.curatedRuleSets.get
-      - chronicle.curatedRuleSets.list
-      - chronicle.curatedRules.get
-      - chronicle.curatedRules.list
-      - chronicle.dashboardCharts.get
-      - chronicle.dashboardCharts.list
-      - chronicle.dashboardQueries.execute
-      - chronicle.dashboardQueries.get
-      - chronicle.dashboardQueries.list
-      - chronicle.dashboards.copy
-      - chronicle.dashboards.edit
-      - chronicle.dashboards.get
-      - chronicle.dashboards.list
-      - chronicle.dashboards.schedule
-      - chronicle.dataAccessLabels.get
-      - chronicle.dataAccessLabels.list
-      - chronicle.dataAccessScopes.get
-      - chronicle.dataAccessScopes.list
-      - chronicle.dataAccessScopes.permit
-      - chronicle.dataTableOperationErrors.get
-      - chronicle.dataTableRows.asyncBulkCreate
-      - chronicle.dataTableRows.asyncBulkReplace
-      - chronicle.dataTableRows.asyncBulkUpdate
-      - chronicle.dataTableRows.bulkCreate
-      - chronicle.dataTableRows.bulkReplace
-      - chronicle.dataTableRows.bulkUpdate
-      - chronicle.dataTableRows.get
-      - chronicle.dataTableRows.list
-      - chronicle.dataTables.bulkCreateDataTableAsync
-      - chronicle.dataTables.get
-      - chronicle.dataTables.list
-      - chronicle.enrichmentControls.get
-      - chronicle.enrichmentControls.list
-      - chronicle.entities.batchCreate
-      - chronicle.entities.batchDelete
-      - chronicle.entities.batchValidate
-      - chronicle.entities.find
-      - chronicle.entities.findRelatedEntities
-      - chronicle.entities.get
-      - chronicle.entities.import
-      - chronicle.entities.list
-      - chronicle.entities.modifyEntityRiskScore
-      - chronicle.entities.queryEntityRiskScoreModifications
-      - chronicle.entities.searchEntities
-      - chronicle.entities.summarize
-      - chronicle.entities.summarizeFromQuery
-      - chronicle.events.batchGet
-      - chronicle.events.findUdmFieldValues
-      - chronicle.events.get
-      - chronicle.events.import
-      - chronicle.events.queryProductSourceStats
-      - chronicle.events.searchRawLogs
-      - chronicle.events.udmSearch
-      - chronicle.events.validateQuery
-      - chronicle.featuredContentRules.list
-      - chronicle.findingsGraphs.exploreNode
-      - chronicle.findingsGraphs.initializeGraph
-      - chronicle.findingsRefinementDeployments.get
-      - chronicle.findingsRefinementDeployments.list
-      - chronicle.findingsRefinements.computeActivity
-      - chronicle.findingsRefinements.computeAllActivities
-      - chronicle.findingsRefinements.get
-      - chronicle.findingsRefinements.list
-      - chronicle.findingsRefinements.test
-      - chronicle.instances.generateCollectionAgentAuth
-      - chronicle.instances.generateSoarAuthJwt
-      - chronicle.instances.generateWorkspaceConnectionToken
-      - chronicle.instances.get
-      - chronicle.instances.graduatePocInstance
-      - chronicle.instances.logTypeClassifier
-      - chronicle.instances.report
-      - chronicle.instances.verifyNonce
-      - chronicle.iocMatches.get
-      - chronicle.iocMatches.list
-      - chronicle.iocState.get
-      - chronicle.iocs.batchGet
-      - chronicle.iocs.findFirstAndLastSeen
-      - chronicle.iocs.get
-      - chronicle.iocs.searchCuratedDetectionsForIoc
-      - chronicle.legacies.legacyBatchGetCollections
-      - chronicle.legacies.legacyFetchAlertsView
-      - chronicle.legacies.legacyFetchUdmSearchCsv
-      - chronicle.legacies.legacyFetchUdmSearchView
-      - chronicle.legacies.legacyFindAssetEvents
-      - chronicle.legacies.legacyFindRawLogs
-      - chronicle.legacies.legacyFindUdmEvents
-      - chronicle.legacies.legacyGetAlert
-      - chronicle.legacies.legacyGetCuratedRulesTrends
-      - chronicle.legacies.legacyGetDetection
-      - chronicle.legacies.legacyGetEventForDetection
-      - chronicle.legacies.legacyGetRuleCounts
-      - chronicle.legacies.legacyGetRulesTrends
-      - chronicle.legacies.legacyRunTestRule
-      - chronicle.legacies.legacySearchArtifactEvents
-      - chronicle.legacies.legacySearchArtifactIoCDetails
-      - chronicle.legacies.legacySearchAssetEvents
-      - chronicle.legacies.legacySearchCuratedDetections
-      - chronicle.legacies.legacySearchCustomerStats
-      - chronicle.legacies.legacySearchDetections
-      - chronicle.legacies.legacySearchDomainsRecentlyRegistered
-      - chronicle.legacies.legacySearchDomainsTimingStats
-      - chronicle.legacies.legacySearchEnterpriseWideAlerts
-      - chronicle.legacies.legacySearchEnterpriseWideIoCs
-      - chronicle.legacies.legacySearchFindings
-      - chronicle.legacies.legacySearchIngestionStats
-      - chronicle.legacies.legacySearchIoCInsights
-      - chronicle.legacies.legacySearchRawLogs
-      - chronicle.legacies.legacySearchRuleDetectionCountBuckets
-      - chronicle.legacies.legacySearchRuleDetectionEvents
-      - chronicle.legacies.legacySearchRuleResults
-      - chronicle.legacies.legacySearchRulesAlerts
-      - chronicle.legacies.legacySearchUserEvents
-      - chronicle.legacies.legacyStreamDetectionAlerts
-      - chronicle.legacies.legacyTestRuleStreaming
-      - chronicle.messages.get
-      - chronicle.messages.list
-      - chronicle.nativeDashboards.duplicate
-      - chronicle.nativeDashboards.get
-      - chronicle.nativeDashboards.list
-      - chronicle.operations.cancel
-      - chronicle.operations.get
-      - chronicle.operations.list
-      - chronicle.operations.streamSearch
-      - chronicle.operations.wait
-      - chronicle.preferenceSets.get
-      - chronicle.referenceLists.get
-      - chronicle.referenceLists.list
-      - chronicle.referenceLists.verifyReferenceList
-      - chronicle.retrohunts.get
-      - chronicle.retrohunts.list
-      - chronicle.riskConfigs.get
-      - chronicle.ruleDeployments.get
-      - chronicle.ruleDeployments.list
-      - chronicle.ruleExecutionErrors.list
-      - chronicle.rules.get
-      - chronicle.rules.list
-      - chronicle.rules.listRevisions
-      - chronicle.rules.verifyRuleText
-      - chronicle.searchQueries.get
-      - chronicle.searchQueries.list
-      - chronicle.threatCollections.fetchIocMatchMetadata
-      - chronicle.threatCollections.fetchRuleMetadata
-      - chronicle.threatCollections.get
-      - chronicle.threatCollections.list
-      - chronicle.watchlists.get
-      - chronicle.watchlists.list
-      - resourcemanager.projects.get
+    - chronicle.ais.createFeedback
+    - chronicle.ais.translateUdmQuery
+    - chronicle.ais.translateYlRule
+    - chronicle.conversations.get
+    - chronicle.conversations.list
+    - chronicle.curatedRuleSetCategories.countAllCuratedRuleSetDetections
+    - chronicle.curatedRuleSetCategories.get
+    - chronicle.curatedRuleSetCategories.list
+    - chronicle.curatedRuleSetDeployments.batchUpdate
+    - chronicle.curatedRuleSetDeployments.get
+    - chronicle.curatedRuleSetDeployments.list
+    - chronicle.curatedRuleSets.countCuratedRuleSetDetections
+    - chronicle.curatedRuleSets.get
+    - chronicle.curatedRuleSets.list
+    - chronicle.curatedRules.get
+    - chronicle.curatedRules.list
+    - chronicle.dashboardCharts.get
+    - chronicle.dashboardCharts.list
+    - chronicle.dashboardQueries.execute
+    - chronicle.dashboardQueries.get
+    - chronicle.dashboardQueries.list
+    - chronicle.dashboards.copy
+    - chronicle.dashboards.edit
+    - chronicle.dashboards.get
+    - chronicle.dashboards.list
+    - chronicle.dashboards.schedule
+    - chronicle.dataAccessLabels.get
+    - chronicle.dataAccessLabels.list
+    - chronicle.dataAccessScopes.get
+    - chronicle.dataAccessScopes.list
+    - chronicle.dataAccessScopes.permit
+    - chronicle.dataTableOperationErrors.get
+    - chronicle.dataTableRows.asyncBulkCreate
+    - chronicle.dataTableRows.asyncBulkReplace
+    - chronicle.dataTableRows.asyncBulkUpdate
+    - chronicle.dataTableRows.bulkCreate
+    - chronicle.dataTableRows.bulkReplace
+    - chronicle.dataTableRows.bulkUpdate
+    - chronicle.dataTableRows.get
+    - chronicle.dataTableRows.list
+    - chronicle.dataTables.bulkCreateDataTableAsync
+    - chronicle.dataTables.get
+    - chronicle.dataTables.list
+    - chronicle.enrichmentControls.get
+    - chronicle.enrichmentControls.list
+    - chronicle.entities.batchCreate
+    - chronicle.entities.batchDelete
+    - chronicle.entities.batchValidate
+    - chronicle.entities.find
+    - chronicle.entities.findRelatedEntities
+    - chronicle.entities.get
+    - chronicle.entities.import
+    - chronicle.entities.list
+    - chronicle.entities.modifyEntityRiskScore
+    - chronicle.entities.queryEntityRiskScoreModifications
+    - chronicle.entities.searchEntities
+    - chronicle.entities.summarize
+    - chronicle.entities.summarizeFromQuery
+    - chronicle.events.batchGet
+    - chronicle.events.findUdmFieldValues
+    - chronicle.events.get
+    - chronicle.events.import
+    - chronicle.events.queryProductSourceStats
+    - chronicle.events.searchRawLogs
+    - chronicle.events.udmSearch
+    - chronicle.events.validateQuery
+    - chronicle.featuredContentRules.list
+    - chronicle.findingsGraphs.exploreNode
+    - chronicle.findingsGraphs.initializeGraph
+    - chronicle.findingsRefinementDeployments.get
+    - chronicle.findingsRefinementDeployments.list
+    - chronicle.findingsRefinements.computeActivity
+    - chronicle.findingsRefinements.computeAllActivities
+    - chronicle.findingsRefinements.get
+    - chronicle.findingsRefinements.list
+    - chronicle.findingsRefinements.test
+    - chronicle.instances.generateCollectionAgentAuth
+    - chronicle.instances.generateSoarAuthJwt
+    - chronicle.instances.generateWorkspaceConnectionToken
+    - chronicle.instances.get
+    - chronicle.instances.graduatePocInstance
+    - chronicle.instances.logTypeClassifier
+    - chronicle.instances.report
+    - chronicle.instances.verifyNonce
+    - chronicle.iocMatches.get
+    - chronicle.iocMatches.list
+    - chronicle.iocState.get
+    - chronicle.iocs.batchGet
+    - chronicle.iocs.findFirstAndLastSeen
+    - chronicle.iocs.get
+    - chronicle.iocs.searchCuratedDetectionsForIoc
+    - chronicle.legacies.legacyBatchGetCollections
+    - chronicle.legacies.legacyFetchAlertsView
+    - chronicle.legacies.legacyFetchUdmSearchCsv
+    - chronicle.legacies.legacyFetchUdmSearchView
+    - chronicle.legacies.legacyFindAssetEvents
+    - chronicle.legacies.legacyFindRawLogs
+    - chronicle.legacies.legacyFindUdmEvents
+    - chronicle.legacies.legacyGetAlert
+    - chronicle.legacies.legacyGetCuratedRulesTrends
+    - chronicle.legacies.legacyGetDetection
+    - chronicle.legacies.legacyGetEventForDetection
+    - chronicle.legacies.legacyGetRuleCounts
+    - chronicle.legacies.legacyGetRulesTrends
+    - chronicle.legacies.legacyRunTestRule
+    - chronicle.legacies.legacySearchArtifactEvents
+    - chronicle.legacies.legacySearchArtifactIoCDetails
+    - chronicle.legacies.legacySearchAssetEvents
+    - chronicle.legacies.legacySearchCuratedDetections
+    - chronicle.legacies.legacySearchCustomerStats
+    - chronicle.legacies.legacySearchDetections
+    - chronicle.legacies.legacySearchDomainsRecentlyRegistered
+    - chronicle.legacies.legacySearchDomainsTimingStats
+    - chronicle.legacies.legacySearchEnterpriseWideAlerts
+    - chronicle.legacies.legacySearchEnterpriseWideIoCs
+    - chronicle.legacies.legacySearchFindings
+    - chronicle.legacies.legacySearchIngestionStats
+    - chronicle.legacies.legacySearchIoCInsights
+    - chronicle.legacies.legacySearchRawLogs
+    - chronicle.legacies.legacySearchRuleDetectionCountBuckets
+    - chronicle.legacies.legacySearchRuleDetectionEvents
+    - chronicle.legacies.legacySearchRuleResults
+    - chronicle.legacies.legacySearchRulesAlerts
+    - chronicle.legacies.legacySearchUserEvents
+    - chronicle.legacies.legacyStreamDetectionAlerts
+    - chronicle.legacies.legacyTestRuleStreaming
+    - chronicle.messages.get
+    - chronicle.messages.list
+    - chronicle.nativeDashboards.duplicate
+    - chronicle.nativeDashboards.get
+    - chronicle.nativeDashboards.list
+    - chronicle.operations.cancel
+    - chronicle.operations.get
+    - chronicle.operations.list
+    - chronicle.operations.streamSearch
+    - chronicle.operations.wait
+    - chronicle.preferenceSets.get
+    - chronicle.referenceLists.get
+    - chronicle.referenceLists.list
+    - chronicle.referenceLists.verifyReferenceList
+    - chronicle.retrohunts.get
+    - chronicle.retrohunts.list
+    - chronicle.riskConfigs.get
+    - chronicle.ruleDeployments.get
+    - chronicle.ruleDeployments.list
+    - chronicle.ruleExecutionErrors.list
+    - chronicle.rules.get
+    - chronicle.rules.list
+    - chronicle.rules.listRevisions
+    - chronicle.rules.verifyRuleText
+    - chronicle.searchQueries.get
+    - chronicle.searchQueries.list
+    - chronicle.threatCollections.fetchIocMatchMetadata
+    - chronicle.threatCollections.fetchRuleMetadata
+    - chronicle.threatCollections.get
+    - chronicle.threatCollections.list
+    - chronicle.watchlists.get
+    - chronicle.watchlists.list
+    - resourcemanager.projects.get
     project: test-project
     role_id: SecOpsScopedSOCAnalyst
     stage: GA
@@ -1307,9 +1308,9 @@ values:
     role: roles/chronicle.editor
   module.project.google_project_iam_member.bindings["user:bruzzechesse@google.com"]:
     condition:
-      - description: datarbac
-        expression: resource.name.endsWith('/gscope')
-        title: datarbac
+    - description: datarbac
+      expression: resource.name.endsWith('/gscope')
+      title: datarbac
     member: user:bruzzechesse@google.com
     project: test-project
     role: roles/chronicle.restrictedDataAccess
@@ -1410,10 +1411,10 @@ values:
   module.secops-data-rbac.google_chronicle_data_access_scope.scopes["google"]:
     allow_all: false
     allowed_data_access_labels:
-      - asset_namespace: null
-        data_access_label: google
-        ingestion_label: []
-        log_type: null
+    - asset_namespace: null
+      data_access_label: google
+      ingestion_label: []
+      log_type: null
     data_access_scope_id: gscope
     denied_data_access_labels: []
     description: Google logs
@@ -1424,13 +1425,13 @@ values:
   module.secops-rules.google_chronicle_reference_list.default["test_2"]:
     description: Private CIDR ranges
     entries:
-      - value: 10.0.0.0/8
-      - value: 172.16.0.0/12
-      - value: 192.168.0.0/16
-      - value: 127.0.0.1/32
-      - value: ::1/128
-      - value: fc00::/7
-      - value: fe80::/10
+    - value: 10.0.0.0/8
+    - value: 172.16.0.0/12
+    - value: 192.168.0.0/16
+    - value: 127.0.0.1/32
+    - value: ::1/128
+    - value: fc00::/7
+    - value: fe80::/10
     instance: xxxxxxx-xxxxx-xxxxxx-xxxxxxx
     location: europe
     project: test-project
@@ -1490,9 +1491,9 @@ values:
     labels: null
     project: test-project
     replication:
-      - auto:
-          - customer_managed_encryption: []
-        user_managed: []
+    - auto:
+      - customer_managed_encryption: []
+      user_managed: []
     rotation: []
     secret_id: secops-feeds-api-key
     tags: null
@@ -1511,9 +1512,9 @@ values:
     labels: null
     project: test-project
     replication:
-      - auto:
-          - customer_managed_encryption: []
-        user_managed: []
+    - auto:
+      - customer_managed_encryption: []
+      user_managed: []
     rotation: []
     secret_id: secops-workspace-ing-sa-key
     tags: null
@@ -1538,6 +1539,49 @@ values:
     secret_data_wo: null
     secret_data_wo_version: 0
     timeouts: null
+  module.secops_data_tables.google_chronicle_data_table.default["sample_data_table_domains"]:
+    column_info:
+    - column_index: 0
+      column_type: STRING
+      key_column: null
+      mapped_column_path: null
+      original_column: rank
+      repeated_values: null
+    - column_index: 1
+      column_type: STRING
+      key_column: null
+      mapped_column_path: null
+      original_column: domain
+      repeated_values: null
+    data_table_id: sample_data_table_domains
+    deletion_policy: DEFAULT
+    description: Sample Data Table for domains
+    instance: xxxxxxx-xxxxx-xxxxxx-xxxxxxx
+    location: europe
+    project: test-project
+    row_time_to_live: null
+    scope_info: []
+    timeouts: null
+  module.secops_data_tables.google_chronicle_data_table_row.default["sample_data_table_domains_0"]:
+    data_table_id: sample_data_table_domains
+    instance: xxxxxxx-xxxxx-xxxxxx-xxxxxxx
+    location: europe
+    project: test-project
+    row_time_to_live: null
+    timeouts: null
+    values:
+    - '1'
+    - google.com
+  module.secops_data_tables.google_chronicle_data_table_row.default["sample_data_table_domains_1"]:
+    data_table_id: sample_data_table_domains
+    instance: xxxxxxx-xxxxx-xxxxxx-xxxxxxx
+    location: europe
+    project: test-project
+    row_time_to_live: null
+    timeouts: null
+    values:
+    - '2'
+    - www.google.com
   module.workspace-integration-sa[0].google_service_account.service_account[0]:
     account_id: workspace-integration
     create_ignore_already_exists: null
@@ -1616,7 +1660,7 @@ values:
     update_path: null
     update_query: null
     write_only_attrs:
-      - details
+    - details
   restful_resource.azure_ad_feeds["azure-ad-audit"]:
     body:
       details:
@@ -1666,7 +1710,7 @@ values:
     update_path: null
     update_query: null
     write_only_attrs:
-      - details
+    - details
   restful_resource.azure_ad_feeds["azure-ad-context"]:
     body:
       details:
@@ -1718,7 +1762,7 @@ values:
     update_path: null
     update_query: null
     write_only_attrs:
-      - details
+    - details
   restful_resource.okta_ad_feeds["okta"]:
     body:
       details:
@@ -1727,8 +1771,8 @@ values:
         okta_settings:
           authentication:
             header_key_values:
-              - key: Authorization
-                value: XXXXXXXXXXXXX
+            - key: Authorization
+              value: XXXXXXXXXXXXX
           hostname: xxxxx.okta.com
       display_name: okta
       name: okta
@@ -1767,7 +1811,7 @@ values:
     update_path: null
     update_query: null
     write_only_attrs:
-      - details
+    - details
   restful_resource.okta_ad_feeds["okta-user-context"]:
     body:
       details:
@@ -1776,8 +1820,8 @@ values:
         okta_user_context_settings:
           authentication:
             header_key_values:
-              - key: Authorization
-                value: XXXXXXXXXXXXX
+            - key: Authorization
+              value: XXXXXXXXXXXXX
           hostname: xxxxx.okta.com
           manager_id_reference_field: managerId
       display_name: okta-user-context
@@ -1817,7 +1861,7 @@ values:
     update_path: null
     update_query: null
     write_only_attrs:
-      - details
+    - details
   restful_resource.webhook_feeds["okta"]:
     body:
       details:
@@ -1861,7 +1905,7 @@ values:
     update_path: null
     update_query: null
     write_only_attrs:
-      - details
+    - details
   restful_resource.workspace_feeds["ws-activity"]:
     body:
       details:
@@ -1871,27 +1915,27 @@ values:
         log_type: projects/test-project/locations/europe/instances/xxxxxxx-xxxxx-xxxxxx-xxxxxxx/logTypes/WORKSPACE_ACTIVITY
         workspace_activity_settings:
           applications:
-            - access_transparency
-            - admin
-            - calendar
-            - chat
-            - drive
-            - gcp
-            - gplus
-            - groups
-            - groups_enterprise
-            - jamboard
-            - login
-            - meet
-            - mobile
-            - rules
-            - saml
-            - token
-            - user_accounts
-            - context_aware_access
-            - chrome
-            - data_studio
-            - keep
+          - access_transparency
+          - admin
+          - calendar
+          - chat
+          - drive
+          - gcp
+          - gplus
+          - groups
+          - groups_enterprise
+          - jamboard
+          - login
+          - meet
+          - mobile
+          - rules
+          - saml
+          - token
+          - user_accounts
+          - context_aware_access
+          - chrome
+          - data_studio
+          - keep
           authentication:
             claims:
               audience: https://oauth2.googleapis.com/token
@@ -1936,7 +1980,7 @@ values:
     update_path: null
     update_query: null
     write_only_attrs:
-      - details
+    - details
   restful_resource.workspace_feeds["ws-alerts"]:
     body:
       details:
@@ -1989,7 +2033,7 @@ values:
     update_path: null
     update_query: null
     write_only_attrs:
-      - details
+    - details
   restful_resource.workspace_feeds["ws-chrome"]:
     body:
       details:
@@ -2042,7 +2086,7 @@ values:
     update_path: null
     update_query: null
     write_only_attrs:
-      - details
+    - details
   restful_resource.workspace_feeds["ws-group"]:
     body:
       details:
@@ -2095,7 +2139,7 @@ values:
     update_path: null
     update_query: null
     write_only_attrs:
-      - details
+    - details
   restful_resource.workspace_feeds["ws-mobile"]:
     body:
       details:
@@ -2148,7 +2192,7 @@ values:
     update_path: null
     update_query: null
     write_only_attrs:
-      - details
+    - details
   restful_resource.workspace_feeds["ws-users"]:
     body:
       details:
@@ -2201,12 +2245,14 @@ values:
     update_path: null
     update_query: null
     write_only_attrs:
-      - details
+    - details
 
 counts:
   google_apikeys_key: 1
   google_chronicle_data_access_label: 1
   google_chronicle_data_access_scope: 1
+  google_chronicle_data_table: 1
+  google_chronicle_data_table_row: 2
   google_chronicle_reference_list: 1
   google_chronicle_rule: 1
   google_chronicle_rule_deployment: 1
@@ -2223,10 +2269,11 @@ counts:
   google_secret_manager_secret_version: 2
   google_service_account: 1
   google_service_account_key: 1
-  modules: 5
-  resources: 58
+  modules: 6
+  resources: 61
   restful_operation: 1
   restful_resource: 12
 
 outputs:
   project_id: test-project
+
