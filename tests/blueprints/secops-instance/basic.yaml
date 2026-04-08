@@ -1862,48 +1862,6 @@ values:
     update_query: null
     write_only_attrs:
     - details
-  restful_resource.secops_log_type["cloudrun"]:
-    body:
-      customLogTypeLabel: CLOUDRUN_CUSTOM
-      displayName: Cloud Run
-      hasCustomParser: true
-      isCustom: true
-      productSource: Cloud Run Custom
-    check_existance: null
-    create_header: null
-    create_method: POST
-    create_query: null
-    create_selector: null
-    delete_body: null
-    delete_body_raw: null
-    delete_header: null
-    delete_method: null
-    delete_path: null
-    delete_query: null
-    ephemeral_body: null
-    force_new_attrs: null
-    header: null
-    merge_patch_disabled: null
-    output_attrs: null
-    path: /projects/test-project/locations/europe/instances/xxxxxxx-xxxxx-xxxxxx-xxxxxxx/logTypes?logTypeId=cloudrun
-    poll_create: null
-    poll_delete: null
-    poll_update: null
-    precheck_create: null
-    precheck_delete: null
-    precheck_update: null
-    query: null
-    read_header: null
-    read_path: /projects/test-project/locations/europe/instances/xxxxxxx-xxxxx-xxxxxx-xxxxxxx
-    read_query: null
-    read_response_template: null
-    read_selector: null
-    update_body_patches: null
-    update_header: null
-    update_method: null
-    update_path: null
-    update_query: null
-    write_only_attrs: null
   restful_resource.webhook_feeds["okta"]:
     body:
       details:
@@ -2312,9 +2270,10 @@ counts:
   google_service_account: 1
   google_service_account_key: 1
   modules: 6
-  resources: 62
+  resources: 61
   restful_operation: 1
-  restful_resource: 13
+  restful_resource: 12
 
 outputs:
   project_id: test-project
+
