@@ -39,3 +39,16 @@ module "secops-rules" {
     reference_lists_defs = "./data/reference_lists"
   }
 }
+
+module "secops_data_tables" {
+  source = "../../modules/secops-data-tables"
+  secops_config = {
+    customer_id = var.secops_tenant_config.customer_id
+    project     = module.project.project_id
+    region      = var.secops_tenant_config.region
+  }
+  factories_config = {
+    data_tables      = "./data/secops_data_tables.yaml"
+    data_tables_defs = "./data/data_tables"
+  }
+}

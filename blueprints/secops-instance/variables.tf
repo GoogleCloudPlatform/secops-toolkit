@@ -26,6 +26,7 @@ variable "monitoring_config" {
     enabled             = optional(bool, false)
     notification_emails = optional(list(string), [])
   })
+  default = {}
 }
 
 variable "project_create_config" {
