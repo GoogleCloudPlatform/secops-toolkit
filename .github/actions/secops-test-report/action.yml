@@ -26,7 +26,7 @@ runs:
         sed -e 's/\\n/\n/g' test-results-raw.xml > test-results.xml
 
     - name: Test report
-      uses: pmeier/pytest-results-action@0841ca7226ab155943837380769373a5dd14d7ed # v0.8.0
+      uses: pmeier/pytest-results-action@fdc7f18d9934e38aca411ca9557e6577bd25ca9c # v0.9.0
       with:
         path: test-results.xml
         title: ${{ inputs.MODULE }} Test report
