@@ -45,7 +45,7 @@ third_party_integration_config = {
     customer_id    = "CXXXXXXXX"
   }
   okta = {
-    api_key = "XXXXXXXXXXXXX"
+    api_key                    = "XXXXXXXXXXXXX"
     hostname                   = "xxxxx.okta.com"
     manager_id_reference_field = "managerId"
   }
