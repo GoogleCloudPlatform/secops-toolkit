@@ -1293,7 +1293,7 @@ resource "google_chronicle_feed" "feeds" {
               }
             }
             rs_credentials {
-              private_key = try(data.google_secret_manager_secret_version.value.secret_data, lookup(rs_credentials.value, "private_key", null))
+              private_key = try(data.google_secret_manager_regional_secret_version.secops_secrets[each.key].secret_data, lookup(authentication.value.rs_credentials, "private_key", null))
             }
           }
         }
@@ -1317,7 +1317,7 @@ resource "google_chronicle_feed" "feeds" {
               }
             }
             rs_credentials {
-              private_key = try(data.google_secret_manager_secret_version.value.secret_data, lookup(rs_credentials.value, "private_key", null))
+              private_key = try(data.google_secret_manager_regional_secret_version.secops_secrets[each.key].secret_data, lookup(authentication.value.rs_credentials, "private_key", null))
             }
           }
         }
@@ -1341,7 +1341,7 @@ resource "google_chronicle_feed" "feeds" {
               }
             }
             rs_credentials {
-              private_key = try(data.google_secret_manager_secret_version.value.secret_data, lookup(rs_credentials.value, "private_key", null))
+              private_key = try(data.google_secret_manager_regional_secret_version.secops_secrets[each.key].secret_data, lookup(authentication.value.rs_credentials, "private_key", null))
             }
           }
         }
@@ -1365,7 +1365,7 @@ resource "google_chronicle_feed" "feeds" {
               }
             }
             rs_credentials {
-              private_key = try(data.google_secret_manager_secret_version.value.secret_data, lookup(rs_credentials.value, "private_key", null))
+              private_key = try(data.google_secret_manager_regional_secret_version.secops_secrets[each.key].secret_data, lookup(authentication.value.rs_credentials, "private_key", null))
             }
           }
         }
@@ -1389,7 +1389,7 @@ resource "google_chronicle_feed" "feeds" {
               }
             }
             rs_credentials {
-              private_key = try(data.google_secret_manager_secret_version.value.secret_data, lookup(rs_credentials.value, "private_key", null))
+              private_key = try(data.google_secret_manager_regional_secret_version.secops_secrets[each.key].secret_data, lookup(authentication.value.rs_credentials, "private_key", null))
             }
           }
         }
@@ -1413,7 +1413,7 @@ resource "google_chronicle_feed" "feeds" {
               }
             }
             rs_credentials {
-              private_key = try(data.google_secret_manager_secret_version.value.secret_data, lookup(rs_credentials.value, "private_key", null))
+              private_key = try(data.google_secret_manager_regional_secret_version.secops_secrets[each.key].secret_data, lookup(authentication.value.rs_credentials, "private_key", null))
             }
           }
         }
@@ -1438,7 +1438,7 @@ resource "google_chronicle_feed" "feeds" {
               }
             }
             rs_credentials {
-              private_key = try(data.google_secret_manager_secret_version.value.secret_data, lookup(rs_credentials.value, "private_key", null))
+              private_key = try(data.google_secret_manager_regional_secret_version.secops_secrets[each.key].secret_data, lookup(authentication.value.rs_credentials, "private_key", null))
             }
           }
         }
