@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,134 +14,119 @@
  * limitations under the License.
  */
 
-locals {
-  azure_ad_feeds = {
-    azure-ad = {
-      log_type  = "AZURE_AD"
-      feed_type = "azure_ad_settings"
-      hostname  = "graph.microsoft.com/v1.0/auditLogs/signIns"
+module "webhook_feeds" {
+  source = "../../modules/secops-feeds"
+  secops_config = merge(var.secops_tenant_config, {
+    project = module.project.project_id
+  })
+  feeds = { for key, value in var.webhook_feeds_config : key => {
+    display_name = value.display_name
+    log_type     = value.log_type
+    https_push_webhook_settings = {
+      split_delimiter = value.split_delimiter
     }
-    azure-ad-audit = {
-      log_type  = "AZURE_AD_AUDIT"
-      feed_type = "azure_ad_audit_settings"
-      hostname  = "graph.microsoft.com/v1.0/auditLogs/directoryAudits"
-    }
-    azure-ad-context = {
-      log_type  = "AZURE_AD_CONTEXT"
-      feed_type = "azure_ad_context_settings"
-      hostname  = "graph.microsoft.com/beta"
-    }
-  }
-  okta_feeds = {
-    okta = {
-      log_type  = "OKTA"
-      feed_type = "okta_settings"
-    }
-    okta-user-context = {
-      log_type  = "OKTA_USER_CONTEXT"
-      feed_type = "okta_user_context_settings"
-    }
-  }
-  secops_webhook_feeds_id = {
-    for key, value in restful_resource.webhook_feeds : key =>
-    [for feed in value.output.feeds : element(split("/", feed.name), length(split("/", feed.name)) - 1)
-    if try(feed.displayName == lower(key), false)][0]
-  }
-}
-
-resource "restful_resource" "webhook_feeds" {
-  for_each        = var.webhook_feeds_config
-  path            = local.secops_feeds_api_path
-  create_method   = "POST"
-  delete_method   = "DELETE"
-  check_existance = false
-  delete_path     = "$query_unescape(body.name)"
-  read_selector   = "feeds.#(displayName==\"${lower(each.key)}\")"
-  body = {
-    name : lower(each.key),
-    display_name : coalesce(each.value.display_name, lower(each.key)),
-    details : {
-      feed_source_type : "HTTPS_PUSH_WEBHOOK",
-      log_type : "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/logTypes/${each.key}",
-      httpsPushWebhookSettings : {}
-    }
-  }
-  write_only_attrs = ["details"]
-  lifecycle {
-    ignore_changes = [body, output]
-  }
+  } }
 }
 
 resource "restful_operation" "webhook_feeds_secret" {
   for_each = var.webhook_feeds_config
-  path     = "${local.secops_feeds_api_path}/${local.secops_webhook_feeds_id[each.key]}:generateSecret"
+  path     = "${local.secops_feeds_api_path}/${module.webhook_feeds.feeds_id[each.key]}:generateSecret"
   method   = "POST"
 }
 
 # Azure AD feeds
-
-resource "restful_resource" "azure_ad_feeds" {
-  for_each        = var.third_party_integration_config.azure_ad == null ? {} : local.azure_ad_feeds
-  path            = local.secops_feeds_api_path
-  create_method   = "POST"
-  delete_method   = "DELETE"
-  check_existance = false
-  delete_path     = "$query_unescape(body.name)"
-  read_selector   = "feeds.#(displayName==\"${lower(each.key)}\")"
-  body = {
-    "name" : lower(each.key),
-    "display_name" : lower(each.key),
-    "details" : {
-      feed_source_type : "API",
-      log_type : "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/logTypes/${each.value.log_type}",
-      (each.value.feed_type) : merge({
-        authentication : {
-          client_id : var.third_party_integration_config.azure_ad.oauth_credentials.client_id,
-          client_secret : var.third_party_integration_config.azure_ad.oauth_credentials.client_secret,
-        },
-        hostname : each.value.hostname,
-        auth_endpoint : "login.microsoftonline.com",
-        tenant_id : var.third_party_integration_config.azure_ad.tenant_id,
-        }, each.key == "azure-ad-context" ? {
-        retrieve_groups : var.third_party_integration_config.azure_ad.retrieve_groups
-        retrieve_devices : var.third_party_integration_config.azure_ad.retrieve_devices
-      } : {})
+module "azure_ad_feeds" {
+  count  = var.third_party_integration_config.azure_ad == null ? 0 : 1
+  source = "../../modules/secops-feeds"
+  secops_config = merge(var.secops_tenant_config, {
+    project = module.project.project_id
+  })
+  feeds = {
+    azure-ad = {
+      display_name          = "Azure AD",
+      secret_manager_config = var.third_party_integration_config.azure_ad.secret_manager_config,
+      azure_ad_settings = {
+        auth_endpoint = "login.microsoftonline.com",
+        hostname      = "graph.microsoft.com/v1.0/auditLogs/signIns",
+        tenant_id     = var.third_party_integration_config.azure_ad.tenant_id,
+        authentication = {
+          client_id     = var.third_party_integration_config.azure_ad.oauth_credentials.client_id
+          client_secret = var.third_party_integration_config.azure_ad.oauth_credentials.client_secret
+        }
+      }
+      log_type = "AZURE_AD"
     }
-  }
-  write_only_attrs = ["details"]
-  lifecycle {
-    ignore_changes = [body, output]
+    azure-ad-audit = {
+      display_name          = "Azure AD Audit",
+      secret_manager_config = var.third_party_integration_config.azure_ad.secret_manager_config,
+      azure_ad_audit_settings = {
+        auth_endpoint = "login.microsoftonline.com",
+        hostname      = "graph.microsoft.com/v1.0/auditLogs/directoryAudits",
+        tenant_id     = var.third_party_integration_config.azure_ad.tenant_id,
+        authentication = {
+          client_id     = var.third_party_integration_config.azure_ad.oauth_credentials.client_id
+          client_secret = var.third_party_integration_config.azure_ad.oauth_credentials.client_secret
+        }
+      }
+      log_type = "AZURE_AD_AUDIT"
+    }
+    azure-ad-context = {
+      display_name          = "Azure AD Context",
+      secret_manager_config = var.third_party_integration_config.azure_ad.secret_manager_config,
+      azure_ad_context_settings = {
+        auth_endpoint = "login.microsoftonline.com",
+        hostname      = "graph.microsoft.com/beta",
+        tenant_id     = var.third_party_integration_config.azure_ad.tenant_id,
+        authentication = {
+          client_id     = var.third_party_integration_config.azure_ad.oauth_credentials.client_id
+          client_secret = var.third_party_integration_config.azure_ad.oauth_credentials.client_secret
+        }
+      }
+      log_type = "AZURE_AD_CONTEXT"
+    }
   }
 }
 
-# Okta feeds
-
-resource "restful_resource" "okta_ad_feeds" {
-  for_each        = var.third_party_integration_config.okta == null ? {} : local.okta_feeds
-  path            = local.secops_feeds_api_path
-  create_method   = "POST"
-  delete_method   = "DELETE"
-  check_existance = false
-  delete_path     = "$query_unescape(body.name)"
-  read_selector   = "feeds.#(displayName==\"${lower(each.key)}\")"
-  body = {
-    "name" : lower(each.key),
-    "display_name" : lower(each.key),
-    "details" : {
-      "feed_source_type" : "API",
-      "log_type" : "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/logTypes/${each.value.log_type}",
-      (each.value.feed_type) : merge({
-        "authentication" : {
-          "header_key_values" : [for k, v in var.third_party_integration_config.okta.auth_header_key_values : { key = k, value = v }]
+# Okta Feeds
+module "okta_feeds" {
+  count  = var.third_party_integration_config.okta == null ? 0 : 1
+  source = "../../modules/secops-feeds"
+  secops_config = merge(var.secops_tenant_config, {
+    project = module.project.project_id
+  })
+  feeds = {
+    okta = {
+      display_name          = "Okta",
+      secret_manager_config = var.third_party_integration_config.okta.secret_manager_config,
+      okta_settings = {
+        authentication = {
+          header_key_values = [
+            {
+              key   = "Authorization"
+              value = var.third_party_integration_config.okta.api_key
+            }
+          ]
         },
-        "hostname" : var.third_party_integration_config.okta.hostname
-        }, each.key == "okta-user-context" ? {
-        "manager_id_reference_field" : var.third_party_integration_config.okta.manager_id_reference_field
-      } : {})
+        hostname = var.third_party_integration_config.okta.hostname
+      }
+      log_type = "OKTA"
     }
-  }
-  write_only_attrs = ["details"]
-  lifecycle {
-    ignore_changes = [body, output]
+    okta-user-context = {
+      display_name          = "Okta User Context",
+      secret_manager_config = var.third_party_integration_config.okta.secret_manager_config,
+      okta_user_context_settings = {
+        authentication = {
+          header_key_values = [
+            {
+              key   = "Authorization"
+              value = var.third_party_integration_config.okta.api_key
+            }
+          ]
+        },
+        hostname                   = var.third_party_integration_config.okta.hostname,
+        manager_id_reference_field = var.third_party_integration_config.okta.manager_id_reference_field
+      }
+      log_type = "OKTA_USER_CONTEXT"
+    }
   }
 }

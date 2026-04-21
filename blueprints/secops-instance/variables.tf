@@ -195,18 +195,28 @@ variable "third_party_integration_config" {
   description = "SecOps Feeds configuration for Workspace logs and entities ingestion."
   type = object({
     azure_ad = optional(object({
+      secret_manager_config = optional(object({
+        region      = string
+        secret_name = string
+        version     = optional(string)
+      }))
       oauth_credentials = object({
         client_id     = string
-        client_secret = string
+        client_secret = optional(string)
       })
       retrieve_devices = optional(bool, true)
       retrieve_groups  = optional(bool, true)
       tenant_id        = string
     }))
     okta = optional(object({
-      auth_header_key_values     = map(string)
+      api_key                    = string
       hostname                   = string
       manager_id_reference_field = string
+      secret_manager_config = optional(object({
+        region      = string
+        secret_name = string
+        version     = optional(string)
+      }))
     }))
     workspace = optional(object({
       customer_id    = string
@@ -223,8 +233,9 @@ variable "third_party_integration_config" {
 variable "webhook_feeds_config" {
   description = "SecOps Webhook feeds config."
   type = map(object({
-    display_name = optional(string)
-    log_type     = string
+    display_name    = optional(string)
+    log_type        = string
+    split_delimiter = optional(string)
   }))
   default  = {}
   nullable = false
