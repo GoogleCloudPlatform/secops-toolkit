@@ -115,5 +115,5 @@ module "secops" {
 
 | name | description | sensitive |
 |---|---|:---:|
-| [feeds_id](outputs.tf#L17) |  |  |
+| [feeds_id](outputs.tf#L17) | A map of Chronicle feeds to create. |  |
 <!-- END TFDOC -->

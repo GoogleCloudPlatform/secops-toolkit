@@ -15,6 +15,7 @@
  */
 
 output "feeds_id" {
+  description = "A map of Chronicle feeds to create."
   value = {
     for key, value in google_chronicle_feed.feeds : key => element(split("/", value.id), length(split("/", value.id)) - 1)
   }
