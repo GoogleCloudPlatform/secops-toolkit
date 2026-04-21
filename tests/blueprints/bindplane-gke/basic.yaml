@@ -59,7 +59,7 @@ values:
     values:
     - null
     verify: false
-    version: 1.33.2
+    version: 1.34.0
     wait: true
     wait_for_jobs: false
   module.addresses.google_compute_address.internal["ingress"]:
