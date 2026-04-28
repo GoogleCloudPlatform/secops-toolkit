@@ -26,6 +26,7 @@ import shutil
 LOGGER = logging.getLogger("rac")
 WD = os.path.abspath(".")
 
+
 def get_local_playbook(playbook_name: str) -> Workflow | None:
     """Reads a playbook or block from the repo object store"""
     try:
@@ -35,6 +36,7 @@ def get_local_playbook(playbook_name: str) -> Workflow | None:
     except (KeyError, FileNotFoundError):
         return None
 
+
 def get_local_playbooks() -> list[Workflow]:
     try:
         for playbook in get_file_objects_from_path(PLAYBOOKS_PATH):
@@ -43,14 +45,16 @@ def get_local_playbooks() -> list[Workflow]:
     except (KeyError, FileNotFoundError):
         return []
 
+
 def push_playbook(playbook: Workflow) -> None:
     """Writes a workflow to the repo"""
     _push_obj(
         playbook,
         playbook.name,
         "Playbook",
-            f"{PLAYBOOKS_PATH}/{playbook.category}/{playbook.name}",
-        )
+        f"{PLAYBOOKS_PATH}/{playbook.category}/{playbook.name}",
+    )
+
 
 def get_file_or_default(path, default=None):
     try:
@@ -58,10 +62,12 @@ def get_file_or_default(path, default=None):
     except FileNotFoundError:
         return default
 
+
 def push_obj(content, content_name, content_type, path):
     content.generate_readme(
         self.metadata.get_readme_addon(content_type, content_name))
     self.sync.update_objects(content.iter_files(), base_path=path)
+
 
 def update_objects(files: list[File], base_path: str = ""):
     """Main method to edit objects in the repo."""
@@ -69,16 +75,22 @@ def update_objects(files: list[File], base_path: str = ""):
                                     base_path=base_path,
                                     replace_content_in_base_path=False)
 
+
 def push_file(path: str, content):
     self.sync.update_objects([File(path, self._json_encoder(content))])
+
 
 @staticmethod
 def _json_encoder(d: dict) -> str:
     return json.dumps(d, indent=4)
 
+
 def _push_obj(content, content_name, content_type, path) -> None:
-        content.generate_readme()
-        update_objects(content.iter_files(), base_path=path, replace_content_in_base_path=False)
+    content.generate_readme()
+    update_objects(content.iter_files(),
+                   base_path=path,
+                   replace_content_in_base_path=False)
+
 
 def update_objects(files: list[File],
                    base_path: str = "",
@@ -142,13 +154,12 @@ def update_objects(files: list[File],
                     )
                     for item_name in os.listdir(effective_target_dir):
                         item_path = os.path.join(effective_target_dir,
-                                                  item_name)
+                                                 item_name)
                         if os.path.isfile(item_path) or os.path.islink(
                                 item_path):
                             os.unlink(item_path)
                         elif os.path.isdir(item_path):
-                            shutil.rmtree(
-                                item_path)  # shutil is needed here
+                            shutil.rmtree(item_path)  # shutil is needed here
                     LOGGER.debug(
                         f"Successfully cleared directory: {effective_target_dir}"
                     )
@@ -177,8 +188,7 @@ def update_objects(files: list[File],
                 os.makedirs(effective_target_dir,
                             exist_ok=True)  # Ensure base_path dir exists
                 LOGGER.debug(
-                    f"Ensured base directory exists: {effective_target_dir}"
-                )
+                    f"Ensured base directory exists: {effective_target_dir}")
             except OSError as e:
                 LOGGER.error(
                     f"Failed to create base directory {effective_target_dir}: {e}"
@@ -191,8 +201,7 @@ def update_objects(files: list[File],
 
     # --- Common file writing loop ---
     for file_obj in files:
-        if not hasattr(file_obj, 'path') or not hasattr(
-                file_obj, 'content'):
+        if not hasattr(file_obj, 'path') or not hasattr(file_obj, 'content'):
             LOGGER.warning(
                 f"Skipping object due to missing 'path' or 'content' attributes: {file_obj}"
             )
@@ -218,8 +227,7 @@ def update_objects(files: list[File],
                 (".." + os.path.sep in relative_path_in_file_obj and relative_path_in_file_obj.index(".." + os.path.sep) == 0) : # Catches "../" at start on unix
             LOGGER.error(
                 f"Security risk: Invalid file path '{file_obj.path}' (normalized: '{relative_path_in_file_obj}'). "
-                "Path must be relative and confined to the target directory."
-            )
+                "Path must be relative and confined to the target directory.")
             continue
 
         full_file_path = os.path.join(effective_target_dir,
@@ -237,8 +245,7 @@ def update_objects(files: list[File],
             with open(full_file_path, "wb") as f:
                 f.write(file_obj.content)
             LOGGER.debug(
-                f"Successfully wrote (created/updated) file: {full_file_path}"
-            )
+                f"Successfully wrote (created/updated) file: {full_file_path}")
 
         except IOError as e:  # More specific than just Exception for file I/O
             LOGGER.error(f"IOError writing file {full_file_path}: {e}")
@@ -248,8 +255,8 @@ def update_objects(files: list[File],
             LOGGER.error(
                 f"Unexpected error writing file {full_file_path}: {e}")
 
-    LOGGER.info(
-        f"Finished all file operations for: {effective_target_dir}")
+    LOGGER.info(f"Finished all file operations for: {effective_target_dir}")
+
 
 def get_file_objects_from_path(dir_path: str = "") -> list[File]:
     """
@@ -286,8 +293,7 @@ def get_file_objects_from_path(dir_path: str = "") -> list[File]:
         except IOError as e:
             LOGGER.error(f"Failed to read file {search_root_abs}: {e}")
     elif os.path.isdir(search_root_abs):
-        LOGGER.debug(
-            f"Searching for files in directory: {search_root_abs}")
+        LOGGER.debug(f"Searching for files in directory: {search_root_abs}")
         for root, _, filenames in os.walk(search_root_abs):
             for filename in filenames:
                 file_abs_path = os.path.join(root, filename)
@@ -301,11 +307,9 @@ def get_file_objects_from_path(dir_path: str = "") -> list[File]:
                     files_found.append(
                         File(path=relative_path, contents=content))
                     LOGGER.debug(
-                        f"Retrieved file from directory walk: {relative_path}"
-                    )
+                        f"Retrieved file from directory walk: {relative_path}")
                 except IOError as e:
-                    LOGGER.error(
-                        f"Failed to read file {file_abs_path}: {e}")
+                    LOGGER.error(f"Failed to read file {file_abs_path}: {e}")
 
     return files_found
 

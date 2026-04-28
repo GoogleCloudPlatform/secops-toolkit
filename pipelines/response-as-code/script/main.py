@@ -28,6 +28,7 @@ from config import INCLUDE_BLOCKS, EXCLUDE_FOLDER
 
 LOGGER = logging.getLogger("rac")
 
+
 def create_root_readme() -> str:
     """
     Creates the content for the root README file based on the playbooks in the Git repository.
@@ -49,7 +50,7 @@ def cli():
 @cli.command(name="sync-playbooks")
 def sync_playbooks():
 
-    response_manager = ResponseManager() 
+    response_manager = ResponseManager()
     soc_roles: List[SocRole] = response_manager.get_soc_roles()
 
     try:
@@ -81,7 +82,8 @@ def sync_playbooks():
             if INCLUDE_BLOCKS:
                 for block in playbook.get_involved_blocks():
                     if block.get("name") not in playbooks:
-                        block = response_manager.get_playbook(block.get("name"))
+                        block = response_manager.get_playbook(
+                            block.get("name"))
                         if block:
                             playbooks[block.name] = block
 
@@ -95,34 +97,44 @@ def sync_playbooks():
 
 @cli.command(name="pull-playbooks")
 @click.pass_obj
-def pull_playbooks(manager_obj: SOARManager): # Renamed manager to manager_obj to avoid conflict with manager instance
+def pull_playbooks(
+    manager_obj: SOARManager
+):  # Renamed manager to manager_obj to avoid conflict with manager instance
     """
     Synchronize SOAR playbooks from the SOAR platform to a Git repository.
     """
     commit_msg = os.environ.get("COMMIT_MESSAGE", "Automated playbook sync")
     readme_addon = os.environ.get("README_ADDON")
-    include_blocks = os.environ.get("INCLUDE_PLAYBOOK_BLOCKS", "false").lower() == "true"
+    include_blocks = os.environ.get("INCLUDE_PLAYBOOK_BLOCKS",
+                                    "false").lower() == "true"
 
-    response_manager = ResponseManager() 
-    
+    response_manager = ResponseManager()
+
     soc_roles: List[SocRole] = response_manager.get_soc_roles()
     print(soc_roles)
 
     try:
-        installed_playbooks: List[WorkflowMenuCard] = response_manager.get_playbooks()
+        installed_playbooks: List[
+            WorkflowMenuCard] = response_manager.get_playbooks()
 
         for playbook in installed_playbooks:
             if EXCLUDE_FOLDER and EXCLUDE_FOLDER in playbook.categoryName:
-                LOGGER.info(f"Skip playbook since belongs to the excluded folder: {playbook.displayName}")
+                LOGGER.info(
+                    f"Skip playbook since belongs to the excluded folder: {playbook.displayName}"
+                )
                 continue
 
             LOGGER.info(f"Processing Playbook {playbook.displayName}")
 
             if readme_addon:
-                LOGGER.info("Readme addon found - adding to GitSync metadata file (GitSync.json)")
-                gitsync.content.metadata.set_readme_addon("Playbook", playbook.displayName, readme_addon)
+                LOGGER.info(
+                    "Readme addon found - adding to GitSync metadata file (GitSync.json)"
+                )
+                gitsync.content.metadata.set_readme_addon(
+                    "Playbook", playbook.displayName, readme_addon)
 
-            playbook_details = Workflow(response_manager.get_playbook(playbook.identifier))
+            playbook_details = Workflow(
+                response_manager.get_playbook(playbook.identifier))
             LOGGER.info(f"Playbook details: {playbook_details}")
             overview_templates = playbook_details.overview_templates
             new_templates = []

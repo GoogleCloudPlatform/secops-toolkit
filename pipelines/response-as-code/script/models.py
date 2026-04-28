@@ -20,6 +20,7 @@ from constants import PLAYBOOK_README_TEMPLATE, TRIGGER_TYPES, CONDITION_OPERATO
 import json
 from typing import Iterator
 
+
 class APIError(Exception):
     """Raised for issues communicating with the SecOps API."""
     pass
@@ -32,10 +33,12 @@ class SocRole:
     displayName: str
     description: str
 
+
 class Content:
 
     def __init__(self):
         self.readme: str | None = None
+
 
 class File:
     """Represents a common file object used by the GitManager"""
@@ -49,6 +52,7 @@ class File:
     def __repr__(self):
         return f"{{Path: {self.path} Contents head: {self.content[:15]}...}}"
 
+
 @dataclass
 class WorkflowMenuCard:
     """Represents a Workflow Menu Card (legacy playbook) in Chronicle."""
@@ -59,13 +63,16 @@ class WorkflowMenuCard:
     categoryName: str
     modification_time: int
 
+
 class WorkflowTypes(Enum):
     PLAYBOOK = 0
     BLOCK = 1
 
+
 class PlaybookTypes(Enum):
     REGULAR = "REGULAR"
     NESTED = "NESTED"
+
 
 class WorkflowCategory(Content):
     """Represents a workflow category in Chronicle."""
@@ -76,6 +83,7 @@ class WorkflowCategory(Content):
         self.name = name
         self.categoryState = categoryState
         self.type = type
+
 
 class Workflow(Content):
 
@@ -95,13 +103,15 @@ class Workflow(Content):
         self.isEnabled = self.raw_data.get("isEnabled")
         self.category = self.raw_data.get("categoryName", "Default")
         self.environments = self.raw_data.get("environments", [])
-        self.modification_time = int(self.raw_data["modificationTimeUnixTimeInMs"])
+        self.modification_time = int(
+            self.raw_data["modificationTimeUnixTimeInMs"])
         self.overview_templates = self.raw_data.get("overviewTemplates", [])
         self.permissions = self.raw_data.get("permissions", [])
         self.entity_access_level = self.raw_data.get("entityAccessLevel", [])
         self.default_access_level = self.raw_data.get("defaultAccessLevel", [])
         self.creation_source = self.raw_data.get("creationSource")
-        self.has_restricted_environments = self.raw_data.get("hasRestrictedEnvironments")
+        self.has_restricted_environments = self.raw_data.get(
+            "hasRestrictedEnvironments")
         self.execution_scope = self.raw_data.get("executionScope")
 
     def __hash__(self):

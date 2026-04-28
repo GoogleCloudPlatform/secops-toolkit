@@ -47,13 +47,13 @@ class ResponseManager:
                 "Missing SecOps env vars: SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION."
             )
         try:
-            self.client = SecOpsClient(
-                customer_id=SECOPS_CUSTOMER_ID,
-                project_id=SECOPS_PROJECT_ID,
-                region=SECOPS_REGION)
+            self.client = SecOpsClient(customer_id=SECOPS_CUSTOMER_ID,
+                                       project_id=SECOPS_PROJECT_ID,
+                                       region=SECOPS_REGION)
             LOGGER.info("Custom SecOps client initialized successfully.")
         except Exception as e:
-            raise APIError(f"Failed to initialize Custom SecOps client: {e}") from e
+            raise APIError(
+                f"Failed to initialize Custom SecOps client: {e}") from e
 
     def get_soc_roles(self) -> List[SocRole]:
         """Retrieves a list of all available SOC roles from the SecOps API."""
@@ -195,7 +195,8 @@ class ResponseManager:
 
         # Ensure content passed to LocalFolderManager is bytes
         readme_content_bytes = readme.encode('utf-8')
-        update_objects([File("README.md", readme_content_bytes)], base_path=base_path)
+        update_objects([File("README.md", readme_content_bytes)],
+                       base_path=base_path)
         LOGGER.info(f"Updated README.md at {base_path}README.md")
 
     def commit_and_push(self, message: str) -> None:
@@ -213,6 +214,7 @@ class ResponseManager:
         self.content.metadata.system_version = self.api.get_system_version()
         self.content.push_metadata()
         self.git_client.commit_and_push(message)
+
 
 class WorkflowInstaller:
     """Helper class for installing workflows"""
@@ -292,7 +294,8 @@ class WorkflowInstaller:
         self._process_steps(workflow)
         self.client.save_playbook(workflow)
         self._save_workflow_mod_time_to_context(workflow)
-        LOGGER.info(f"New Playbook '{workflow.name}' was installed successfully")
+        LOGGER.info(
+            f"New Playbook '{workflow.name}' was installed successfully")
 
     def _process_steps(
         self,

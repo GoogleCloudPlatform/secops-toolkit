@@ -15,12 +15,10 @@
 from __future__ import annotations
 from enum import Enum
 
-
 DEFAULT_USERNAME = "None"
 DEFAULT_AUTHOR = "GitSync <gitsync@siemplify.co>"
 COMMIT_AUTHOR_REGEX = (
     r"[A-Za-z ,.'-]+ <[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}>")
-
 
 ALL_ENVIRONMENTS_IDENTIFIER = "*"
 
@@ -381,4 +379,3 @@ ROOT_README = """# GitSync
 """
 
 STEP_TYPE: int = 0
-
