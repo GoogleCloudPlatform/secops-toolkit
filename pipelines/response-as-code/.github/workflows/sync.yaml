@@ -24,30 +24,59 @@ on:
       - synchronize
       - merged
 
+permissions:
+  contents: write
+  id-token: write
+  issues: write
+  pull-requests: write
+
 env:
   LOCAL_SYNC_PATH: ${{ vars.LOCAL_SYNC_PATH }}
-  TARGET_SOAR_API_URL: ${{ vars.TARGET_SOAR_API_URL }}
-  TARGET_SOAR_API_KEY: ${{ secrets.TARGET_SOAR_API_KEY }}
+  SECOPS_CUSTOMER_ID: ${{ vars.TARGET_SECOPS_CUSTOMER_ID }}
+  SECOPS_PROJECT_ID: ${{ vars.TARGET_SECOPS_PROJECT_ID }}
+  SECOPS_REGION: ${{ vars.TARGET_SECOPS_REGION }}
+  SERVICE_ACCOUNT: ${{ vars.SERVICE_ACCOUNT }}
+  WIF_PROVIDER: ${{ vars.WIF_PROVIDER }}
   SSH_AUTH_SOCK: /tmp/ssh_agent.sock
 
 jobs:
   sync-playbooks:
     runs-on: ubuntu-latest
-    container: python:3.14
-    # Condition to run only on push to the default branch
     if: github.event.pull_request.merged == true
-
-    env:
-      COMMAND: apply # Set COMMAND for this job based on the GitLab rule
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - id: gcp-auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{env.WIF_PROVIDER}}
+          service_account: ${{env.SERVICE_ACCOUNT}}
+          access_token_lifetime: 900s
+
+      - id: gcp-sdk
+        name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          install_components: alpha
+
+      - id: install-python
+        name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install -r ./script/requirements.txt
+        shell: bash
 
       - name: Run Python script
+        env:
+          # Set PYTHONPATH for this specific step
+          PYTHONPATH: ${{ github.workspace }}
         run: |
-          python main.py sync-playbooks
+          python ./script/main.py sync-playbooks
+        shell: bash

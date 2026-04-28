@@ -1,4 +1,4 @@
-# Copyright 2025 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,51 +13,14 @@
 # limitations under the License.
 
 from __future__ import annotations
-
 from enum import Enum
 
-#############
-# GitSync
-#############
 
-INTEGRATION_NAME = "GitSync"
 DEFAULT_USERNAME = "None"
 DEFAULT_AUTHOR = "GitSync <gitsync@siemplify.co>"
 COMMIT_AUTHOR_REGEX = (
     r"[A-Za-z ,.'-]+ <[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}>")
 
-IGNORED_INTEGRATIONS = ["GitSync", "Siemplify", "SiemplifyUtilities"]
-IGNORED_JOBS = [
-    "Actions Monitor",
-    "Connectors Monitor",
-    "ETL Monitor",
-    "Jobs Monitor",
-    "Machine Resource Utilization",
-]
-
-AVAILABLE_CONTENT = [
-    "Integrations",
-    "Playbooks",
-    "Jobs",
-    "Connectors",
-    "Simulated Cases",
-    "Integration Instances",
-    "Visual Families",
-    "Mappings",
-    "Environments",
-    "Dynamic Parameters",
-    "Logo",
-    "Case Tags",
-    "Case Stages",
-    "Case Title Settings",
-    "Case Close Reasons",
-    "Networks",
-    "Domains",
-    "Custom Lists",
-    "Email Templates",
-    "Blacklists",
-    "SLA Records",
-]
 
 ALL_ENVIRONMENTS_IDENTIFIER = "*"
 
@@ -65,39 +28,45 @@ ALL_ENVIRONMENTS_IDENTIFIER = "*"
 # Playbooks
 #############
 
-
-class WorkflowTypes(Enum):
-    PLAYBOOK = 0
-    BLOCK = 1
-
-
 TRIGGER_TYPES = {
-    0: "Vendor Name",
-    1: "Tag Name",
-    2: "Alert Type",
-    3: "Product Name",
-    4: "Network Name",
-    5: "Entity Details",
-    6: "Relation Details",
-    7: "Tracking List",
-    8: "All",
-    9: "Alert Trigger Value",
-    10: "Custom Trigger",
-    11: "Get Inputs",
+    "WORKFLOW_TRIGGER_TYPE_UNSPECIFIED": "Unspecified",
+    "VENDOR_NAME": "Vendor Name",
+    "TAG_NAME": "Tag Name",
+    "RULE_NAME": "Rule Name",
+    "PRODUCT_NAME": "Product Name",
+    "NETWORK_NAME": "Network Name",
+    "ENTITY_DETAILS": "Entity Details",
+    "RELATION_DETAILS": "Relation Details",
+    "TRACKING_LIST": "Tracking List",
+    "ALL": "All",
+    "ALERT_TRIGGER_VALUE": "Alert Trigger Value",
+    "CASE_DATA": "Case Data",
+    "GET_INPUTS": "Get Inputs",
+    "CASE_ASSIGNEE_CHANGED": "Case Assignee Changed",
+    "ENTITY_ADDED": "Entity Added",
+    "ALERT_PRIORITY_CHANGED": "Alert Priority Changed",
+    "ALERT_CUSTOM_FIELD_CHANGED": "Alert Custom Field Changed",
 }
 
-CONDITION_OPERATORS = {0: "And", 1: "Or"}
+CONDITION_OPERATORS = {
+    "CONDITION_LOGICAL_OPERATOR_UNSPECIFIED": "Unspecified",
+    "AND": "And",
+    "OR": "Or",
+}
 
 CONDITION_MATCH_TYPES = {
-    0: "Equals",
-    1: "Contains",
-    2: "Starts With",
-    3: "Greater Than",
-    4: "Less Than",
-    5: "Not Equals",
-    6: "Not Contains",
-    7: "Is Empty",
-    8: "Is Not Empty",
+    "CONDITION_MATCH_TYPE_UNSPECIFIED": "Unspecified",
+    "EQUAL": "Equal",
+    "CONTAINS": "Contains",
+    "STARTS_WITH": "Starts With",
+    "GREATER_THAN": "Greater Than",
+    "LESSER_THAN": "Less Than",
+    "NOT_EQUAL": "Not Equal",
+    "NOT_CONTAINS": "Not Contains",
+    "IS_EMPTY": "Is Empty",
+    "IS_NOT_EMPTY": "Is Not Empty",
+    "CUSTOM": "Custom",
+    "EQUALS_ANY": "Equals Any"
 }
 
 #############
@@ -162,7 +131,7 @@ PLAYBOOK_README_TEMPLATE = """# {{ playbook.name }}
 
 {% if playbook.trigger.type != 11 %}
 ### Playbook Trigger
-**Trigger Type:** {{ playbook.trigger.type|trigger_type }}\n
+**Trigger Type:** {{ playbook.trigger.type | trigger_type }}\n
 **Conditions Operator:** {{ playbook.trigger.logicalOperator|condition_operator }}\n
 ##### Conditions
 |Key|Operator|Value|
@@ -412,3 +381,4 @@ ROOT_README = """# GitSync
 """
 
 STEP_TYPE: int = 0
+

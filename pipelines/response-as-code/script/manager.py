@@ -1,4 +1,4 @@
-# Copyright 2025 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,243 +20,80 @@ import tempfile
 import uuid
 import logging
 from typing import TYPE_CHECKING, Any
-from jinja2 import Template
-from .cache import Cache, Context
-from .constants import (
+from jinja2 import Template, Environment
+from constants import (
     ALL_ENVIRONMENTS_IDENTIFIER,
     DEFAULT_AUTHOR,
-    IGNORED_INTEGRATIONS,
     ROOT_README,
-    ScriptType,
-    WorkflowTypes,
 )
-from .definitions import Connector, File, Integration, Job, Mapping, Workflow
-from .git_content_manager import GitContentManager
-from .soar_api_client import SiemplifyApiClient
-from soar.local_folder_manager import LocalFolderManager
+from models import Workflow, File
+from config import SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION, PLAYBOOKS_PATH
+from models import APIError
+from secops_client import SecOpsClient
+from models import SocRole
+from models import WorkflowMenuCard
+from utils import update_objects, _push_obj
+from cache import Cache
 
-LOGGER = logging.getLogger("soar")
+LOGGER = logging.getLogger("rac")
 
 
-class MergeConflictError(Exception):
-    """A merge conflict was discovered."""
+class ResponseManager:
+    """Manages the lifecycle of SecOps playbooks."""
 
+    def __init__(self):
+        if not all([SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION]):
+            raise APIError(
+                "Missing SecOps env vars: SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION."
+            )
+        try:
+            self.client = SecOpsClient(
+                customer_id=SECOPS_CUSTOMER_ID,
+                project_id=SECOPS_PROJECT_ID,
+                region=SECOPS_REGION)
+            LOGGER.info("Custom SecOps client initialized successfully.")
+        except Exception as e:
+            raise APIError(f"Failed to initialize Custom SecOps client: {e}") from e
 
-class GitSyncManager:
-    """GitSync main interface
+    def get_soc_roles(self) -> List[SocRole]:
+        """Retrieves a list of all available SOC roles from the SecOps API."""
+        return self.client.list_soc_roles()
 
-    This class holds and orchestrates all GitSync components.
+    def get_playbooks(self) -> List[WorkflowMenuCard]:
+        """Retrieves a list of all playbooks and blocks from the Chronicle API."""
+        return self.client.get_playbooks()
 
-    Attributes:
-        local_manager: A LocalFolderManager instance for handling all local file operations.
-        api: A SiemplifyApiClient instance for communicating with Siemplify.
-        content: A GitContentManager instance for reading or writing objects from the
-                 local file system to a defined structure using the local_manager.
-        logger: A logger instance.
-    """
+    def get_playbook(self, identifier: str):
+        """Retrieves full information for a legacy playbooks or block by its identifier."""
+        return self.client.get_playbook(identifier)
 
-    def __init__(
-        self,
-        local_sync_path: str,
-        smp_verify: bool = True,
-        soar_api_client: SiemplifyApiClient = None,
-    ):
-        """
-        Initializes the GitSyncManager with a local folder path.
+    def store_playbook(self, playbook: Workflow) -> None:
+        """Writes a workflow to the repo
 
         Args:
-            local_sync_path (str): The path to the local directory to be managed.
-            smp_verify (bool, optional): Whether to verify SSL for Siemplify API calls. Defaults to True.
-            soar_api_client (SiemplifyApiClient, optional): An existing Siemplify API client. Defaults to None.
-        """
-        self._cache = {}
-        self.api = soar_api_client
-        self.content = GitContentManager(self.api)
-
-    @classmethod
-    def from_env_vars(
-        cls,
-        soar_api_client: SiemplifyApiClient = None,
-    ) -> GitSyncManager:
-        """Init an instance using Environment variables.
-
-        Required Environment Variables:
-            LOCAL_SYNC_PATH: Path to the local directory for synchronization.
-
-        Optional Environment Variables:
-            GIT_SYNC_SIEMPLIFY_VERIFY_SSL (str): "true" or "false" for Siemplify SSL verification. Defaults to "true".
-
-        Args:
-            soar_api_client: SiemplifyApiClient instance.
-
-        Returns: A GitSyncManager instance.
-
-        Raises:
-            Exception: If LOCAL_SYNC_PATH is not set.
-        """
-
-        LOGGER.info("================= Param Init =================")
-        local_sync_path = os.environ.get("LOCAL_SYNC_PATH")
-        if not local_sync_path:
-            LOGGER.error("LOCAL_SYNC_PATH environment variable is not set.")
-            raise Exception("LOCAL_SYNC_PATH environment variable is not set.")
-
-        smp_verify = os.environ.get("GIT_SYNC_SIEMPLIFY_VERIFY_SSL",
-                                    "true").lower() == "true"
-
-        LOGGER.info(f"Local Sync Path: {local_sync_path}")
-        LOGGER.info(f"Siemplify Verify SSL: {smp_verify}")
-
-        return cls(local_sync_path=local_sync_path,
-                   smp_verify=smp_verify,
-                   soar_api_client=soar_api_client)
-
-    def install_integration(self, integration: Integration) -> None:
-        """Install or update a custom or commercial integration.
-
-        There are two different flows to install an integration,
-        If the integration is custom, the entire zip (ide/exportPackage) is used when pushing, so we
-        import it as a zip file (ide/importPackage)
-        if the integration is commercial, only custom items are pushed, that means we iterate the
-        items, install new items and update existing ones.
-
-        Args:
-            integration: An Integration object instance to install
+            playbook: A playbook object
 
         """
-        if integration.identifier in IGNORED_INTEGRATIONS:
-            return
-        LOGGER.info(f"Installing {integration.identifier}")
-        if integration.isCustom:
-            LOGGER.info(
-                f"{integration.identifier} is a custom integration - importing as zip",
-            )
-            self.api.import_package(
-                integration.identifier,
-                integration.get_zip_as_base64(),
-            )
-        else:
-            LOGGER.info(
-                f"{integration.identifier} is a commercial integration - Checking installation",
-            )
-            if not self.get_installed_integration_version(
-                    integration.identifier):
-                LOGGER.info(
-                    f"{integration.identifier} is not installed - installing from the marketplace",
-                )
-                if not self.install_marketplace_integration(
-                        integration.identifier):
-                    LOGGER.warn(
-                        f"Couldn't install integration {integration.identifier} "
-                        "from the marketplace", )
-                    return
-            integration_cards = next(
-                x for x in self.api.get_ide_cards()
-                if x["identifier"] == integration.identifier)["cards"]
-            for script in integration.get_all_items():
-                item_card = next(
-                    (x
-                     for x in integration_cards if x["name"] == script["name"]
-                     and x["type"] == script["type"]),
-                    None,
-                )
-                if item_card:
-                    script["id"] = item_card["id"]
-                    LOGGER.info(
-                        f"Updating {integration.identifier} - {script['name']}",
-                    )
-                else:
-                    LOGGER.info(
-                        f"Adding {integration.identifier} - {script['name']}",
-                    )
-                script["script"] = integration.get_script(
-                    script.get("name"),
-                    ScriptType(script.get("type")),
-                )
-                self.api.update_ide_item(script)
+        _push_obj(
+            playbook,
+            playbook.name,
+            "Playbook",
+            f"{PLAYBOOKS_PATH}/{playbook.category}/{playbook.name}",
+        )
 
-    def install_connector(self, connector: Connector) -> None:
-        """Installs or update a connector instance
-
-        If the integration of the connector doesn't exist, will attempt to install it from the
-        marketplace or from the git repository,
-        If the connector instance integration version doesn't match the installed integration,
-        the update button on the connector will forcibly activate to update the definition
-
-        Args:
-            connector: A Connector object instance to install
-
-        """
-        installed_version = self.get_installed_integration_version(
-            connector.integration, )
-        if not installed_version:
-            LOGGER.info(
-                f"Connector {connector.name} integration ({connector.integration}) not installed",
-            )
-            # Integration is not installed - try installing from repo,
-            # and if not install from the marketplace
-            integration = self.content.get_integration(connector.integration)
-            if integration and integration.isCustom:
-                LOGGER.info("Custom integration found in repo, installing")
-                # Integration found in repo
-                self.install_integration(integration)
-            else:
-                # Try installing integration from marketplace
-                LOGGER.info(
-                    "Trying to install connector integration from the marketplace",
-                )
-                if not self.install_marketplace_integration(
-                        connector.integration):
-                    raise Exception(
-                        f"Error installing connector {connector.name} - missing integration",
-                    )
-                LOGGER.info(
-                    "Connector integration successfully installed from the marketplace",
-                )
-        if connector.integration_version != installed_version:
-            LOGGER.warn(
-                "Installed integration version doesn't match the connector integration version. "
-                "Please upgrade the connector.", )
-            connector.raw_data["isUpdateAvailable"] = True
-        if connector.environment not in self.api.get_environment_names():
-            LOGGER.warn(
-                f"Connector is set to non-existing environment {connector.environment}. "
-                f"Using Default Environment instead", )
-        self.api.update_connector(connector.raw_data)
-
-    def install_mappings(self, mappings: Mapping) -> None:
-        """Install or update mappings definitions
-
-        Args:
-            mappings: A Mapping object instance to install
-
-        """
-        LOGGER.info(f"Installing mappings for {mappings.integrationName}")
-        for rule in mappings.rules:
-            self.api.add_mapping_rules(rule["familyFields"])
-            self.api.add_mapping_rules(rule["systemFields"])
-
-        for record in mappings.records:
-            self.api.set_mappings_visual_family(
-                record.get("source"),
-                record.get("product"),
-                record.get("eventName"),
-                record.get("familyName"),
-            )
-
-    def install_workflows(self, workflows: list[Workflow]) -> None:
+    def install_playbooks(self, workflows: list[Workflow]) -> None:
         """Install or update playbooks and blocks
 
         Args:
-            workflows: A list of playbook instances to install
+            workflows: A list of workflow instances to install
 
         Raises:
             Exception: When a playbook environment doesn't exist
 
         """
         # Validate all playbook environments exist as environments or environment groups
-        environments = (self.api.get_environment_names() +
-                        self.api.get_environment_group_names() +
+        environments = (self.client.get_environment_names() +
+                        self.client.get_environment_group_names() +
                         [ALL_ENVIRONMENTS_IDENTIFIER])
         for p in workflows:
             invalid_environments = [
@@ -271,12 +108,11 @@ class GitSyncManager:
         # Remove duplicates and split by type
         workflows = list(set(workflows))
         cache: Cache[str, int] = Cache()
-        playbook_installer = WorkflowInstaller(self.api, cache)
+        playbook_installer = WorkflowInstaller(self.client, cache)
         blocks, playbooks = [], []
         for workflow in workflows:
             if workflow.type == WorkflowTypes.BLOCK:
                 blocks.append(workflow)
-
             else:
                 playbooks.append(workflow)
 
@@ -288,39 +124,6 @@ class GitSyncManager:
 
         for playbook in playbooks:
             playbook_installer.install_workflow(playbook)
-
-    def install_job(self, job: Job) -> None:
-        """Installs or updates a job instance
-
-        Args:
-            job: A Job object instance to install
-
-        """
-        if not self.get_installed_integration_version(job.integration):
-            LOGGER.warn(
-                f"Error installing job {job.name} - Job integration ({job.integration}) "
-                "is not installed", )
-            return
-        # Try to find and fix the jobDefinitionId field
-        integration_cards = next(
-            (x for x in self.api.get_ide_cards()
-             if x["identifier"] == job.integration),
-            {},
-        ).get("cards", None)
-        if integration_cards:
-            job_def_id = next(
-                (x for x in integration_cards
-                 if x["type"] == 2 and x["name"] == job.name),
-                None,
-            )
-            if job_def_id:
-                job.raw_data["jobDefinitionId"] = job_def_id.get("id")
-
-        job_id = next(
-            (x for x in self.api.get_jobs() if x["name"] == job.name), None)
-        if job_id:
-            job.raw_data["id"] = job_id.get("id")
-        self.api.add_job(job.raw_data)
 
     def generate_root_readme(self) -> str:
         """Generates the readme file contents for the root of the repository
@@ -392,8 +195,7 @@ class GitSyncManager:
 
         # Ensure content passed to LocalFolderManager is bytes
         readme_content_bytes = readme.encode('utf-8')
-        self.content.update_objects([File("README.md", readme_content_bytes)],
-                                    base_path=base_path)
+        update_objects([File("README.md", readme_content_bytes)], base_path=base_path)
         LOGGER.info(f"Updated README.md at {base_path}README.md")
 
     def commit_and_push(self, message: str) -> None:
@@ -412,78 +214,15 @@ class GitSyncManager:
         self.content.push_metadata()
         self.git_client.commit_and_push(message)
 
-    @property
-    def _marketplace_integrations(self) -> list[dict]:
-        if "marketplace" not in self._cache:
-            self._cache["marketplace"] = self.api.get_store_data()
-        return self._cache.get("marketplace")
-
-    def clear_cache(self) -> None:
-        self._cache = {}
-
-    def refresh_cache_item(self, item_name) -> None:
-        if item_name in self._cache:
-            del self._cache[item_name]
-
-    def install_marketplace_integration(self, integration_name: str) -> bool:
-        """Installs or update an integration from the marketplace.
-
-        Args:
-            integration_name: Name of the integration to install
-
-        Returns: True if the integration was installed successfully, otherwise False
-
-        """
-        store_integration = next(
-            (x for x in self._marketplace_integrations
-             if x["identifier"] == integration_name),
-            None,
-        )
-        if not store_integration:
-            LOGGER.warn(
-                f"Integration {integration_name} wasn't found in the marketplace",
-            )
-            return False
-        try:
-            self.api.install_integration(
-                integration_name,
-                store_integration["version"],
-                store_integration["isCertified"],
-            )
-            LOGGER.info(f"{integration_name} installed successfully")
-            return True
-        except Exception as e:
-            LOGGER.warn(f"Couldn't install {integration_name} - {e}")
-            return False
-
-    def get_installed_integration_version(self,
-                                          integration_name: str) -> float:
-        """Get the currently installed integration version
-
-        If the integration is not installed, 0.0 will be returned
-
-        Args:
-            integration_name: Name of the integration to check
-
-        Returns: Integration version
-
-        """
-        return next(
-            (x["installedVersion"] for x in self._marketplace_integrations
-             if x["identifier"] == integration_name),
-            0.0,
-        )
-
-
 class WorkflowInstaller:
     """Helper class for installing workflows"""
 
     def __init__(
         self,
-        api: SiemplifyApiClient,
+        client: SecOpsClient,
         mod_time_cache: Cache[str, int],
     ) -> None:
-        self.api: SiemplifyApiClient = api
+        self.client = client
         self._mod_time_cache: Cache[str, int] = mod_time_cache
         self._cache: dict[str, Any] = {}
 
@@ -533,7 +272,7 @@ class WorkflowInstaller:
         """Update an existing workflow in the platform."""
         LOGGER.info(f"Updating existing workflow '{workflow.name}'")
         self._adjust_workflow_ids(workflow)
-        self.api.save_playbook(workflow.raw_data)
+        self.client.save_playbook(workflow)
         self._save_workflow_mod_time_to_context(workflow)
         LOGGER.info(f"Workflow '{workflow.name}' was updated successfully")
 
@@ -541,9 +280,8 @@ class WorkflowInstaller:
         """Adjust workflow identifiers to match the existing workflow's
         (with the same name) identifiers.
         """
-        playbook_id: str = self._installed_playbooks[
-            workflow.name]["identifier"]
-        local_playbook: dict[str, Any] = self.api.get_playbook(playbook_id)
+        playbook_id: str = self._installed_playbooks[workflow.name].identifier
+        local_playbook: dict[str, Any] = self.client.get_playbook(playbook_id)
         self._copy_ids_from_existing_workflow(workflow, local_playbook)
         self._process_steps(workflow, local_playbook)
 
@@ -552,10 +290,9 @@ class WorkflowInstaller:
         LOGGER.info(f"Installing new workflow '{workflow.name}'")
         self._define_workflow_as_new(workflow)
         self._process_steps(workflow)
-        self.api.save_playbook(workflow.raw_data)
+        self.client.save_playbook(workflow)
         self._save_workflow_mod_time_to_context(workflow)
-        LOGGER.info(
-            f"New workflow '{workflow.name}' was installed successfully")
+        LOGGER.info(f"New Playbook '{workflow.name}' was installed successfully")
 
     def _process_steps(
         self,
@@ -673,15 +410,15 @@ class WorkflowInstaller:
         /,
     ) -> int:
         playbook: dict[str, Any] = self._installed_playbooks[__workflow_name]
-        return playbook.get("modificationTimeUnixTimeInMs", default)
+        return playbook.modification_time or default
 
     @property
     def _installed_playbooks(self) -> dict[str, dict[str, Any]]:
         """Currently installed playbooks and blocks"""
         if "playbooks" not in self._cache:
             self._cache["playbooks"] = {
-                x.get("name"): x
-                for x in self.api.get_playbooks()
+                x.name: x
+                for x in self.client.get_playbooks()
             }
         return self._cache.get("playbooks")
 
@@ -690,8 +427,8 @@ class WorkflowInstaller:
         """Currently configured playbook categories"""
         if "categories" not in self._cache:
             self._cache["categories"] = {
-                x.get("name"): x
-                for x in self.api.get_playbook_categories()
+                x.name: x
+                for x in self.client.get_playbook_categories()
             }
         return self._cache.get("categories")
 
@@ -924,7 +661,7 @@ class WorkflowInstaller:
         else:
             category = self._playbook_categories.get(workflow.category)
 
-        workflow.raw_data["categoryId"] = category.get("id")
+        workflow.raw_data["categoryId"] = category.id
 
     def _link_nested_block_step(self, step: dict) -> None:
         """Links a nested block step to the correct block that is stored on the system
