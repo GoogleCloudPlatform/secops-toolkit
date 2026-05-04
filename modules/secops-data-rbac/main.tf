@@ -39,7 +39,7 @@ resource "google_chronicle_data_access_scope" "scopes" {
       data_access_label = denied_data_access_labels.value.data_access_label
       asset_namespace   = denied_data_access_labels.value.asset_namespace
       dynamic "ingestion_label" {
-        for_each = coalesce(denied_data_access_labels.value.ingestion_label, {})
+        for_each = denied_data_access_labels.value.ingestion_label == null ? {} : {label = denied_data_access_labels.value.ingestion_label}
         content {
           ingestion_label_key   = ingestion_label.ingestion_label_key
           ingestion_label_value = ingestion_label.ingestion_label_value
@@ -54,10 +54,10 @@ resource "google_chronicle_data_access_scope" "scopes" {
       data_access_label = allowed_data_access_labels.value.data_access_label
       asset_namespace   = allowed_data_access_labels.value.asset_namespace
       dynamic "ingestion_label" {
-        for_each = coalesce(allowed_data_access_labels.value.ingestion_label, {})
+        for_each = allowed_data_access_labels.value.ingestion_label == null ? {} : {label = allowed_data_access_labels.value.ingestion_label}
         content {
-          ingestion_label_key   = ingestion_label.ingestion_label_key
-          ingestion_label_value = ingestion_label.ingestion_label_value
+          ingestion_label_key   = ingestion_label.value.ingestion_label_key
+          ingestion_label_value = ingestion_label.value.ingestion_label_value
         }
       }
     }
