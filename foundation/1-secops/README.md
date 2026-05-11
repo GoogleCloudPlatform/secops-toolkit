@@ -1,6 +1,6 @@
 # SecOps Instance
 
-This blueprint allows automated configuration of SecOps instance at both infrastructure and application level.
+This blueprint allows automated configuration of SecOps instance at both configuration and application level.
 
 The following diagram illustrates the high-level design of SecOps instance configuration in both GCP and SecOps instance, which can be adapted to specific requirements via variables.
 

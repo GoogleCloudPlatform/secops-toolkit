@@ -29,11 +29,6 @@ module "project" {
   billing_account = try(var.project_create_config.billing_account, null)
   parent          = try(var.project_create_config.parent, null)
   project_reuse   = var.project_create_config != null ? null : {}
-  org_policies = var.third_party_integration_config.workspace == null ? {} : {
-    "iam.disableServiceAccountKeyCreation" = {
-      rules = [{ enforce = false }]
-    }
-  }
   services = concat([
     "apikeys.googleapis.com",
     "compute.googleapis.com",
@@ -90,4 +85,3 @@ resource "google_apikeys_key" "feed_api_key" {
     }
   }
 }
-
