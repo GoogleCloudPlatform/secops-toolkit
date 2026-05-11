@@ -109,7 +109,6 @@ class SecOpsClient:
             parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
             api_path = f"/v1alpha/{parent}/legacyPlaybooks:legacyGetWorkflowMenuCardsWithEnvFilter"
 
-            # Assuming payload based on previous SiemplifyApiClient context (json=[0, 1])
             # The actual API documentation for this method is not clear on the body,
             # but a POST usually expects one.
             # If this is incorrect, it will need to be adjusted.
@@ -224,3 +223,15 @@ class SecOpsClient:
             raise APIError(
                 f"Failed to retrieve workflow categories: {e}") from e
         return workflow_categories
+
+    def get_integration_instance_name(self, integration_name: str, instance_id: str) -> str:
+        """Retrieves the display name of an integration instance."""
+        try:
+            parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
+            api_path = f"/v1alpha/{parent}/integrations/{integration_name}/integrationInstances/{instance_id}"
+
+            response_json = self._make_request(method="GET", path=api_path)
+            return response_json.get("displayName", "")
+        except Exception as e:
+            raise APIError(
+                f"Failed to retrieve integration instance name: {e}") from e

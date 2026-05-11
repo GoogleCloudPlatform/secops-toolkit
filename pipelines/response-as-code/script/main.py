@@ -149,6 +149,8 @@ def pull_playbooks(
                 new_templates.append(overview_template)
             playbook_details.overview_templates = new_templates
 
+            response_manager.update_instance_name_in_steps(playbook_details)
+
             response_manager.store_playbook(playbook_details)
 
             if include_blocks:
@@ -164,6 +166,7 @@ def pull_playbooks(
                     block_details = Workflow(
                         response_manager.get_playbook(
                             installed_block.identifier))
+                    response_manager.update_instance_name_in_steps(block_details)
                     response_manager.store_playbook(block_details)
 
         response_manager.update_readme(create_root_readme(), "Playbooks")

@@ -18,7 +18,8 @@ from enum import Enum
 from jinja2 import Template, Environment as JinjaEnvironment
 from constants import PLAYBOOK_README_TEMPLATE, TRIGGER_TYPES, CONDITION_OPERATORS, CONDITION_MATCH_TYPES
 import json
-from typing import Iterator
+from typing import Iterator, Any
+import uuid
 
 
 class APIError(Exception):
@@ -152,18 +153,6 @@ class Workflow(Content):
     def get_involved_blocks(self):
         return [x for x in self.steps if x.get("type") == 5]
 
-    # def update_instance_name_in_steps(
-    #     self,
-    #     client: SiemplifyApiClient,
-    #     chronicle_soar: ChronicleSOAR,
-    # ) -> None:
-    #     """Updates name of instances in the steps."""
-    #     for step in self.steps:
-    #         if (step.get("type") == STEP_TYPE
-    #                 and step.get("actionProvider") == "Scripts"):
-    #             self._update_instance_display_names_for_step(
-    #                 step, api, chronicle_soar)
-
     def _is_integration_instance_param(
         self,
         param_name: str | None,
@@ -174,62 +163,6 @@ class Workflow(Content):
             "IntegrationInstance",
             "FallbackIntegrationInstance",
         ) and self._is_valid_instance_id(param_value)
-
-    def _update_instance_display_names_for_step(
-        self,
-        step: dict,
-        api: SiemplifyApiClient,
-        chronicle_soar: ChronicleSOAR,
-    ) -> None:
-        """Updates display names for integration instance parameters in a step.
-
-        Args:
-            step (dict): The workflow step dictionary to process.
-            api (SiemplifyApiClient): An API client instance used to fetch
-                integration instance names.
-        """
-        integration_name = step["integration"]
-
-        for param in step.get("parameters", []):
-            param_name = param.get("name")
-            param_value = param.get("value")
-            try:
-                if not self._is_integration_instance_param(
-                        param_name, param_value):
-                    continue
-
-                display_name = api.get_integration_instance_name(
-                    chronicle_soar,
-                    integration_name,
-                    param_value,
-                    self.environments,
-                )
-
-                match param_name:
-                    case "IntegrationInstance":
-                        param["InstanceDisplayName"] = display_name
-                    case "FallbackIntegrationInstance":
-                        param["FallbackInstanceDisplayName"] = display_name
-            except HTTPError as e:
-                # ignoring 404 errors as they expected in migrations between instances.
-                if e.response is not None and hasattr(e.response,
-                                                      'status_code'):
-                    status_code = e.response.status_code
-                    if status_code != 404:
-                        raise e
-                else:
-                    # TIPCommon is re-raising HTTPError without response object
-                    # Try to extract status code from the error message itself
-                    error_msg = str(e)
-                    status_code_match = re.search(r'(\d{3})\s+Client Error',
-                                                  error_msg)
-                    if status_code_match:
-                        status_code = int(status_code_match.group(1))
-                        if status_code != 404:
-                            raise e
-                    else:
-                        # can't determine the status code
-                        raise e
 
     def _is_valid_instance_id(self, instance_id: str) -> bool:
         try:
