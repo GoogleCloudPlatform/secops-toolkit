@@ -63,7 +63,7 @@ class WorkflowMenuCard:
     displayName: str
     categoryName: str
     modification_time: int
-
+    playbookType: str
 
 class WorkflowTypes(Enum):
     PLAYBOOK = 0

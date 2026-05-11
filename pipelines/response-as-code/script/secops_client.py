@@ -128,8 +128,8 @@ class SecOpsClient:
                             name=card_data.get("name", ""),
                             displayName=card_data.get("displayName", ""),
                             categoryName=card_data.get("categoryName", ""),
-                            modification_time=card_data.get(
-                                "modificationTime", "")))
+                            modification_time=card_data.get("modificationTime", ""),
+                            playbookType=card_data.get("playbookType", "")))
         except Exception as e:
             raise APIError(
                 f"Failed to retrieve legacy workflow menu cards: {e}") from e
@@ -235,3 +235,18 @@ class SecOpsClient:
         except Exception as e:
             raise APIError(
                 f"Failed to retrieve integration instance name: {e}") from e
+
+    def get_integrations_instances(self, environment: str) -> List[Dict[str, Any]]:
+        integration_instances: List[Dict[str, Any]] = []
+        try:
+            parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
+            api_path = f"/v1alpha/{parent}/integrations"
+
+            response_json = self._make_request(method="GET", path=api_path)
+            if "integrations" in response_json:
+                for integration_data in response_json["integrations"]:
+                    integration_instances.append(integration_data)
+        except Exception as e:
+            raise APIError(
+                f"Failed to retrieve integration instances: {e}") from e
+        return integration_instances

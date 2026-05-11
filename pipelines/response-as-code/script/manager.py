@@ -27,7 +27,7 @@ from constants import (
     ROOT_README,
     STEP_TYPE
 )
-from models import Workflow, File
+from models import Workflow, File, WorkflowTypes
 from config import SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION, PLAYBOOKS_PATH
 from models import APIError
 from secops_client import SecOpsClient
@@ -289,7 +289,7 @@ class WorkflowInstaller:
     ) -> None:
         self.client = client
         self._mod_time_cache: Cache[str, int] = mod_time_cache
-        self._cache: dict[str, Any] = {}
+        self._cache: dict[str, WorkflowMenuCard] = {}
 
     def install_workflow(self, workflow: Workflow) -> None:
         """Save a playbook or block in the current platform
@@ -337,6 +337,7 @@ class WorkflowInstaller:
         """Update an existing workflow in the platform."""
         LOGGER.info(f"Updating existing workflow '{workflow.name}'")
         self._adjust_workflow_ids(workflow)
+        self._process_steps(workflow)
         self.client.save_playbook(workflow)
         self._save_workflow_mod_time_to_context(workflow)
         LOGGER.info(f"Workflow '{workflow.name}' was updated successfully")
@@ -411,13 +412,13 @@ class WorkflowInstaller:
                     step_debug_data["originalWorkflowIdentifier"] = (
                         installed_workflow.get("originalPlaybookIdentifier"))
 
-            if step_type == 0 and provider == "Scripts":  # Regular Action
+            if step_type == STEP_TYPE and provider == "Scripts":  # Regular Action
                 self._assign_integration_instance_to_step(
                     step,
                     workflow.environments,
                     existing_step,
                 )
-            elif step_type == 5:  # Nested Workflow
+            elif step_type == "BLOCK":  # Nested Workflow
                 self._link_nested_block_step(step)
 
         for relation in workflow.raw_data.get("stepsRelations"):
@@ -479,12 +480,12 @@ class WorkflowInstaller:
         return playbook.modification_time or default
 
     @property
-    def _installed_playbooks(self) -> dict[str, dict[str, Any]]:
+    def _installed_playbooks(self) -> dict[str, WorkflowMenuCard]:
         """Currently installed playbooks and blocks"""
         if "playbooks" not in self._cache:
             self._cache["playbooks"] = {
                 x.name: x
-                for x in self.client.get_playbooks()
+                for x in self.client.get_playbooks()    
             }
         return self._cache.get("playbooks")
 
@@ -541,6 +542,13 @@ class WorkflowInstaller:
                 "FallbackIntegrationInstance",
                 fallback,
             )
+            # remove integration and fallback integration fields from params
+            for param in existing_step.get("parameters", []):
+                if param.get("InstanceDisplayName"):
+                    del param["InstanceDisplayName"]
+                elif param.get("FallbackInstanceDisplayName"):
+                    del param["FallbackInstanceDisplayName"]
+
             return
 
         instance_display_name = self._get_instance_display_name(
@@ -552,8 +560,7 @@ class WorkflowInstaller:
         # If the playbook is for one specific environment, choose the first integration instance
         # from that environment. Otherwise, set the step to dynamic mode and set the first shared
         # integration instance as fallback
-        if len(environments
-               ) == 1 and environments[0] != ALL_ENVIRONMENTS_IDENTIFIER:
+        if len(environments) == 1 and environments[0] != ALL_ENVIRONMENTS_IDENTIFIER:
             integration_instances = self._find_integration_instances_for_step(
                 step.get("integration"),
                 environments[0],
@@ -591,6 +598,12 @@ class WorkflowInstaller:
                     "FallbackIntegrationInstance",
                     None,
                 )
+        # remove integration and fallback integration fields from params
+        for param in step.get("parameters", []):
+            if param.get("InstanceDisplayName"):
+                del param["InstanceDisplayName"]
+            elif param.get("FallbackInstanceDisplayName"):
+                del param["FallbackInstanceDisplayName"]
     
     def _get_instance_display_name(
         self,
@@ -623,11 +636,11 @@ class WorkflowInstaller:
         """
         cache_key = f"integration_instances_{environment}"
         if cache_key not in self._cache:
-            self._cache[cache_key] = self.api.get_integrations_instances(
+            self._cache[cache_key] = self.client.get_integrations_instances(
                 environment)
 
         instances = self._cache.get(cache_key)
-        instances.sort(key=lambda x: x.get("instanceName"))
+        instances.sort(key=lambda x: x.get("displayName"))
 
         return [
             x for x in instances
@@ -667,8 +680,7 @@ class WorkflowInstaller:
             parameter_value: New value of the parameter
 
         """
-        self._get_step_parameter_by_name(
-            step, parameter_name)["value"] = (parameter_value)
+        self._get_step_parameter_by_name(step, parameter_name)["value"] = (parameter_value)
 
     @staticmethod
     def _get_step_parameter_by_name(step: dict,
@@ -737,13 +749,10 @@ class WorkflowInstaller:
 
         """
         if (step.get("name") in self._installed_playbooks and
-                self._installed_playbooks[step.get("name")].get("playbookType")
-                == WorkflowTypes.BLOCK.value):
+                self._installed_playbooks[step.get("name")].playbookType == WorkflowTypes.BLOCK.value):
             nested_workflow_identifier = self._get_step_parameter_by_name(
                 step,
                 "NestedWorkflowIdentifier",
             )
             if nested_workflow_identifier:
-                nested_workflow_identifier[
-                    "value"] = self._installed_playbooks[step.get("name")].get(
-                        "identifier")
+                nested_workflow_identifier["value"] = self._installed_playbooks[step.get("name")].identifier
