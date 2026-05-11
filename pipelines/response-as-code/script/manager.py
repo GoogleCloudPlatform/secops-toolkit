@@ -21,12 +21,8 @@ import uuid
 import logging
 from typing import TYPE_CHECKING, Any
 from jinja2 import Template, Environment
-from constants import (
-    ALL_ENVIRONMENTS_IDENTIFIER,
-    DEFAULT_AUTHOR,
-    ROOT_README,
-    STEP_TYPE
-)
+from constants import (ALL_ENVIRONMENTS_IDENTIFIER, DEFAULT_AUTHOR,
+                       ROOT_README, STEP_TYPE)
 from models import Workflow, File, WorkflowTypes
 from config import SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION, PLAYBOOKS_PATH
 from models import APIError
@@ -217,7 +213,6 @@ class ResponseManager:
         self.content.push_metadata()
         self.git_client.commit_and_push(message)
 
-    
     def update_instance_name_in_steps(
         self,
         workflow: Workflow,
@@ -228,11 +223,8 @@ class ResponseManager:
                     and step.get("actionProvider") == "Scripts"):
                 self._update_instance_display_names_for_step(workflow, step)
 
-    def _update_instance_display_names_for_step(
-        self,
-        workflow: Workflow,
-        step: dict
-    ) -> None:
+    def _update_instance_display_names_for_step(self, workflow: Workflow,
+                                                step: dict) -> None:
         """Updates display names for integration instance parameters in a step.
 
         Args:
@@ -245,13 +237,12 @@ class ResponseManager:
             param_name = param.get("name")
             param_value = param.get("value")
             try:
-                if not workflow._is_integration_instance_param(param_name, param_value):
+                if not workflow._is_integration_instance_param(
+                        param_name, param_value):
                     continue
 
                 display_name = self.client.get_integration_instance_name(
-                    integration_name,
-                    param_value
-                )
+                    integration_name, param_value)
 
                 match param_name:
                     case "IntegrationInstance":
@@ -278,6 +269,7 @@ class ResponseManager:
                     else:
                         # can't determine the status code
                         raise e
+
 
 class WorkflowInstaller:
     """Helper class for installing workflows"""
@@ -485,7 +477,7 @@ class WorkflowInstaller:
         if "playbooks" not in self._cache:
             self._cache["playbooks"] = {
                 x.name: x
-                for x in self.client.get_playbooks()    
+                for x in self.client.get_playbooks()
             }
         return self._cache.get("playbooks")
 
@@ -560,7 +552,8 @@ class WorkflowInstaller:
         # If the playbook is for one specific environment, choose the first integration instance
         # from that environment. Otherwise, set the step to dynamic mode and set the first shared
         # integration instance as fallback
-        if len(environments) == 1 and environments[0] != ALL_ENVIRONMENTS_IDENTIFIER:
+        if len(environments
+               ) == 1 and environments[0] != ALL_ENVIRONMENTS_IDENTIFIER:
             integration_instances = self._find_integration_instances_for_step(
                 step.get("integration"),
                 environments[0],
@@ -604,7 +597,7 @@ class WorkflowInstaller:
                 del param["InstanceDisplayName"]
             elif param.get("FallbackInstanceDisplayName"):
                 del param["FallbackInstanceDisplayName"]
-    
+
     def _get_instance_display_name(
         self,
         step: dict,
@@ -680,7 +673,8 @@ class WorkflowInstaller:
             parameter_value: New value of the parameter
 
         """
-        self._get_step_parameter_by_name(step, parameter_name)["value"] = (parameter_value)
+        self._get_step_parameter_by_name(
+            step, parameter_name)["value"] = (parameter_value)
 
     @staticmethod
     def _get_step_parameter_by_name(step: dict,
@@ -748,11 +742,14 @@ class WorkflowInstaller:
             step: A nested workflow step to reconfigure
 
         """
-        if (step.get("name") in self._installed_playbooks and
-                self._installed_playbooks[step.get("name")].playbookType == WorkflowTypes.BLOCK.value):
+        if (step.get("name") in self._installed_playbooks
+                and self._installed_playbooks[step.get("name")].playbookType
+                == WorkflowTypes.BLOCK.value):
             nested_workflow_identifier = self._get_step_parameter_by_name(
                 step,
                 "NestedWorkflowIdentifier",
             )
             if nested_workflow_identifier:
-                nested_workflow_identifier["value"] = self._installed_playbooks[step.get("name")].identifier
+                nested_workflow_identifier[
+                    "value"] = self._installed_playbooks[step.get(
+                        "name")].identifier

@@ -128,7 +128,8 @@ class SecOpsClient:
                             name=card_data.get("name", ""),
                             displayName=card_data.get("displayName", ""),
                             categoryName=card_data.get("categoryName", ""),
-                            modification_time=card_data.get("modificationTime", ""),
+                            modification_time=card_data.get(
+                                "modificationTime", ""),
                             playbookType=card_data.get("playbookType", "")))
         except Exception as e:
             raise APIError(
@@ -224,7 +225,8 @@ class SecOpsClient:
                 f"Failed to retrieve workflow categories: {e}") from e
         return workflow_categories
 
-    def get_integration_instance_name(self, integration_name: str, instance_id: str) -> str:
+    def get_integration_instance_name(self, integration_name: str,
+                                      instance_id: str) -> str:
         """Retrieves the display name of an integration instance."""
         try:
             parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
@@ -236,7 +238,8 @@ class SecOpsClient:
             raise APIError(
                 f"Failed to retrieve integration instance name: {e}") from e
 
-    def get_integrations_instances(self, environment: str) -> List[Dict[str, Any]]:
+    def get_integrations_instances(self,
+                                   environment: str) -> List[Dict[str, Any]]:
         integration_instances: List[Dict[str, Any]] = []
         try:
             parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"

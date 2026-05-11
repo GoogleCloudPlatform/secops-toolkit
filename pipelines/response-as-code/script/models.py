@@ -65,6 +65,7 @@ class WorkflowMenuCard:
     modification_time: int
     playbookType: str
 
+
 class WorkflowTypes(Enum):
     PLAYBOOK = 0
     BLOCK = 1

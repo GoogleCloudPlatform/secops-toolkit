@@ -166,7 +166,8 @@ def pull_playbooks(
                     block_details = Workflow(
                         response_manager.get_playbook(
                             installed_block.identifier))
-                    response_manager.update_instance_name_in_steps(block_details)
+                    response_manager.update_instance_name_in_steps(
+                        block_details)
                     response_manager.store_playbook(block_details)
 
         response_manager.update_readme(create_root_readme(), "Playbooks")
