@@ -13,69 +13,6 @@
 # limitations under the License.
 
 values:
-  google_cloud_scheduler_job.anonymization_jobs["batch-1"]:
-    app_engine_http_target: []
-    attempt_deadline: 320s
-    description: Trigger SecOps Data Export job.
-    http_target:
-    - body: eyJBQ1RJT04iOiJUUklHR0VSLUVYUE9SVCIsIkxPR19UWVBFUyI6IkdDUF9DTE9VREFVRElUIn0=
-      headers:
-        Content-Type: application/json
-      http_method: POST
-      oauth_token: []
-      oidc_token:
-      - service_account_email: secops-scheduler@gcp-project-id.iam.gserviceaccount.com
-    name: secops-batch-1
-    project: gcp-project-id
-    pubsub_target: []
-    region: europe-west1
-    retry_config:
-    - retry_count: 1
-    schedule: 0 8 1 * *
-    time_zone: Etc/UTC
-    timeouts: null
-  google_cloud_scheduler_job.anonymization_jobs["batch-2"]:
-    app_engine_http_target: []
-    attempt_deadline: 320s
-    description: Trigger SecOps Data Export job.
-    http_target:
-    - body: eyJBQ1RJT04iOiJUUklHR0VSLUVYUE9SVCIsIkxPR19UWVBFUyI6IkdDUF9CSUdRVUVSWV9DT05URVhULEdDUF9DTE9VRFNRTCJ9
-      headers:
-        Content-Type: application/json
-      http_method: POST
-      oauth_token: []
-      oidc_token:
-      - service_account_email: secops-scheduler@gcp-project-id.iam.gserviceaccount.com
-    name: secops-batch-2
-    project: gcp-project-id
-    pubsub_target: []
-    region: europe-west1
-    retry_config:
-    - retry_count: 1
-    schedule: 0 14 1 * *
-    time_zone: Etc/UTC
-    timeouts: null
-  google_cloud_scheduler_job.anonymization_jobs["check"]:
-    app_engine_http_target: []
-    attempt_deadline: 320s
-    description: Trigger SecOps Data Export job.
-    http_target:
-    - body: eyJBQ1RJT04iOiJDSEVDSy1NT05USExZLUVYUE9SVCIsIkxPR19UWVBFUyI6IkdDUF9DTE9VREFVRElUIn0=
-      headers:
-        Content-Type: application/json
-      http_method: POST
-      oauth_token: []
-      oidc_token:
-      - service_account_email: secops-scheduler@gcp-project-id.iam.gserviceaccount.com
-    name: secops-check
-    project: gcp-project-id
-    pubsub_target: []
-    region: europe-west1
-    retry_config:
-    - retry_count: 1
-    schedule: 0 8 2 * *
-    time_zone: Etc/UTC
-    timeouts: null
   module.cloudbuild-sa[0].google_project_iam_member.project_roles["gcp-project-id-roles/artifactregistry.writer"]:
     condition: []
     project: gcp-project-id
@@ -439,7 +376,6 @@ values:
 
 counts:
   google_cloud_run_service_iam_binding: 1
-  google_cloud_scheduler_job: 3
   google_cloudfunctions2_function: 1
   google_project: 1
   google_project_iam_binding: 4
@@ -451,7 +387,7 @@ counts:
   google_storage_bucket_iam_binding: 1
   google_storage_bucket_object: 1
   modules: 5
-  resources: 47
+  resources: 44
 
 outputs:
   function_sa: secops-archiver@gcp-project-id.iam.gserviceaccount.com
