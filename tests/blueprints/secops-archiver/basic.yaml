@@ -11,20 +11,84 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 values:
-  module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/artifactregistry.writer"]:
+  google_cloud_scheduler_job.anonymization_jobs["batch-1"]:
+    app_engine_http_target: []
+    attempt_deadline: 320s
+    description: Trigger SecOps Data Export job.
+    http_target:
+    - body: eyJBQ1RJT04iOiJUUklHR0VSLUVYUE9SVCIsIkxPR19UWVBFUyI6IkdDUF9DTE9VREFVRElUIn0=
+      headers:
+        Content-Type: application/json
+      http_method: POST
+      oauth_token: []
+      oidc_token:
+      - service_account_email: secops-scheduler@gcp-project-id.iam.gserviceaccount.com
+    name: secops-batch-1
+    project: gcp-project-id
+    pubsub_target: []
+    region: europe-west1
+    retry_config:
+    - retry_count: 1
+    schedule: 0 8 1 * *
+    time_zone: Etc/UTC
+    timeouts: null
+  google_cloud_scheduler_job.anonymization_jobs["batch-2"]:
+    app_engine_http_target: []
+    attempt_deadline: 320s
+    description: Trigger SecOps Data Export job.
+    http_target:
+    - body: eyJBQ1RJT04iOiJUUklHR0VSLUVYUE9SVCIsIkxPR19UWVBFUyI6IkdDUF9CSUdRVUVSWV9DT05URVhULEdDUF9DTE9VRFNRTCJ9
+      headers:
+        Content-Type: application/json
+      http_method: POST
+      oauth_token: []
+      oidc_token:
+      - service_account_email: secops-scheduler@gcp-project-id.iam.gserviceaccount.com
+    name: secops-batch-2
+    project: gcp-project-id
+    pubsub_target: []
+    region: europe-west1
+    retry_config:
+    - retry_count: 1
+    schedule: 0 14 1 * *
+    time_zone: Etc/UTC
+    timeouts: null
+  google_cloud_scheduler_job.anonymization_jobs["check"]:
+    app_engine_http_target: []
+    attempt_deadline: 320s
+    description: Trigger SecOps Data Export job.
+    http_target:
+    - body: eyJBQ1RJT04iOiJDSEVDSy1NT05USExZLUVYUE9SVCIsIkxPR19UWVBFUyI6IkdDUF9DTE9VREFVRElUIn0=
+      headers:
+        Content-Type: application/json
+      http_method: POST
+      oauth_token: []
+      oidc_token:
+      - service_account_email: secops-scheduler@gcp-project-id.iam.gserviceaccount.com
+    name: secops-check
+    project: gcp-project-id
+    pubsub_target: []
+    region: europe-west1
+    retry_config:
+    - retry_count: 1
+    schedule: 0 8 2 * *
+    time_zone: Etc/UTC
+    timeouts: null
+  module.cloudbuild-sa[0].google_project_iam_member.project_roles["gcp-project-id-roles/artifactregistry.writer"]:
     condition: []
     project: gcp-project-id
     role: roles/artifactregistry.writer
-  module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/logging.logWriter"]:
+  module.cloudbuild-sa[0].google_project_iam_member.project_roles["gcp-project-id-roles/logging.logWriter"]:
     condition: []
     project: gcp-project-id
     role: roles/logging.logWriter
-  module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/monitoring.metricWriter"]:
+  module.cloudbuild-sa[0].google_project_iam_member.project_roles["gcp-project-id-roles/monitoring.metricWriter"]:
     condition: []
     project: gcp-project-id
     role: roles/monitoring.metricWriter
-  module.cloudbuild-sa[0].google_project_iam_member.project-roles["gcp-project-id-roles/storage.objectAdmin"]:
+  module.cloudbuild-sa[0].google_project_iam_member.project_roles["gcp-project-id-roles/storage.objectAdmin"]:
     condition: []
     project: gcp-project-id
     role: roles/storage.objectAdmin
@@ -64,34 +128,34 @@ values:
     timeouts: null
     uniform_bucket_level_access: true
     versioning:
-      - enabled: true
+    - enabled: true
   module.export-bucket.google_storage_bucket_iam_binding.authoritative["roles/storage.objectViewer"]:
     bucket: pre-secops-data-archiver
     condition: []
     members:
-      - serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
+    - serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
     role: roles/storage.objectViewer
     timeouts: null
   module.function.google_cloud_run_service_iam_binding.invoker[0]:
     condition: []
     location: europe-west1
     members:
-      - serviceAccount:secops-scheduler@gcp-project-id.iam.gserviceaccount.com
+    - serviceAccount:secops-scheduler@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     role: roles/run.invoker
     service: pre-secops-archiver
   module.function.google_cloudfunctions2_function.function:
     build_config:
-      - entry_point: main
-        on_deploy_update_policy: []
-        runtime: python310
-        service_account: projects/gcp-project-id/serviceAccounts/cloudbuild@gcp-project-id.iam.gserviceaccount.com
-        source:
-          - repo_source: []
-            storage_source:
-              - bucket: pre-gcp-project-id-archiver
-                object: bundle-5d5c3c8e5db3e5d3758ff50923b987af.zip
-        worker_pool: null
+    - entry_point: main
+      on_deploy_update_policy: []
+      runtime: python310
+      service_account: projects/gcp-project-id/serviceAccounts/cloudbuild@gcp-project-id.iam.gserviceaccount.com
+      source:
+      - repo_source: []
+        storage_source:
+        - bucket: pre-gcp-project-id-archiver
+          object: bundle-5d5c3c8e5db3e5d3758ff50923b987af.zip
+      worker_pool: null
     description: Terraform managed.
     effective_labels:
       goog-terraform-provisioned: 'true'
@@ -102,26 +166,26 @@ values:
     name: pre-secops-archiver
     project: gcp-project-id
     service_config:
-      - all_traffic_on_latest_revision: true
-        available_cpu: '1'
-        available_memory: 2048M
-        binary_authorization_policy: null
-        direct_vpc_network_interface: []
-        environment_variables:
-          GCP_PROJECT: gcp-project-id
-          GCS_BUCKET: pre-secops-data-archiver
-          SECOPS_CUSTOMER_ID: xxxxxxxxxxxxxxxxxxxxxxx
-          SECOPS_PROJECT_ID: xxxxxxxxxxxx
-          SECOPS_REGION: eu
-        ingress_settings: ALLOW_INTERNAL_AND_GCLB
-        max_instance_count: 1
-        min_instance_count: 0
-        secret_environment_variables: []
-        secret_volumes: []
-        service_account_email: secops-archiver@gcp-project-id.iam.gserviceaccount.com
-        timeout_seconds: 3600
-        vpc_connector: null
-        vpc_connector_egress_settings: null
+    - all_traffic_on_latest_revision: true
+      available_cpu: '1'
+      available_memory: 2048M
+      binary_authorization_policy: null
+      direct_vpc_network_interface: []
+      environment_variables:
+        GCP_PROJECT: gcp-project-id
+        GCS_BUCKET: pre-secops-data-archiver
+        SECOPS_CUSTOMER_ID: xxxxxxxxxxxxxxxxxxxxxxx
+        SECOPS_PROJECT_ID: xxxxxxxxxxxx
+        SECOPS_REGION: eu
+      ingress_settings: ALLOW_INTERNAL_AND_GCLB
+      max_instance_count: 1
+      min_instance_count: 0
+      secret_environment_variables: []
+      secret_volumes: []
+      service_account_email: secops-archiver@gcp-project-id.iam.gserviceaccount.com
+      timeout_seconds: 3600
+      vpc_connector: null
+      vpc_connector_egress_settings: null
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
@@ -159,25 +223,25 @@ values:
     ip_filter: []
     labels: null
     lifecycle_rule:
-      - action:
-          - storage_class: ''
-            type: Delete
-        condition:
-          - age: 1
-            created_before: ''
-            custom_time_before: ''
-            days_since_custom_time: null
-            days_since_noncurrent_time: null
-            matches_prefix: []
-            matches_storage_class: []
-            matches_suffix: []
-            noncurrent_time_before: ''
-            num_newer_versions: null
-            send_age_if_zero: null
-            send_days_since_custom_time_if_zero: null
-            send_days_since_noncurrent_time_if_zero: null
-            send_num_newer_versions_if_zero: null
-            with_state: ARCHIVED
+    - action:
+      - storage_class: ''
+        type: Delete
+      condition:
+      - age: 1
+        created_before: ''
+        custom_time_before: ''
+        days_since_custom_time: null
+        days_since_noncurrent_time: null
+        matches_prefix: []
+        matches_storage_class: []
+        matches_suffix: []
+        noncurrent_time_before: ''
+        num_newer_versions: null
+        send_age_if_zero: null
+        send_days_since_custom_time_if_zero: null
+        send_days_since_noncurrent_time_if_zero: null
+        send_num_newer_versions_if_zero: null
+        with_state: ARCHIVED
     location: EUROPE-WEST1
     logging: []
     name: pre-gcp-project-id-archiver
@@ -190,7 +254,7 @@ values:
     timeouts: null
     uniform_bucket_level_access: true
     versioning:
-      - enabled: true
+    - enabled: true
   module.function.google_storage_bucket_object.bundle[0]:
     bucket: pre-gcp-project-id-archiver
     cache_control: null
@@ -228,25 +292,25 @@ values:
   module.project.google_project_iam_binding.authoritative["roles/chronicle.editor"]:
     condition: []
     members:
-      - serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
+    - serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     role: roles/chronicle.editor
   module.project.google_project_iam_binding.authoritative["roles/dlp.jobsEditor"]:
     condition: []
     members:
-      - serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
+    - serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     role: roles/dlp.jobsEditor
   module.project.google_project_iam_binding.authoritative["roles/dlp.reader"]:
     condition: []
     members:
-      - serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
+    - serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     role: roles/dlp.reader
   module.project.google_project_iam_binding.authoritative["roles/serviceusage.serviceUsageConsumer"]:
     condition: []
     members:
-      - serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
+    - serviceAccount:secops-archiver@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     role: roles/serviceusage.serviceUsageConsumer
   module.project.google_project_iam_member.bindings["function-artifact-reader"]:
@@ -372,21 +436,3 @@ values:
     member: serviceAccount:secops-scheduler@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     timeouts: null
-
-counts:
-  google_cloud_run_service_iam_binding: 1
-  google_cloudfunctions2_function: 1
-  google_project: 1
-  google_project_iam_binding: 4
-  google_project_iam_member: 16
-  google_project_service: 8
-  google_project_service_identity: 6
-  google_service_account: 3
-  google_storage_bucket: 2
-  google_storage_bucket_iam_binding: 1
-  google_storage_bucket_object: 1
-  modules: 5
-  resources: 44
-
-outputs:
-  function_sa: secops-archiver@gcp-project-id.iam.gserviceaccount.com
