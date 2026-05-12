@@ -59,7 +59,7 @@ values:
     values:
     - null
     verify: false
-    version: 1.34.0
+    version: 1.35.0
     wait: true
     wait_for_jobs: false
   module.addresses.google_compute_address.internal["ingress"]:
@@ -194,6 +194,7 @@ values:
     maintenance_policy:
     - daily_maintenance_window:
       - start_time: 03:00
+      disruption_budget: []
       maintenance_exclusion: []
       recurring_window: []
     master_auth:
@@ -294,7 +295,7 @@ values:
     timeouts: null
     type: kubernetes.io/tls
     wait_for_service_account_token: true
-  module.bindplane-sa.google_project_iam_member.project-roles["tmp-test-roles/pubsub.editor"]:
+  module.bindplane-sa.google_project_iam_member.project_roles["tmp-test-roles/pubsub.editor"]:
     condition: []
     project: tmp-test
     role: roles/pubsub.editor
@@ -349,6 +350,7 @@ values:
       edition: ENTERPRISE
       enable_dataplex_integration: null
       enable_google_ml_integration: null
+      entraid_config: []
       final_backup_config: []
       ip_configuration:
       - allocated_ip_range: null
@@ -364,6 +366,7 @@ values:
           psc_auto_connections: []
           psc_enabled: true
         server_ca_pool: null
+        server_certificate_rotation_mode: null
       maintenance_window: []
       password_validation_policy: []
       pricing_plan: PER_USE
@@ -642,40 +645,3 @@ values:
       street_address: null
     uris: null
     validity_period_hours: 87600
-
-counts:
-  google_compute_address: 2
-  google_compute_forwarding_rule: 1
-  google_container_cluster: 1
-  google_dns_managed_zone: 1
-  google_dns_record_set: 1
-  google_gke_hub_membership: 1
-  google_logging_project_settings: 1
-  google_project: 1
-  google_project_iam_binding: 1
-  google_project_iam_member: 8
-  google_project_service: 9
-  google_project_service_identity: 6
-  google_pubsub_topic: 1
-  google_service_account: 1
-  google_service_account_iam_binding: 1
-  google_sql_database: 1
-  google_sql_database_instance: 1
-  google_sql_user: 1
-  helm_release: 1
-  kubernetes_namespace: 1
-  kubernetes_secret: 2
-  modules: 9
-  random_password: 1
-  resources: 49
-  tls_cert_request: 1
-  tls_locally_signed_cert: 1
-  tls_private_key: 2
-  tls_self_signed_cert: 1
-
-outputs:
-  bindplane_hostname: https://bindplane.example.com
-  ca_cert: __missing__
-  cluster_ca_certificate: __missing__
-  fleet_host: __missing__
-  lb_ip_address: __missing__

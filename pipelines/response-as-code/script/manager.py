@@ -21,12 +21,9 @@ import uuid
 import logging
 from typing import TYPE_CHECKING, Any
 from jinja2 import Template, Environment
-from constants import (
-    ALL_ENVIRONMENTS_IDENTIFIER,
-    DEFAULT_AUTHOR,
-    ROOT_README,
-)
-from models import Workflow, File
+from constants import (ALL_ENVIRONMENTS_IDENTIFIER, DEFAULT_AUTHOR,
+                       ROOT_README, STEP_TYPE)
+from models import Workflow, File, WorkflowTypes
 from config import SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION, PLAYBOOKS_PATH
 from models import APIError
 from secops_client import SecOpsClient
@@ -34,6 +31,7 @@ from models import SocRole
 from models import WorkflowMenuCard
 from utils import update_objects, _push_obj
 from cache import Cache
+from requests.exceptions import HTTPError
 
 LOGGER = logging.getLogger("rac")
 
@@ -215,6 +213,63 @@ class ResponseManager:
         self.content.push_metadata()
         self.git_client.commit_and_push(message)
 
+    def update_instance_name_in_steps(
+        self,
+        workflow: Workflow,
+    ) -> None:
+        """Updates name of instances in the steps."""
+        for step in workflow.steps:
+            if (step.get("type") == STEP_TYPE
+                    and step.get("actionProvider") == "Scripts"):
+                self._update_instance_display_names_for_step(workflow, step)
+
+    def _update_instance_display_names_for_step(self, workflow: Workflow,
+                                                step: dict) -> None:
+        """Updates display names for integration instance parameters in a step.
+
+        Args:
+            workflow: The workflow object.
+            step: The workflow step dictionary to process.
+        """
+        integration_name = step["integration"]
+
+        for param in step.get("parameters", []):
+            param_name = param.get("name")
+            param_value = param.get("value")
+            try:
+                if not workflow._is_integration_instance_param(
+                        param_name, param_value):
+                    continue
+
+                display_name = self.client.get_integration_instance_name(
+                    integration_name, param_value)
+
+                match param_name:
+                    case "IntegrationInstance":
+                        param["InstanceDisplayName"] = display_name
+                    case "FallbackIntegrationInstance":
+                        param["FallbackInstanceDisplayName"] = display_name
+            except HTTPError as e:
+                # ignoring 404 errors as they expected in migrations between instances.
+                if e.response is not None and hasattr(e.response,
+                                                      'status_code'):
+                    status_code = e.response.status_code
+                    if status_code != 404:
+                        raise e
+                else:
+                    # TIPCommon is re-raising HTTPError without response object
+                    # Try to extract status code from the error message itself
+                    error_msg = str(e)
+                    status_code_match = re.search(r'(\d{3})\s+Client Error',
+                                                  error_msg)
+                    if status_code_match:
+                        status_code = int(status_code_match.group(1))
+                        if status_code != 404:
+                            raise e
+                    else:
+                        # can't determine the status code
+                        raise e
+
 
 class WorkflowInstaller:
     """Helper class for installing workflows"""
@@ -226,7 +281,7 @@ class WorkflowInstaller:
     ) -> None:
         self.client = client
         self._mod_time_cache: Cache[str, int] = mod_time_cache
-        self._cache: dict[str, Any] = {}
+        self._cache: dict[str, WorkflowMenuCard] = {}
 
     def install_workflow(self, workflow: Workflow) -> None:
         """Save a playbook or block in the current platform
@@ -274,6 +329,7 @@ class WorkflowInstaller:
         """Update an existing workflow in the platform."""
         LOGGER.info(f"Updating existing workflow '{workflow.name}'")
         self._adjust_workflow_ids(workflow)
+        self._process_steps(workflow)
         self.client.save_playbook(workflow)
         self._save_workflow_mod_time_to_context(workflow)
         LOGGER.info(f"Workflow '{workflow.name}' was updated successfully")
@@ -348,13 +404,13 @@ class WorkflowInstaller:
                     step_debug_data["originalWorkflowIdentifier"] = (
                         installed_workflow.get("originalPlaybookIdentifier"))
 
-            if step_type == 0 and provider == "Scripts":  # Regular Action
+            if step_type == STEP_TYPE and provider == "Scripts":  # Regular Action
                 self._assign_integration_instance_to_step(
                     step,
                     workflow.environments,
                     existing_step,
                 )
-            elif step_type == 5:  # Nested Workflow
+            elif step_type == "BLOCK":  # Nested Workflow
                 self._link_nested_block_step(step)
 
         for relation in workflow.raw_data.get("stepsRelations"):
@@ -416,7 +472,7 @@ class WorkflowInstaller:
         return playbook.modification_time or default
 
     @property
-    def _installed_playbooks(self) -> dict[str, dict[str, Any]]:
+    def _installed_playbooks(self) -> dict[str, WorkflowMenuCard]:
         """Currently installed playbooks and blocks"""
         if "playbooks" not in self._cache:
             self._cache["playbooks"] = {
@@ -478,6 +534,13 @@ class WorkflowInstaller:
                 "FallbackIntegrationInstance",
                 fallback,
             )
+            # remove integration and fallback integration fields from params
+            for param in existing_step.get("parameters", []):
+                if param.get("InstanceDisplayName"):
+                    del param["InstanceDisplayName"]
+                elif param.get("FallbackInstanceDisplayName"):
+                    del param["FallbackInstanceDisplayName"]
+
             return
 
         instance_display_name = self._get_instance_display_name(
@@ -528,6 +591,12 @@ class WorkflowInstaller:
                     "FallbackIntegrationInstance",
                     None,
                 )
+        # remove integration and fallback integration fields from params
+        for param in step.get("parameters", []):
+            if param.get("InstanceDisplayName"):
+                del param["InstanceDisplayName"]
+            elif param.get("FallbackInstanceDisplayName"):
+                del param["FallbackInstanceDisplayName"]
 
     def _get_instance_display_name(
         self,
@@ -560,11 +629,11 @@ class WorkflowInstaller:
         """
         cache_key = f"integration_instances_{environment}"
         if cache_key not in self._cache:
-            self._cache[cache_key] = self.api.get_integrations_instances(
+            self._cache[cache_key] = self.client.get_integrations_instances(
                 environment)
 
         instances = self._cache.get(cache_key)
-        instances.sort(key=lambda x: x.get("instanceName"))
+        instances.sort(key=lambda x: x.get("displayName"))
 
         return [
             x for x in instances
@@ -673,8 +742,8 @@ class WorkflowInstaller:
             step: A nested workflow step to reconfigure
 
         """
-        if (step.get("name") in self._installed_playbooks and
-                self._installed_playbooks[step.get("name")].get("playbookType")
+        if (step.get("name") in self._installed_playbooks
+                and self._installed_playbooks[step.get("name")].playbookType
                 == WorkflowTypes.BLOCK.value):
             nested_workflow_identifier = self._get_step_parameter_by_name(
                 step,
@@ -682,5 +751,5 @@ class WorkflowInstaller:
             )
             if nested_workflow_identifier:
                 nested_workflow_identifier[
-                    "value"] = self._installed_playbooks[step.get("name")].get(
-                        "identifier")
+                    "value"] = self._installed_playbooks[step.get(
+                        "name")].identifier

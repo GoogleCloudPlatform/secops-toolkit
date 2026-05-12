@@ -109,7 +109,6 @@ class SecOpsClient:
             parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
             api_path = f"/v1alpha/{parent}/legacyPlaybooks:legacyGetWorkflowMenuCardsWithEnvFilter"
 
-            # Assuming payload based on previous SiemplifyApiClient context (json=[0, 1])
             # The actual API documentation for this method is not clear on the body,
             # but a POST usually expects one.
             # If this is incorrect, it will need to be adjusted.
@@ -130,7 +129,8 @@ class SecOpsClient:
                             displayName=card_data.get("displayName", ""),
                             categoryName=card_data.get("categoryName", ""),
                             modification_time=card_data.get(
-                                "modificationTime", "")))
+                                "modificationTime", ""),
+                            playbookType=card_data.get("playbookType", "")))
         except Exception as e:
             raise APIError(
                 f"Failed to retrieve legacy workflow menu cards: {e}") from e
@@ -224,3 +224,32 @@ class SecOpsClient:
             raise APIError(
                 f"Failed to retrieve workflow categories: {e}") from e
         return workflow_categories
+
+    def get_integration_instance_name(self, integration_name: str,
+                                      instance_id: str) -> str:
+        """Retrieves the display name of an integration instance."""
+        try:
+            parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
+            api_path = f"/v1alpha/{parent}/integrations/{integration_name}/integrationInstances/{instance_id}"
+
+            response_json = self._make_request(method="GET", path=api_path)
+            return response_json.get("displayName", "")
+        except Exception as e:
+            raise APIError(
+                f"Failed to retrieve integration instance name: {e}") from e
+
+    def get_integrations_instances(self,
+                                   environment: str) -> List[Dict[str, Any]]:
+        integration_instances: List[Dict[str, Any]] = []
+        try:
+            parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
+            api_path = f"/v1alpha/{parent}/integrations"
+
+            response_json = self._make_request(method="GET", path=api_path)
+            if "integrations" in response_json:
+                for integration_data in response_json["integrations"]:
+                    integration_instances.append(integration_data)
+        except Exception as e:
+            raise APIError(
+                f"Failed to retrieve integration instances: {e}") from e
+        return integration_instances

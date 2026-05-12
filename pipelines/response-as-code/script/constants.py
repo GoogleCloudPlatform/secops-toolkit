@@ -378,4 +378,4 @@ ROOT_README = """# GitSync
 
 """
 
-STEP_TYPE: int = 0
+STEP_TYPE: str = "ACTION"
