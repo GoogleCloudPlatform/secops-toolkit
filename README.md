@@ -121,3 +121,29 @@ This repository provides a collection of sample repositories for automating Goog
 <a href="./pipelines/response-as-code/" title="Response As Code pipeline"><img src="./pipelines/response-as-code/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [sample repository](./pipelines/response-as-code/) provides a framework to manage and deploy SOAR playbooks using a "Response as Code" methodology.</p>
 
 <br clear="left">
+
+# Validation and Linting
+
+To ensure code quality, syntax correctness, and formatting consistency, this repository utilizes automated checks via GitHub Actions. You can run these validations locally before pushing your changes to the remote repository.
+
+### Python Validation Locally
+
+We use [Ruff](https://docs.astral.sh/ruff/) as our standard Python linter to check for syntax errors, undefined names, unused imports, and code style issues.
+
+1. **Install tool dependencies** (including Ruff and YAPF):
+   ```shell
+   pip install -r tools/requirements.txt
+   ```
+
+2. **Run Ruff validation** across all Python scripts in the repository:
+   ```shell
+   ruff check .
+   ```
+
+### Python Code Formatting Locally
+
+We use [YAPF](https://github.com/google/yapf) to enforce standard Python code formatting. To format your code in-place locally:
+
+```shell
+yapf . -i --recursive --exclude "**/.terraform/" --exclude "tools/" --exclude "tests/" --exclude "**/*.yaml" --exclude "**/requirements.txt"
+```

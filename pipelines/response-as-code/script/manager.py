@@ -14,15 +14,12 @@
 
 from __future__ import annotations
 
-import os
 import re
-import tempfile
 import uuid
 import logging
-from typing import TYPE_CHECKING, Any
-from jinja2 import Template, Environment
-from constants import (ALL_ENVIRONMENTS_IDENTIFIER, DEFAULT_AUTHOR,
-                       ROOT_README, STEP_TYPE)
+from typing import Any, List
+from jinja2 import Template
+from constants import (ALL_ENVIRONMENTS_IDENTIFIER, ROOT_README, STEP_TYPE)
 from models import Workflow, File, WorkflowTypes
 from config import SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION, PLAYBOOKS_PATH
 from models import APIError
@@ -541,9 +538,16 @@ class WorkflowInstaller:
                 elif param.get("FallbackInstanceDisplayName"):
                     del param["FallbackInstanceDisplayName"]
 
+            # remove integration and fallback integration fields from params
+            for param in existing_step.get("parameters", []):
+                if param.get("InstanceDisplayName"):
+                    del param["InstanceDisplayName"]
+                elif param.get("FallbackInstanceDisplayName"):
+                    del param["FallbackInstanceDisplayName"]
+
             return
 
-        instance_display_name = self._get_instance_display_name(
+        _instance_display_name = self._get_instance_display_name(
             step,
             "IntegrationInstance",
             "InstanceDisplayName",
@@ -597,6 +601,12 @@ class WorkflowInstaller:
                 del param["InstanceDisplayName"]
             elif param.get("FallbackInstanceDisplayName"):
                 del param["FallbackInstanceDisplayName"]
+        # remove integration and fallback integration fields from params
+        for param in step.get("parameters", []):
+            if param.get("InstanceDisplayName"):
+                del param["InstanceDisplayName"]
+            elif param.get("FallbackInstanceDisplayName"):
+                del param["FallbackInstanceDisplayName"]
 
     def _get_instance_display_name(
         self,
@@ -633,6 +643,7 @@ class WorkflowInstaller:
                 environment)
 
         instances = self._cache.get(cache_key)
+        instances.sort(key=lambda x: x.get("displayName"))
         instances.sort(key=lambda x: x.get("displayName"))
 
         return [
