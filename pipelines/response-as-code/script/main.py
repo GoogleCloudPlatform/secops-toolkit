@@ -16,15 +16,14 @@
 import logging
 import os
 import sys
-import time
+from typing import List
+
 import click
-from secops.exceptions import APIError
-from dotenv import load_dotenv
-from models import SocRole, WorkflowMenuCard, Workflow, Template
-from manager import ResponseManager
-from utils import get_local_playbooks, get_local_playbook
+from config import EXCLUDE_FOLDER, INCLUDE_BLOCKS
 from constants import PLAYBOOKS_ROOT_README
-from config import INCLUDE_BLOCKS, EXCLUDE_FOLDER
+from manager import ResponseManager
+from models import SocRole, Template, Workflow, WorkflowMenuCard
+from utils import get_local_playbooks
 
 LOGGER = logging.getLogger("rac")
 
@@ -49,7 +48,6 @@ def cli():
 
 @cli.command(name="sync-playbooks")
 def sync_playbooks():
-
     response_manager = ResponseManager()
     soc_roles: List[SocRole] = response_manager.get_soc_roles()
 
@@ -66,7 +64,7 @@ def sync_playbooks():
             for overview_template in overview_templates:
                 LOGGER.info(f"Roles: {overview_template['roles']}")
                 new_roles = []
-                for role in overview_template['roles']:
+                for role in overview_template["roles"]:
                     for soc_role in soc_roles:
                         if soc_role["name"] == role:
                             new_roles.append(soc_role["id"])
@@ -82,31 +80,28 @@ def sync_playbooks():
             if INCLUDE_BLOCKS:
                 for block in playbook.get_involved_blocks():
                     if block.get("name") not in playbooks:
-                        block = response_manager.get_playbook(
-                            block.get("name"))
+                        block = response_manager.get_playbook(block.get("name"))
                         if block:
                             playbooks[block.name] = block
 
         response_manager.install_playbooks(list(playbooks.values()))
 
     except Exception as e:
-        LOGGER.error(f"General error performing Sync Playbooks")
+        LOGGER.error("General error performing Sync Playbooks")
         LOGGER.exception(e)
         raise
 
 
 @cli.command(name="pull-playbooks")
-@click.pass_obj
-def pull_playbooks(
-    manager_obj: SOARManager
-):  # Renamed manager to manager_obj to avoid conflict with manager instance
+def pull_playbooks():
     """
     Synchronize SOAR playbooks from the SOAR platform to a Git repository.
     """
     commit_msg = os.environ.get("COMMIT_MESSAGE", "Automated playbook sync")
     readme_addon = os.environ.get("README_ADDON")
-    include_blocks = os.environ.get("INCLUDE_PLAYBOOK_BLOCKS",
-                                    "false").lower() == "true"
+    include_blocks = (
+        os.environ.get("INCLUDE_PLAYBOOK_BLOCKS", "false").lower() == "true"
+    )
 
     response_manager = ResponseManager()
 
@@ -114,8 +109,7 @@ def pull_playbooks(
     print(soc_roles)
 
     try:
-        installed_playbooks: List[
-            WorkflowMenuCard] = response_manager.get_playbooks()
+        installed_playbooks: List[WorkflowMenuCard] = response_manager.get_playbooks()
 
         for playbook in installed_playbooks:
             if EXCLUDE_FOLDER and EXCLUDE_FOLDER in playbook.categoryName:
@@ -131,17 +125,19 @@ def pull_playbooks(
                     "Readme addon found - adding to GitSync metadata file (GitSync.json)"
                 )
                 gitsync.content.metadata.set_readme_addon(
-                    "Playbook", playbook.displayName, readme_addon)
+                    "Playbook", playbook.displayName, readme_addon
+                )
 
             playbook_details = Workflow(
-                response_manager.get_playbook(playbook.identifier))
+                response_manager.get_playbook(playbook.identifier)
+            )
             LOGGER.info(f"Playbook details: {playbook_details}")
             overview_templates = playbook_details.overview_templates
             new_templates = []
             for overview_template in overview_templates:
                 LOGGER.info(f"Roles: {overview_template.get('roles')}")
                 new_roles = []
-                for role in overview_template.get('roles', []):
+                for role in overview_template.get("roles", []):
                     for soc_role in soc_roles:
                         if soc_role.displayName == role:
                             new_roles.append(soc_role.name)
@@ -156,24 +152,28 @@ def pull_playbooks(
             if include_blocks:
                 for block in playbook_details.get_involved_blocks():
                     installed_block = next(
-                        (x for x in installed_playbooks
-                         if x.displayName == block.displayName), None)
+                        (
+                            x
+                            for x in installed_playbooks
+                            if x.displayName == block.displayName
+                        ),
+                        None,
+                    )
                     if not installed_block:
                         LOGGER.warning(
                             f"Block {block.displayName} wasn't found in the repo, ignoring"
                         )
                         continue
                     block_details = Workflow(
-                        response_manager.get_playbook(
-                            installed_block.identifier))
-                    response_manager.update_instance_name_in_steps(
-                        block_details)
+                        response_manager.get_playbook(installed_block.identifier)
+                    )
+                    response_manager.update_instance_name_in_steps(block_details)
                     response_manager.store_playbook(block_details)
 
         response_manager.update_readme(create_root_readme(), "Playbooks")
 
     except Exception as e:
-        LOGGER.error(f"General error performing Pull Playbooks")
+        LOGGER.error("General error performing Pull Playbooks")
         LOGGER.exception(e)
         raise
 
@@ -181,9 +181,10 @@ def pull_playbooks(
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         stream=sys.stdout,
-        force=True)
+        force=True,
+    )
 
     LOGGER.setLevel(logging.INFO)
     cli()
