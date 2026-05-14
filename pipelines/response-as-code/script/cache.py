@@ -183,20 +183,20 @@ class Cache(MutableMapping[_KT, _VT], Generic[_KT, _VT]):
                 self._set_scoped_job_context_property(index, new_cache)
                 break
 
-            except Exception as e:
+            except Exception:
                 _move_item(from_=new_cache, to=removed_keys)
 
         self._new_cache = removed_keys
 
     def _get_scoped_job_context_property(self,
                                          index: _Index) -> JsonStr | None:
-        key: str = _row_key(index)
+        _key: str = _row_key(index)
         return None
 
     def _set_scoped_job_context_property(self, index: _Index,
                                          cache: _Record) -> None:
-        key: str = _row_key(index)
-        value: JsonStr = _dump_property_value(cache)
+        _key: str = _row_key(index)
+        _value: JsonStr = _dump_property_value(cache)
 
 
 def _load_record(row_value: JsonStr, /) -> _Record:

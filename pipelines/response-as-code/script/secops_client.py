@@ -20,7 +20,6 @@ import google.auth
 import google.auth.transport.requests
 
 from models import SocRole, WorkflowMenuCard, APIError, Workflow, WorkflowCategory
-from config import SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION
 
 LOGGER = logging.getLogger(__name__)
 

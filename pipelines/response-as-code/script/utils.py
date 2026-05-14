@@ -13,13 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import difflib
-import re
-import yaml
 import os
 import logging
 import json
-from config import GITHUB_OUTPUT_FILE, PLAYBOOKS_PATH
+from config import PLAYBOOKS_PATH
 from models import Workflow, File
 import shutil
 
@@ -54,35 +51,6 @@ def push_playbook(playbook: Workflow) -> None:
         "Playbook",
         f"{PLAYBOOKS_PATH}/{playbook.category}/{playbook.name}",
     )
-
-
-def get_file_or_default(path, default=None):
-    try:
-        return LocalFolderManager.get_file_contents_from_path(path)
-    except FileNotFoundError:
-        return default
-
-
-def push_obj(content, content_name, content_type, path):
-    content.generate_readme(
-        self.metadata.get_readme_addon(content_type, content_name))
-    self.sync.update_objects(content.iter_files(), base_path=path)
-
-
-def update_objects(files: list[File], base_path: str = ""):
-    """Main method to edit objects in the repo."""
-    return self.sync.update_objects(files=files,
-                                    base_path=base_path,
-                                    replace_content_in_base_path=False)
-
-
-def push_file(path: str, content):
-    self.sync.update_objects([File(path, self._json_encoder(content))])
-
-
-@staticmethod
-def _json_encoder(d: dict) -> str:
-    return json.dumps(d, indent=4)
 
 
 def _push_obj(content, content_name, content_type, path) -> None:

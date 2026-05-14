@@ -20,10 +20,11 @@ from typing import List
 
 import click
 from config import EXCLUDE_FOLDER, INCLUDE_BLOCKS
-from constants import PLAYBOOKS_ROOT_README
+from models import SocRole, WorkflowMenuCard, Workflow
+from jinja2 import Template
 from manager import ResponseManager
-from models import SocRole, Template, Workflow, WorkflowMenuCard
 from utils import get_local_playbooks
+from constants import PLAYBOOKS_ROOT_README
 
 LOGGER = logging.getLogger("rac")
 
@@ -80,7 +81,8 @@ def sync_playbooks():
             if INCLUDE_BLOCKS:
                 for block in playbook.get_involved_blocks():
                     if block.get("name") not in playbooks:
-                        block = response_manager.get_playbook(block.get("name"))
+                        block = response_manager.get_playbook(
+                            block.get("name"))
                         if block:
                             playbooks[block.name] = block
 
@@ -97,11 +99,9 @@ def pull_playbooks():
     """
     Synchronize SOAR playbooks from the SOAR platform to a Git repository.
     """
-    commit_msg = os.environ.get("COMMIT_MESSAGE", "Automated playbook sync")
-    readme_addon = os.environ.get("README_ADDON")
-    include_blocks = (
-        os.environ.get("INCLUDE_PLAYBOOK_BLOCKS", "false").lower() == "true"
-    )
+    _commit_msg = os.environ.get("COMMIT_MESSAGE", "Automated playbook sync")
+    include_blocks = (os.environ.get("INCLUDE_PLAYBOOK_BLOCKS",
+                                     "false").lower() == "true")
 
     response_manager = ResponseManager()
 
@@ -109,7 +109,8 @@ def pull_playbooks():
     print(soc_roles)
 
     try:
-        installed_playbooks: List[WorkflowMenuCard] = response_manager.get_playbooks()
+        installed_playbooks: List[
+            WorkflowMenuCard] = response_manager.get_playbooks()
 
         for playbook in installed_playbooks:
             if EXCLUDE_FOLDER and EXCLUDE_FOLDER in playbook.categoryName:
@@ -119,18 +120,8 @@ def pull_playbooks():
                 continue
 
             LOGGER.info(f"Processing Playbook {playbook.displayName}")
-
-            if readme_addon:
-                LOGGER.info(
-                    "Readme addon found - adding to GitSync metadata file (GitSync.json)"
-                )
-                gitsync.content.metadata.set_readme_addon(
-                    "Playbook", playbook.displayName, readme_addon
-                )
-
             playbook_details = Workflow(
-                response_manager.get_playbook(playbook.identifier)
-            )
+                response_manager.get_playbook(playbook.identifier))
             LOGGER.info(f"Playbook details: {playbook_details}")
             overview_templates = playbook_details.overview_templates
             new_templates = []
@@ -152,11 +143,8 @@ def pull_playbooks():
             if include_blocks:
                 for block in playbook_details.get_involved_blocks():
                     installed_block = next(
-                        (
-                            x
-                            for x in installed_playbooks
-                            if x.displayName == block.displayName
-                        ),
+                        (x for x in installed_playbooks
+                         if x.displayName == block.displayName),
                         None,
                     )
                     if not installed_block:
@@ -165,9 +153,10 @@ def pull_playbooks():
                         )
                         continue
                     block_details = Workflow(
-                        response_manager.get_playbook(installed_block.identifier)
-                    )
-                    response_manager.update_instance_name_in_steps(block_details)
+                        response_manager.get_playbook(
+                            installed_block.identifier))
+                    response_manager.update_instance_name_in_steps(
+                        block_details)
                     response_manager.store_playbook(block_details)
 
         response_manager.update_readme(create_root_readme(), "Playbooks")

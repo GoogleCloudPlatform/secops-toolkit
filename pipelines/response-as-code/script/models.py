@@ -15,10 +15,10 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from jinja2 import Template, Environment as JinjaEnvironment
-from constants import PLAYBOOK_README_TEMPLATE, TRIGGER_TYPES, CONDITION_OPERATORS, CONDITION_MATCH_TYPES
+from jinja2 import Environment as JinjaEnvironment
+from constants import PLAYBOOK_README_TEMPLATE, TRIGGER_TYPES, CONDITION_OPERATORS, CONDITION_MATCH_TYPES, BASE_PARAMETER_TYPES, JOB_README
 import json
-from typing import Iterator, Any
+from typing import Iterator
 import uuid
 
 
