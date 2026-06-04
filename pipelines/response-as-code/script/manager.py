@@ -739,7 +739,7 @@ class WorkflowInstaller:
         workflow.raw_data["trigger"]["identifier"] = str(uuid.uuid4())
 
         if workflow.category not in self._playbook_categories:
-            category = self.api.create_playbook_category(workflow.category)
+            category = self.client.create_playbook_category(workflow.category)
             self.refresh_cache_item("categories")
         else:
             category = self._playbook_categories.get(workflow.category)
