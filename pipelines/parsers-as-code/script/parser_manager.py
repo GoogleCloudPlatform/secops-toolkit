@@ -131,7 +131,7 @@ class ParserManager:
         try:
             if is_extension:
                 extensions = self.client.list_parser_extensions(log_type)
-                if not "parserExtensions" in extensions:
+                if "parserExtensions" not in extensions:
                     return None
                 for ext in extensions["parserExtensions"]:
                     if ext.get(

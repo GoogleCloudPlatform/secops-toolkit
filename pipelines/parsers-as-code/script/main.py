@@ -23,7 +23,6 @@ from parser_manager import ParserManager
 from models import ParserError, Operation
 from utils import generate_pr_comment_output
 from compare import ParserComparator
-from dotenv import load_dotenv
 
 LOGGER = logging.getLogger("pac")
 
@@ -64,7 +63,7 @@ def verify_and_deploy(manager: ParserManager):
         submitted = manager.execute_deployment(plan)
         if submitted:
             LOGGER.info(
-                f"\n--- Pausing 60s for Chronicle validation to begin ---")
+                "\n--- Pausing 60s for Chronicle validation to begin ---")
             time.sleep(60)
         else:
             LOGGER.info("No valid changes to submit.")
@@ -193,8 +192,7 @@ def compare_parsers(manager: ParserManager, log_type: str, branch: str):
     """Compares the current local parser against the active parser in SecOps (or git branch as fallback)."""
     try:
         comparator = ParserComparator(log_type, client=manager.client)
-        report = comparator.run(branch=branch)
-        # valid report printed by run()
+        _ = comparator.run(branch=branch)  # valid report printed by run()
     except Exception as e:
         LOGGER.error(f"Failed to compare parsers: {e}", exc_info=True)
         sys.exit(1)

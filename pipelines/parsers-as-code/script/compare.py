@@ -13,15 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
 import logging
 import os
 import subprocess
 import sys
-import yaml
 from config import PARSERS_ROOT_DIR, LOGS_FOLDER_NAME, EVENTS_FOLDER_NAME
-from utils import compare_yaml_files, process_data_for_dump, generate_event_files
-from models import ParserError, ParserState, ParserExtensionState, ParserType
+from utils import compare_yaml_files, generate_event_files
+from models import ParserState, ParserExtensionState
 import base64
 
 LOGGER = logging.getLogger("pac")
@@ -271,7 +269,7 @@ class ParserComparator:
         try:
             if is_extension:
                 extensions = self.client.list_parser_extensions(log_type)
-                if not "parserExtensions" in extensions:
+                if "parserExtensions" not in extensions:
                     return None
                 for ext in extensions["parserExtensions"]:
                     if ext.get(

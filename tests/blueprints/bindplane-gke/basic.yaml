@@ -64,6 +64,7 @@ values:
     wait_for_jobs: false
   module.addresses.google_compute_address.internal["ingress"]:
     address_type: INTERNAL
+    deletion_policy: DELETE
     description: Terraform managed.
     effective_labels:
       goog-terraform-provisioned: 'true'
@@ -82,6 +83,7 @@ values:
     timeouts: null
   module.addresses.google_compute_address.psc["postgresql"]:
     address_type: INTERNAL
+    deletion_policy: DELETE
     description: Terraform managed.
     effective_labels:
       goog-terraform-provisioned: 'true'
@@ -102,6 +104,7 @@ values:
     allow_global_access: null
     allow_psc_global_access: true
     backend_service: null
+    deletion_policy: DELETE
     description: null
     ip_collection: null
     is_mirroring_collector: null
@@ -155,6 +158,7 @@ values:
       - enabled: true
     cost_management_config:
     - enabled: true
+    deletion_policy: DELETE
     deletion_protection: false
     description: null
     disable_l4_lb_firewall_reconciliation: false
@@ -302,6 +306,7 @@ values:
   module.bindplane-sa.google_service_account.service_account[0]:
     account_id: bindplane
     create_ignore_already_exists: null
+    deletion_policy: DELETE
     description: null
     disabled: false
     display_name: Terraform-managed.
@@ -324,6 +329,7 @@ values:
     backupdr_backup: null
     clone: []
     database_version: POSTGRES_13
+    deletion_policy: DELETE
     deletion_protection: false
     final_backup_description: null
     name: tmp-bindplane
@@ -377,7 +383,7 @@ values:
     timeouts: null
   module.db.google_sql_user.users["bindplane"]:
     database_roles: null
-    deletion_policy: null
+    deletion_policy: DELETE
     instance: tmp-bindplane
     name: bindplane
     password_policy: []
@@ -402,6 +408,7 @@ values:
   module.dns[0].google_dns_managed_zone.dns_managed_zone[0]:
     cloud_logging_config:
     - enable_logging: false
+    deletion_policy: DELETE
     description: Terraform managed.
     dns_name: example.com.
     effective_labels:
@@ -423,6 +430,7 @@ values:
     timeouts: null
     visibility: private
   module.dns[0].google_dns_record_set.dns_record_set["A bindplane"]:
+    deletion_policy: DELETE
     managed_zone: bindplane
     name: bindplane.example.com.
     project: tmp-test
@@ -431,6 +439,7 @@ values:
     type: A
   module.fleet.google_gke_hub_membership.default["bindplane"]:
     authority: []
+    deletion_policy: DELETE
     effective_labels:
       goog-terraform-provisioned: 'true'
     endpoint:
@@ -493,54 +502,63 @@ values:
     project: tmp-test
     role: roles/monitoring.notificationServiceAgent
   module.project.google_project_service.project_services["chronicle.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: chronicle.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["compute.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: compute.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["connectgateway.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: connectgateway.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["container.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: container.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["gkeconnect.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: gkeconnect.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["gkehub.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: gkehub.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["iap.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: iap.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["logging.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
     service: logging.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["monitoring.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: tmp-test
@@ -571,6 +589,7 @@ values:
     service: monitoring.googleapis.com
     timeouts: null
   module.pubsub.google_pubsub_topic.default:
+    deletion_policy: DELETE
     effective_labels:
       goog-terraform-provisioned: 'true'
     ingestion_data_source_settings: []
@@ -645,3 +664,40 @@ values:
       street_address: null
     uris: null
     validity_period_hours: 87600
+
+counts:
+  google_compute_address: 2
+  google_compute_forwarding_rule: 1
+  google_container_cluster: 1
+  google_dns_managed_zone: 1
+  google_dns_record_set: 1
+  google_gke_hub_membership: 1
+  google_logging_project_settings: 1
+  google_project: 1
+  google_project_iam_binding: 1
+  google_project_iam_member: 8
+  google_project_service: 9
+  google_project_service_identity: 6
+  google_pubsub_topic: 1
+  google_service_account: 1
+  google_service_account_iam_binding: 1
+  google_sql_database: 1
+  google_sql_database_instance: 1
+  google_sql_user: 1
+  helm_release: 1
+  kubernetes_namespace: 1
+  kubernetes_secret: 2
+  modules: 9
+  random_password: 1
+  resources: 49
+  tls_cert_request: 1
+  tls_locally_signed_cert: 1
+  tls_private_key: 2
+  tls_self_signed_cert: 1
+
+outputs:
+  bindplane_hostname: https://bindplane.example.com
+  ca_cert: __missing__
+  cluster_ca_certificate: __missing__
+  fleet_host: __missing__
+  lb_ip_address: __missing__
