@@ -23,62 +23,58 @@ from google.cloud import pubsub_v1
 from google.auth.transport.requests import AuthorizedSession
 
 HTTP = AuthorizedSession(google.auth.default()[0])
-LOGGER = logging.getLogger('cai-chronicle')
+LOGGER = logging.getLogger("cai-chronicle")
 
 
 def generate_timestamp(offset_days=0):
     """
-  Generates a timestamp string in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)
-  based on the current UTC time with an optional offset in days.
+    Generates a timestamp string in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)
+    based on the current UTC time with an optional offset in days.
 
-  Args:
-      offset_days (int, optional): Number of days to offset from current time. Defaults to 0.
+    Args:
+        offset_days (int, optional): Number of days to offset from current time. Defaults to 0.
 
-  Returns:
-      str: Timestamp string in ISO 8601 format.
-  """
+    Returns:
+        str: Timestamp string in ISO 8601 format.
+    """
     # Get current UTC time
     now = datetime.utcnow()
     # Apply offset
     timestamp = now + timedelta(days=offset_days)
     # Format timestamp in ISO 8601 format
-    formatted_time = timestamp.isoformat() + 'Z'
+    formatted_time = timestamp.isoformat() + "Z"
     return formatted_time
 
 
-def assets_list(parent,
-                asset_types,
-                content_type,
-                page_size,
-                read_time,
-                next_page=None):
+def assets_list(
+    parent, asset_types, content_type, page_size, read_time, next_page=None
+):
     """Fetches assets from Cloud Asset Inventory (CAI) with pagination.
 
-  Args:
-      parent (str): The parent resource name (e.g., projects/your-project-id).
-      asset_types (str): Comma-separated list of asset types to search for.
-      content_type (str): Asset content type (e.g., RESOURCE).
-      page_size (int): The maximum number of assets to return per page.
-      read_time (str): Read time for assets as an RFC3339 timestamp.
-      next_page (str, optional): Optional next page token for pagination.
+    Args:
+        parent (str): The parent resource name (e.g., projects/your-project-id).
+        asset_types (str): Comma-separated list of asset types to search for.
+        content_type (str): Asset content type (e.g., RESOURCE).
+        page_size (int): The maximum number of assets to return per page.
+        read_time (str): Read time for assets as an RFC3339 timestamp.
+        next_page (str, optional): Optional next page token for pagination.
 
-  Returns:
-      dict: A dictionary containing the response data (including status code and potentially JSON content).
+    Returns:
+        dict: A dictionary containing the response data (including status code and potentially JSON content).
 
-  Raises:
-      Exception: An exception if an error occurs during the request.
-  """
+    Raises:
+        Exception: An exception if an error occurs during the request.
+    """
     params = {
         "assetTypes": asset_types,
-        'contentType': content_type,
-        'pageSize': page_size,
-        'readTime': read_time
+        "contentType": content_type,
+        "pageSize": page_size,
+        "readTime": read_time,
     }
     if next_page:
-        params['pageToken'] = next_page
+        params["pageToken"] = next_page
 
-    url = 'https://cloudasset.googleapis.com/v1/{parent}/assets'.format(
-        parent=parent)
+    url = "https://cloudasset.googleapis.com/v1/{parent}/assets".format(parent=parent)
     headers = {"Content-Type": "application/json"}
 
     try:
@@ -90,16 +86,16 @@ def assets_list(parent,
 
 def send_to_pubsub(pubsub_topic_id, asset):
     """
-  Publishes a message to a Pub/Sub.
+    Publishes a message to a Pub/Sub.
 
-  Args:
-      :param asset: The message data to be published.
-      :param pubsub_topic_id: The pubsub topic ID where to publish asset
+    Args:
+        :param asset: The message data to be published.
+        :param pubsub_topic_id: The pubsub topic ID where to publish asset
 
-  Returns:
-      str: The message ID of the published message (if successful).
-      Exception: Raises an exception if there's an error publishing.
-  """
+    Returns:
+        str: The message ID of the published message (if successful).
+        Exception: Raises an exception if there's an error publishing.
+    """
     publisher = pubsub_v1.PublisherClient()
 
     try:
@@ -116,17 +112,17 @@ def send_to_pubsub(pubsub_topic_id, asset):
 
 
 def main(request):
-    """Fetches Cloud Asset Inventory (CAI) assets within a specified lookback period, 
-  handles pagination, and sends retrieved assets to Pub/Sub.
+    """Fetches Cloud Asset Inventory (CAI) assets within a specified lookback period,
+    handles pagination, and sends retrieved assets to Pub/Sub.
 
-  This function retrieves assets from CAI based on provided parameters and a 
-  configurable lookback period. It iterates through paginated results, 
-  extracts assets, and sends them to Pub/Sub. Error handling is included for 
-  common conditions (success, throttling errors, unexpected exceptions).
+    This function retrieves assets from CAI based on provided parameters and a
+    configurable lookback period. It iterates through paginated results,
+    extracts assets, and sends them to Pub/Sub. Error handling is included for
+    common conditions (success, throttling errors, unexpected exceptions).
 
-  Raises:
-      Exception: An exception for critical errors.
-  """
+    Raises:
+        Exception: An exception for critical errors.
+    """
     logging.basicConfig(
         level=logging.DEBUG if os.environ.get("DEBUG") else logging.INFO,
         format="[%(levelname)-8s] - %(asctime)s - %(message)s",
@@ -145,37 +141,40 @@ def main(request):
         page_size = request_json.get("PAGE_SIZE")
     else:
         LOGGER.error("Did not get configuration parameters from request body.")
-        raise SystemExit('No configuration sent from Cloud Scheduler')
+        raise SystemExit("No configuration sent from Cloud Scheduler")
 
     # iterate through all the asset types
     for chronicle_ingestion_label in chronicle_assets_config.keys():
-        asset_types = chronicle_assets_config[chronicle_ingestion_label][
-            'asset_types']
+        asset_types = chronicle_assets_config[chronicle_ingestion_label]["asset_types"]
         # iterate through all the GCP nodes for tenant
         for node in nodes:
             # List to store GCP CAI Assets
             assets = []
             more_results = True
             try:
-                response = assets_list(node, asset_types, content_type,
-                                       page_size, lookback_timestamp)
+                response = assets_list(
+                    node, asset_types, content_type, page_size, lookback_timestamp
+                )
                 while more_results:
                     LOGGER.info(f"response_code: {response.status_code}")
                     if response.status_code == 200:
                         fetched_assets = json.loads(response.text)
                         if "assets" in fetched_assets:
-                            for each_asset in fetched_assets[
-                                    "assets"]:  # refactor
+                            for each_asset in fetched_assets["assets"]:  # refactor
                                 assets.append(each_asset)
-                        if 'nextPageToken' in fetched_assets:
+                        if "nextPageToken" in fetched_assets:
                             LOGGER.info("More pages available.")
                             LOGGER.info(
                                 f"nextPageToken: {fetched_assets['nextPageToken']}"
                             )
                             response = assets_list(
-                                node, asset_types, content_type, page_size,
+                                node,
+                                asset_types,
+                                content_type,
+                                page_size,
                                 lookback_timestamp,
-                                fetched_assets['nextPageToken'])
+                                fetched_assets["nextPageToken"],
+                            )
                         else:
                             if assets:
                                 LOGGER.info(
@@ -184,9 +183,10 @@ def main(request):
                                 for asset in assets:
                                     send_to_pubsub(
                                         pubsub_topic_id=chronicle_assets_config[
-                                            chronicle_ingestion_label]
-                                        ['pubsub_topic_id'],
-                                        asset=asset)
+                                            chronicle_ingestion_label
+                                        ]["pubsub_topic_id"],
+                                        asset=asset,
+                                    )
                             else:
                                 LOGGER.info("No assets returned from GCP CAI.")
                             more_results = False
@@ -194,8 +194,7 @@ def main(request):
                         LOGGER.info("Sleeping for 60 seconds.")
                         time.sleep(60)
                     else:
-                        LOGGER.info(
-                            "Catch all for any other HTTP error codes.")
+                        LOGGER.info("Catch all for any other HTTP error codes.")
                         more_results = False
                         break
 

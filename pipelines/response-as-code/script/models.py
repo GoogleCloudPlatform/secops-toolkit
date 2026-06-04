@@ -16,7 +16,14 @@
 from dataclasses import dataclass
 from enum import Enum
 from jinja2 import Environment as JinjaEnvironment
-from constants import PLAYBOOK_README_TEMPLATE, TRIGGER_TYPES, CONDITION_OPERATORS, CONDITION_MATCH_TYPES, BASE_PARAMETER_TYPES, JOB_README
+from constants import (
+    PLAYBOOK_README_TEMPLATE,
+    TRIGGER_TYPES,
+    CONDITION_OPERATORS,
+    CONDITION_MATCH_TYPES,
+    BASE_PARAMETER_TYPES,
+    JOB_README,
+)
 import json
 from typing import Iterator
 import uuid
@@ -24,19 +31,20 @@ import uuid
 
 class APIError(Exception):
     """Raised for issues communicating with the SecOps API."""
+
     pass
 
 
 @dataclass
 class SocRole:
     """Represents a SOC Role in Chronicle."""
+
     name: str
     displayName: str
     description: str
 
 
 class Content:
-
     def __init__(self):
         self.readme: str | None = None
 
@@ -57,6 +65,7 @@ class File:
 @dataclass
 class WorkflowMenuCard:
     """Represents a Workflow Menu Card (legacy playbook) in Chronicle."""
+
     id: str
     identifier: str
     name: str
@@ -88,7 +97,6 @@ class WorkflowCategory(Content):
 
 
 class Workflow(Content):
-
     def __init__(self, raw_data: dict):
         super().__init__()
         self.raw_data = raw_data
@@ -105,15 +113,15 @@ class Workflow(Content):
         self.isEnabled = self.raw_data.get("isEnabled")
         self.category = self.raw_data.get("categoryName", "Default")
         self.environments = self.raw_data.get("environments", [])
-        self.modification_time = int(
-            self.raw_data["modificationTimeUnixTimeInMs"])
+        self.modification_time = int(self.raw_data["modificationTimeUnixTimeInMs"])
         self.overview_templates = self.raw_data.get("overviewTemplates", [])
         self.permissions = self.raw_data.get("permissions", [])
         self.entity_access_level = self.raw_data.get("entityAccessLevel", [])
         self.default_access_level = self.raw_data.get("defaultAccessLevel", [])
         self.creation_source = self.raw_data.get("creationSource")
         self.has_restricted_environments = self.raw_data.get(
-            "hasRestrictedEnvironments")
+            "hasRestrictedEnvironments"
+        )
         self.execution_scope = self.raw_data.get("executionScope")
 
     def __hash__(self):
@@ -129,15 +137,12 @@ class Workflow(Content):
         env.globals["WorkflowTypes"] = WorkflowTypes
         env.filters.update(
             {
-                "trigger_type":
-                lambda x: TRIGGER_TYPES.get(x),
-                "condition_operator":
-                lambda x: CONDITION_OPERATORS.get(x),
-                "condition_match_type":
-                lambda x: CONDITION_MATCH_TYPES.get(x),
-                "split_action_name":
-                lambda x: x.split("_", 1)[1] if "_" in x else x,
-            }, )
+                "trigger_type": lambda x: TRIGGER_TYPES.get(x),
+                "condition_operator": lambda x: CONDITION_OPERATORS.get(x),
+                "condition_match_type": lambda x: CONDITION_MATCH_TYPES.get(x),
+                "split_action_name": lambda x: x.split("_", 1)[1] if "_" in x else x,
+            },
+        )
         template = PLAYBOOK_README_TEMPLATE
         if additional_info:
             template += additional_info
@@ -176,7 +181,6 @@ class Workflow(Content):
 
 
 class Job(Content):
-
     def __init__(self, raw_data: dict):
         super().__init__()
         raw_data["id"] = 0
@@ -189,8 +193,7 @@ class Job(Content):
 
     def generate_readme(self, additional_info: str = None) -> None:
         env = JinjaEnvironment()
-        env.filters.update(
-            {"base_param_type": lambda x: BASE_PARAMETER_TYPES.get(x)})
+        env.filters.update({"base_param_type": lambda x: BASE_PARAMETER_TYPES.get(x)})
         template = JOB_README
         if additional_info:
             template += additional_info
@@ -198,5 +201,4 @@ class Job(Content):
         self.readme = readme.render(job=self.__dict__)
 
     def iter_files(self) -> Iterator[File]:
-        yield File(f"Jobs/{self.name}.json", json.dumps(self.raw_data,
-                                                        indent=4))
+        yield File(f"Jobs/{self.name}.json", json.dumps(self.raw_data, indent=4))

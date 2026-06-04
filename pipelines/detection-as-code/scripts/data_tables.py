@@ -38,8 +38,7 @@ DATA_TABLE_COLUMN_TYPES = Literal["CIDR", "STRING", "REGEX"]
 # --- Global Logger Setup ---
 _LOGGER = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 _LOGGER.addHandler(handler)
 _LOGGER.setLevel(logging.INFO)
@@ -62,6 +61,7 @@ class InvalidDataTableConfigError(DataTablesError):
 
 class DataTableColumn(pydantic.BaseModel):
     """Class for a data table column."""
+
     column_index: int | None
     original_column: str
     column_type: str | None
@@ -71,6 +71,7 @@ class DataTableColumn(pydantic.BaseModel):
 
 class DataTable(pydantic.BaseModel):
     """Class for a data table."""
+
     name: str
     description: str | None
     columns: Sequence[DataTableColumn]
@@ -101,14 +102,15 @@ class DataTables:
                 description=data_table.get("description"),
                 create_time=data_table.get("createTime"),
                 update_time=data_table.get("updateTime"),
-                columns=cls.parse_data_table_columns(
-                    columns=data_table["columnInfo"]),
+                columns=cls.parse_data_table_columns(columns=data_table["columnInfo"]),
                 row_time_to_live=data_table.get("rowTimeToLive"),
                 rules=data_table.get("rules"),
-                rule_associations_count=data_table.get(
-                    "ruleAssociationsCount"),
-                scopes=(data_table["scopeInfo"]["dataAccessScopes"]
-                        if data_table.get("scopeInfo") else None),
+                rule_associations_count=data_table.get("ruleAssociationsCount"),
+                scopes=(
+                    data_table["scopeInfo"]["dataAccessScopes"]
+                    if data_table.get("scopeInfo")
+                    else None
+                ),
             )
         except pydantic.ValidationError as e:
             _LOGGER.error(
@@ -120,7 +122,8 @@ class DataTables:
 
     @classmethod
     def parse_data_tables(
-            cls, data_tables: Sequence[Mapping[str, Any]]) -> list[DataTable]:
+        cls, data_tables: Sequence[Mapping[str, Any]]
+    ) -> list[DataTable]:
         """Parse a list of data tables into a list of DataTable objects."""
         return [cls.parse_data_table(dt) for dt in data_tables]
 
@@ -131,8 +134,7 @@ class DataTables:
         data_tables_dir: pathlib.Path = DATA_TABLES_DIR,
     ) -> Mapping[str, DataTable]:
         """Load data table config from file."""
-        _LOGGER.info("Loading data table config from file %s",
-                     data_table_config_file)
+        _LOGGER.info("Loading data table config from file %s", data_table_config_file)
         with open(data_table_config_file, "r", encoding="utf-8") as f:
             data_table_config = ruamel_yaml.load(f)
 
@@ -150,7 +152,8 @@ class DataTables:
                     name=name,
                     description=config_entry.get("description"),
                     columns=cls.parse_data_table_config_entry_columns(
-                        columns=config_entry.get("columns")),
+                        columns=config_entry.get("columns")
+                    ),
                     row_time_to_live=config_entry.get("row_time_to_live"),
                     scopes=config_entry.get("scopes"),
                 )
@@ -169,8 +172,9 @@ class DataTables:
         return parsed_config
 
     @classmethod
-    def validate_data_table_files(cls, config: Mapping[str, Any],
-                                  data_tables_dir: pathlib.Path):
+    def validate_data_table_files(
+        cls, config: Mapping[str, Any], data_tables_dir: pathlib.Path
+    ):
         """Validate that data table files and config match."""
         csv_files = {p.stem for p in data_tables_dir.glob("*.csv")}
         config_keys = set(config.keys())
@@ -178,17 +182,19 @@ class DataTables:
         missing_files = config_keys - csv_files
         if missing_files:
             raise InvalidDataTableConfigError(
-                f"Data table files not found for: {', '.join(missing_files)}")
+                f"Data table files not found for: {', '.join(missing_files)}"
+            )
 
         extra_files = csv_files - config_keys
         if extra_files:
             raise InvalidDataTableConfigError(
-                f"Data tables not in config file: {', '.join(extra_files)}")
+                f"Data tables not in config file: {', '.join(extra_files)}"
+            )
 
     @classmethod
     def parse_data_table_config_entry_columns(
-            cls, columns: Sequence[Mapping[str,
-                                           Any]]) -> Sequence[DataTableColumn]:
+        cls, columns: Sequence[Mapping[str, Any]]
+    ) -> Sequence[DataTableColumn]:
         """Parse columns from the local config file."""
         if not columns:
             return []
@@ -199,13 +205,14 @@ class DataTables:
                 column_type=c.get("column_type"),
                 mapped_column_path=c.get("mapped_column_path"),
                 key_column=c.get("key_column"),
-            ) for c in columns
+            )
+            for c in columns
         ]
 
     @classmethod
     def parse_data_table_columns(
-            cls, columns: Sequence[Mapping[str,
-                                           Any]]) -> list[DataTableColumn]:
+        cls, columns: Sequence[Mapping[str, Any]]
+    ) -> list[DataTableColumn]:
         """Parse columns from the Google SecOps API response."""
         parsed_columns = []
         for i, column in enumerate(columns):
@@ -217,7 +224,8 @@ class DataTables:
                         column_type=column.get("columnType"),
                         mapped_column_path=column.get("mappedColumnPath"),
                         key_column=column.get("keyColumn"),
-                    ))
+                    )
+                )
             except pydantic.ValidationError as e:
                 _LOGGER.error(
                     "ValidationError for data table column %s\n%s",
@@ -244,11 +252,11 @@ class DataTables:
             invalid_keys = set(data_table_config.keys()) - allowed_keys
             if invalid_keys:
                 raise InvalidDataTableConfigError(
-                    f"Invalid keys {invalid_keys} for data table '{name}'")
+                    f"Invalid keys {invalid_keys} for data table '{name}'"
+                )
 
     @classmethod
-    def get_remote_data_tables(
-            cls, chronicle_client: ChronicleClient) -> "DataTables":
+    def get_remote_data_tables(cls, chronicle_client: ChronicleClient) -> "DataTables":
         """Retrieve all data tables from Google SecOps."""
         _LOGGER.info("Retrieving all data tables from Google SecOps...")
         retrieved_data_tables = chronicle_client.list_data_tables() or []
@@ -270,12 +278,12 @@ class DataTables:
             log_message += f" and writing to {file_path}"
         _LOGGER.info(log_message)
 
-        rows = chronicle_client.list_data_table_rows(
-            name=data_table_name) or []
+        rows = chronicle_client.list_data_table_rows(name=data_table_name) or []
         row_values = [row["values"] for row in rows]
 
-        _LOGGER.info("Retrieved %d rows for data table '%s'.", len(row_values),
-                     data_table_name)
+        _LOGGER.info(
+            "Retrieved %d rows for data table '%s'.", len(row_values), data_table_name
+        )
 
         if write_to_file:
             with open(file_path, "w", encoding="utf-8", newline="") as f:
@@ -303,37 +311,41 @@ class DataTables:
         data_table_config_file: pathlib.Path = DATA_TABLE_CONFIG_FILE,
     ) -> Mapping[str, list[str]]:
         """Update data tables in Google SecOps based on local files."""
-        _LOGGER.info(
-            "Updating data tables in Google SecOps from local files...")
-        local_tables = cls.load_data_table_config(data_table_config_file,
-                                                  data_tables_dir)
+        _LOGGER.info("Updating data tables in Google SecOps from local files...")
+        local_tables = cls.load_data_table_config(
+            data_table_config_file, data_tables_dir
+        )
         if not local_tables:
             return {}
 
         remote_tables = {
-            t.name: t
-            for t in cls.get_remote_data_tables(chronicle_client).data_tables
+            t.name: t for t in cls.get_remote_data_tables(chronicle_client).data_tables
         }
         summary = {
             "created": [],
             "recreated": [],
             "config_updated": [],
-            "content_updated": []
+            "content_updated": [],
         }
 
         for name, local in local_tables.items():
             remote = remote_tables.get(name)
             if not remote:
-                cls._create_new_data_table(chronicle_client, name, local,
-                                           summary)
+                cls._create_new_data_table(chronicle_client, name, local, summary)
             else:
-                cls._update_existing_data_table(chronicle_client, name, local,
-                                                remote, summary)
+                cls._update_existing_data_table(
+                    chronicle_client, name, local, remote, summary
+                )
         return summary
 
     @classmethod
-    def _create_new_data_table(cls, chronicle_client: ChronicleClient,
-                               name: str, local: DataTable, summary: dict):
+    def _create_new_data_table(
+        cls,
+        chronicle_client: ChronicleClient,
+        name: str,
+        local: DataTable,
+        summary: dict,
+    ):
         """Create a new data table."""
         _LOGGER.info(f"Creating new data table '{name}'.")
         rows = cls._read_data_table_csv(name)
@@ -365,20 +377,16 @@ class DataTables:
     ):
         """Update an existing data table."""
         if cls._has_schema_changed(local, remote):
-            cls._recreate_data_table(chronicle_client, name, local, remote,
-                                     summary)
+            cls._recreate_data_table(chronicle_client, name, local, remote, summary)
         else:
             cls._check_and_update_config(name, local, remote, summary)
-            cls._check_and_update_content(chronicle_client, name, remote,
-                                          summary)
+            cls._check_and_update_content(chronicle_client, name, remote, summary)
 
     @classmethod
     def _has_schema_changed(cls, local: DataTable, remote: DataTable) -> bool:
         """Check if the data table schema has changed."""
-        local_cols = {(c.original_column, c.column_type)
-                      for c in local.columns}
-        remote_cols = {(c.original_column, c.column_type)
-                       for c in remote.columns}
+        local_cols = {(c.original_column, c.column_type) for c in local.columns}
+        remote_cols = {(c.original_column, c.column_type) for c in remote.columns}
         return local_cols != remote_cols
 
     @classmethod
@@ -397,26 +405,33 @@ class DataTables:
         summary["recreated"].append(name)
 
     @classmethod
-    def _check_and_update_config(cls, name: str, local: DataTable,
-                                 remote: DataTable, summary: dict):
+    def _check_and_update_config(
+        cls, name: str, local: DataTable, remote: DataTable, summary: dict
+    ):
         """Check for configuration changes and update if necessary."""
-        if (local.description != remote.description
-                or local.row_time_to_live != remote.row_time_to_live):
+        if (
+            local.description != remote.description
+            or local.row_time_to_live != remote.row_time_to_live
+        ):
             _LOGGER.info(f"Updating configuration for data table '{name}'.")
             # Placeholder for actual update logic
             summary["config_updated"].append(name)
 
     @classmethod
-    def _check_and_update_content(cls, chronicle_client: ChronicleClient,
-                                  name: str, remote: DataTable, summary: dict):
+    def _check_and_update_content(
+        cls,
+        chronicle_client: ChronicleClient,
+        name: str,
+        remote: DataTable,
+        summary: dict,
+    ):
         """Check for content changes and update if necessary."""
         remote_rows = cls.get_remote_data_table_rows(chronicle_client, name)
         local_rows = cls._read_data_table_csv(name)
 
         if cls.are_data_tables_different(remote_rows, local_rows):
             _LOGGER.info(f"Updating content for data table '{name}'.")
-            cls.update_remote_data_table_rows(chronicle_client, name,
-                                              local_rows)
+            cls.update_remote_data_table_rows(chronicle_client, name, local_rows)
             summary["content_updated"].append(name)
 
     @classmethod
@@ -435,8 +450,7 @@ class DataTables:
     ):
         """Update the content (rows) for a data table in Google SecOps."""
         if not row_values:
-            raise ValueError(
-                f"No rows found in local data table '{data_table_name}'")
+            raise ValueError(f"No rows found in local data table '{data_table_name}'")
 
         _LOGGER.info(
             "Uploading %d rows to data table '%s'.",

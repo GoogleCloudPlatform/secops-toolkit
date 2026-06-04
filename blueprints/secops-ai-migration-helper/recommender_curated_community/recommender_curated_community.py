@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#from vertexai.preview.language_models import HarmCategory, HarmBlockThreshold
+# from vertexai.preview.language_models import HarmCategory, HarmBlockThreshold
 import os
 import json
 import sys
@@ -43,51 +43,62 @@ if "--help" not in sys.argv:
 ai_model = os.getenv("AI_MODEL", "gemini-2.5-pro")
 
 # File will all community rules
-customer_rules_to_evaluate = os.getenv("CUSTOMER_RULES_TO_EVALUATE",
-                                       "./resources/sample_input_rules.json")
-community_rules = os.getenv("COMMUNITY_RULES",
-                            "./resources/all_community_rules_20250816.txt")
+customer_rules_to_evaluate = os.getenv(
+    "CUSTOMER_RULES_TO_EVALUATE", "./resources/sample_input_rules.json"
+)
+community_rules = os.getenv(
+    "COMMUNITY_RULES", "./resources/all_community_rules_20250816.txt"
+)
 
 # optional if provided it will not be downloaded from content hub
-curated_use_preloaded_file = os.getenv("CURATED_USE_PRELOADED_FILE",
-                                       "False")  # True or False
-curated_rules_file = os.getenv("CURATED_RULES_FILE",
-                               "./resources/curated_rules.json")
-curated_rulesets_file = os.getenv("CURATED_RULESETS_FILE",
-                                  "./resources/curated_rulesets.json")
+curated_use_preloaded_file = os.getenv(
+    "CURATED_USE_PRELOADED_FILE", "False"
+)  # True or False
+curated_rules_file = os.getenv("CURATED_RULES_FILE", "./resources/curated_rules.json")
+curated_rulesets_file = os.getenv(
+    "CURATED_RULESETS_FILE", "./resources/curated_rulesets.json"
+)
 
 # Output files
-curated_rules_output_file = os.getenv("CURATED_RULES_OUTPUT_FILE",
-                                      "./work_dir/curated_rules.json")
-curated_rulesets_output_file = os.getenv("CURATED_RULESETS_OUTPUT_FILE",
-                                         "./work_dir/curated_rulesets.json")
+curated_rules_output_file = os.getenv(
+    "CURATED_RULES_OUTPUT_FILE", "./work_dir/curated_rules.json"
+)
+curated_rulesets_output_file = os.getenv(
+    "CURATED_RULESETS_OUTPUT_FILE", "./work_dir/curated_rulesets.json"
+)
 recommendations_json_output_file = os.getenv(
     "RECOMMENDATIONS_JSON_OUTPUT_FILE",
-    "./work_dir/recommendation_curated_community_rules.json")
+    "./work_dir/recommendation_curated_community_rules.json",
+)
 recommendations_csv_output_file = os.getenv(
     "RECOMMENDATIONS_CSV_OUTPUT_FILE",
-    "./work_dir/recommendation_curated_community_rules.csv")
+    "./work_dir/recommendation_curated_community_rules.csv",
+)
 recommendations_ruleset_csv_output_file = os.getenv(
-    "RECOMMENDATIONS_CSV_OUTPUT_FILE",
-    "./work_dir/recommendation_curated_rulesets.csv")
+    "RECOMMENDATIONS_CSV_OUTPUT_FILE", "./work_dir/recommendation_curated_rulesets.csv"
+)
 
 
 def load_curated_rules_description():
     """
-        Loads all curated rules and rules sets 
-        Returns curated rules enriched with log sources 
+    Loads all curated rules and rules sets
+    Returns curated rules enriched with log sources
     """
     chronicle_client = secops_resources_helper.get_chronicle_client(
-        contenthub_project_id, contenthub_location, contenthub_instance_id)
+        contenthub_project_id, contenthub_location, contenthub_instance_id
+    )
     if not chronicle_client:
         sys.exit(1)
 
     all_curated_rules = secops_resources_helper.get_featured_content_rules(
-        chronicle_client)
+        chronicle_client
+    )
     all_curated_rulesets = secops_resources_helper.get_curated_rule_sets(
-        chronicle_client)
+        chronicle_client
+    )
     all_curated_rules = secops_resources_helper.add_log_sources_to_curated_list(
-        all_curated_rulesets, all_curated_rules)
+        all_curated_rulesets, all_curated_rules
+    )
 
     return (all_curated_rules, all_curated_rulesets)
 
@@ -136,7 +147,6 @@ CONFIGURATION (via Environment Variables):
 
 
 if __name__ == "__main__":
-
     # Check if the --help flag is provided
     if "--help" in sys.argv:
         print_help()
@@ -144,28 +154,23 @@ if __name__ == "__main__":
 
     # load from secops or file and save curated rules
     if curated_use_preloaded_file == "True":
-        with open(curated_rules_file, 'r') as f:
+        with open(curated_rules_file, "r") as f:
             all_curated_rules = json.load(f)
-            print(
-                f"\nSuccessfully loaded curated rule form file {curated_rules_file}"
-            )
+            print(f"\nSuccessfully loaded curated rule form file {curated_rules_file}")
         # Corrected variable name from curated_rulesets_files to curated_rulesets_file
-        with open(curated_rulesets_file, 'r') as f:
+        with open(curated_rulesets_file, "r") as f:
             all_curated_rulesets = json.load(f)
             print(
                 f"\nSuccessfully loaded curated ruleset form file {curated_rulesets_file}"
             )
     else:
-        all_curated_rules, all_curated_rulesets = load_curated_rules_description(
-        )
+        all_curated_rules, all_curated_rulesets = load_curated_rules_description()
 
-        with open(curated_rules_output_file, 'w', encoding='utf-8') as f:
+        with open(curated_rules_output_file, "w", encoding="utf-8") as f:
             json.dump(all_curated_rules, f, indent=2)
-        print(
-            f"\nSuccessfully curated rules saved to {curated_rules_output_file}"
-        )
+        print(f"\nSuccessfully curated rules saved to {curated_rules_output_file}")
 
-        with open(curated_rulesets_output_file, 'w', encoding='utf-8') as f:
+        with open(curated_rulesets_output_file, "w", encoding="utf-8") as f:
             json.dump(all_curated_rulesets, f, indent=2)
         print(
             f"\nSuccessfully curated rulesets saved to {curated_rulesets_output_file}"
@@ -176,21 +181,21 @@ if __name__ == "__main__":
     recommendation_curated_community = []
 
     # load rules
-    with open(customer_rules_to_evaluate, 'r') as f:
+    with open(customer_rules_to_evaluate, "r") as f:
         customer_rules = json.load(f)
         print(f"Successfully loaded data from {customer_rules_to_evaluate}")
 
-    with open(community_rules, 'r') as f:
+    with open(community_rules, "r") as f:
         all_community_rules = f.read()
-        print(
-            f"\nSuccessfully loaded community rules form file {community_rules}"
-        )
+        print(f"\nSuccessfully loaded community rules form file {community_rules}")
 
     # Enrich the input rules with the sources
     unique_log_types = secops_resources_helper.get_unique_log_sources(
-        all_curated_rulesets)
+        all_curated_rulesets
+    )
     customer_rules_with_log_sources = ai_helper.find_log_sources_needed(
-        customer_rules, unique_log_types)
+        customer_rules, unique_log_types
+    )
     print("Logs sources identified")
 
     import time
@@ -215,18 +220,23 @@ if __name__ == "__main__":
             print(f"Start working on rule ucid:{rule['ucid']}")
             rule_str = json.dumps(rule)
             curated_filtered = secops_resources_helper.filter_curated_rules_log_source(
-                customer_rules_with_log_sources[i], all_curated_rules)
+                customer_rules_with_log_sources[i], all_curated_rules
+            )
 
             print("  Evaluating curated rules...")
             curated_sugg_str = call_with_backoff(
-                ai_helper.generate_curated_rules_recommendation, rule_str,
-                curated_filtered)
+                ai_helper.generate_curated_rules_recommendation,
+                rule_str,
+                curated_filtered,
+            )
             curated_sugg = json.loads(curated_sugg_str)
 
             print("  Evaluating community rules...")
             community_sugg_str = call_with_backoff(
-                ai_helper.generate_community_rules_recommendation, rule_str,
-                all_community_rules)
+                ai_helper.generate_community_rules_recommendation,
+                rule_str,
+                all_community_rules,
+            )
             community_sugg = json.loads(community_sugg_str)
 
             # Merge results for the CSV/JSON output
@@ -237,7 +247,7 @@ if __name__ == "__main__":
             print(f"Erorr on rule #{i}, content{rule}")
             print(e)
 
-        print(f"Processed {i+1}/{len(customer_rules)}")
+        print(f"Processed {i + 1}/{len(customer_rules)}")
 
     # with open("recommendations_json_output_file", 'r') as f:
     #         recommendation_curated_community = json.load(f)
@@ -246,6 +256,8 @@ if __name__ == "__main__":
 
     # Saving to files
     secops_resources_helper.write_results_file(
-        recommendation_curated_community, recommendations_json_output_file,
+        recommendation_curated_community,
+        recommendations_json_output_file,
         recommendations_csv_output_file,
-        recommendations_ruleset_csv_output_file)
+        recommendations_ruleset_csv_output_file,
+    )

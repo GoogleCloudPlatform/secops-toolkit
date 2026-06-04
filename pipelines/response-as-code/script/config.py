@@ -26,11 +26,11 @@ SECOPS_REGION = os.environ.get("SECOPS_REGION")
 
 # --- Application Constants ---
 # Scopes for Google Cloud authentication
-SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
+SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
 
 # Filesystem paths and filenames
 PLAYBOOKS_PATH = "Playbooks"
-INCLUDE_BLOCKS = os.getenv('INCLUDE_BLOCKS', 'true').lower() == 'true'
-EXCLUDE_FOLDER = os.getenv('EXCLUDE_FOLDER')
+INCLUDE_BLOCKS = os.getenv("INCLUDE_BLOCKS", "true").lower() == "true"
+EXCLUDE_FOLDER = os.getenv("EXCLUDE_FOLDER")
 
-GITHUB_OUTPUT_FILE = os.getenv('GITHUB_OUTPUT')
+GITHUB_OUTPUT_FILE = os.getenv("GITHUB_OUTPUT")

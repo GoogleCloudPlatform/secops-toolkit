@@ -45,7 +45,7 @@ def generate_pr_comment_output(plan: dict, has_errors: bool):
     for dashboard_name, operation_config in sorted(plan.items()):
         line_parts = [f"- **Dashboard**: `{dashboard_name}`"]
 
-        op = operation_config['operation']
+        op = operation_config["operation"]
         line_parts.append(f"  - **Dashboard Operation**: `{op.value}`")
 
         report_lines.append("\n".join(line_parts))
@@ -54,7 +54,9 @@ def generate_pr_comment_output(plan: dict, has_errors: bool):
 
     if has_errors:
         title = "❌ Dashboard Plan Failed"
-        summary = "Errors were encountered during the process. See action logs for details."
+        summary = (
+            "Errors were encountered during the process. See action logs for details."
+        )
     elif not report_lines:
         title = "✅ All Dashboards Up-to-Date"
         summary = "No changes were needed for any dashboard."
@@ -91,8 +93,9 @@ def report_pipeline_errors_and_exit():
         LOGGER.error("--- Pipeline Finished with Errors ---")
         for error in PIPELINE_ERRORS:
             # GitHub Actions error format
-            gha_error_message = error.replace('%', '%25').replace(
-                '\r', '%0D').replace('\n', '%0A')
+            gha_error_message = (
+                error.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+            )
             print(f"::error::{gha_error_message}", file=sys.stderr)
         sys.exit(1)
     else:

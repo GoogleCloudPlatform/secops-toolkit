@@ -47,7 +47,8 @@ class DashboardManager:
             self.client = SecOpsClient(retry_config=retry_config).chronicle(
                 customer_id=SECOPS_CUSTOMER_ID,
                 project_id=SECOPS_PROJECT_ID,
-                region=SECOPS_REGION)
+                region=SECOPS_REGION,
+            )
             LOGGER.info("SecOps client initialized successfully.")
         except Exception as e:
             raise APIError(f"Failed to initialize SecOps client: {e}") from e
@@ -58,7 +59,7 @@ class DashboardManager:
     def list_remote_dashboards(self, include_charts: bool = True) -> Dict:
         """
         Fetches all dashboards and their charts from the Google SecOps API.
-    
+
         Returns:
             dict: A dictionary where keys are dashboard names and values are dicts
                   containing the dashboard details and a list of its charts.
@@ -84,15 +85,13 @@ class DashboardManager:
                     continue
 
                 if dashboard.type == DashboardType.CURATED:
-                    LOGGER.debug(
-                        f"Skipping a curated dashboard: {dashboard.name}")
+                    LOGGER.debug(f"Skipping a curated dashboard: {dashboard.name}")
                     continue
 
-                LOGGER.info(
-                    f"Fetching details for dashboard: {dashboard.display_name}"
-                )
+                LOGGER.info(f"Fetching details for dashboard: {dashboard.display_name}")
                 full_dashboard_dict = self.client.get_dashboard(
-                    dashboard.name.split("/")[-1], "FULL")
+                    dashboard.name.split("/")[-1], "FULL"
+                )
                 full_dashboard = NativeDashboard.from_dict(full_dashboard_dict)
 
                 if include_charts:
@@ -100,11 +99,9 @@ class DashboardManager:
                     if full_dashboard.definition and full_dashboard.definition.charts:
                         for chart_ref in full_dashboard.definition.charts:
                             if chart_ref.dashboard_chart:
-                                chart_id = chart_ref.dashboard_chart.split(
-                                    "/")[-1]
+                                chart_id = chart_ref.dashboard_chart.split("/")[-1]
                                 try:
-                                    chart_details = self.client.get_chart(
-                                        chart_id)
+                                    chart_details = self.client.get_chart(chart_id)
                                     charts_list.append(chart_details)
                                     LOGGER.debug(
                                         f"Successfully fetched chart {chart_id} for dashboard {dashboard.display_name}"
@@ -116,7 +113,7 @@ class DashboardManager:
 
                     dashboards[dashboard.display_name] = {
                         "dashboard": full_dashboard,
-                        "dashboardCharts": charts_list
+                        "dashboardCharts": charts_list,
                     }
                 else:
                     dashboards[dashboard.display_name] = full_dashboard
@@ -129,8 +126,7 @@ class DashboardManager:
             LOGGER.error(f"Details: {e}")
             return {}
 
-    def get_local_dashboards_with_charts(self,
-                                         path: str = "./dashboards") -> Dict:
+    def get_local_dashboards_with_charts(self, path: str = "./dashboards") -> Dict:
         dashboard_dir = Path(path)
         if not dashboard_dir.is_dir():
             LOGGER.error(f"Error: Directory '{path}' not found.")
@@ -148,20 +144,23 @@ class DashboardManager:
 
                     chart_layouts = {}
                     if "definition" in dashboard_def.get(
-                            "dashboard",
-                        {}) and "charts" in dashboard_def["dashboard"].get(
-                            "definition", {}):
-                        for layout_info in dashboard_def["dashboard"][
-                                "definition"]["charts"]:
-                            if "dashboardChart" in layout_info and "chartLayout" in layout_info:
-                                chart_layouts[layout_info[
-                                    "dashboardChart"]] = layout_info[
-                                        "chartLayout"]
+                        "dashboard", {}
+                    ) and "charts" in dashboard_def["dashboard"].get("definition", {}):
+                        for layout_info in dashboard_def["dashboard"]["definition"][
+                            "charts"
+                        ]:
+                            if (
+                                "dashboardChart" in layout_info
+                                and "chartLayout" in layout_info
+                            ):
+                                chart_layouts[layout_info["dashboardChart"]] = (
+                                    layout_info["chartLayout"]
+                                )
 
                     local_dashboards[dashboard_name] = {
                         "dashboard": dashboard_def["dashboard"],
                         "dashboardCharts": charts,
-                        "dashboardQueries": queries
+                        "dashboardQueries": queries,
                     }
             except (json.JSONDecodeError, KeyError) as e:
                 LOGGER.error(f"Error parsing {json_file.name}: {e}")
@@ -172,14 +171,19 @@ class DashboardManager:
 
         return local_dashboards
 
-    def are_charts_different(self, local_chart: Dict,
-                             remote_chart: Dict) -> bool:
+    def are_charts_different(self, local_chart: Dict, remote_chart: Dict) -> bool:
         local_copy = local_chart.copy()
         remote_copy = remote_chart.copy()
 
         ignore_fields = [
-            "name", "etag", "chartDatasource", "nativeDashboard", "createTime",
-            "updateTime", "createUserId", "updateUserId"
+            "name",
+            "etag",
+            "chartDatasource",
+            "nativeDashboard",
+            "createTime",
+            "updateTime",
+            "createUserId",
+            "updateUserId",
         ]
 
         for field in ignore_fields:
@@ -212,26 +216,26 @@ class DashboardManager:
             if name not in remote_dashboards:
                 dashboards_ops[name] = {
                     "operation": DashboardOperation.CREATE,
-                    "dashboard": local_dashboards[name]
+                    "dashboard": local_dashboards[name],
                 }
             else:
                 # Dashboard exists, compare charts
                 remote_data = remote_dashboards[name]
                 local_charts_map = {
-                    c['displayName']: c
-                    for c in local_data.get("dashboardCharts", [])
+                    c["displayName"]: c for c in local_data.get("dashboardCharts", [])
                 }
                 remote_charts_map = {
-                    c['displayName']: c
-                    for c in remote_data.get("dashboardCharts", [])
+                    c["displayName"]: c for c in remote_data.get("dashboardCharts", [])
                 }
 
                 charts_to_add = [
-                    c for name, c in local_charts_map.items()
+                    c
+                    for name, c in local_charts_map.items()
                     if name not in remote_charts_map
                 ]
                 charts_to_delete = [
-                    c for name, c in remote_charts_map.items()
+                    c
+                    for name, c in remote_charts_map.items()
                     if name not in local_charts_map
                 ]
                 charts_to_update = []
@@ -239,21 +243,17 @@ class DashboardManager:
                 for chart_name, local_chart in local_charts_map.items():
                     if chart_name in remote_charts_map:
                         remote_chart = remote_charts_map[chart_name]
-                        if self.are_charts_different(local_chart,
-                                                     remote_chart):
+                        if self.are_charts_different(local_chart, remote_chart):
                             # We need the remote chart's ID to update it.
                             update_payload = local_chart.copy()
-                            update_payload['name'] = remote_chart['name']
+                            update_payload["name"] = remote_chart["name"]
                             charts_to_update.append(update_payload)
 
                 if charts_to_add or charts_to_delete or charts_to_update:
                     dashboards_ops[name] = {
-                        "operation":
-                        DashboardOperation.UPDATE,
-                        "dashboard_id":
-                        remote_data['dashboard'].name.split('/')[-1],
-                        "dashboard":
-                        local_dashboards[name]
+                        "operation": DashboardOperation.UPDATE,
+                        "dashboard_id": remote_data["dashboard"].name.split("/")[-1],
+                        "dashboard": local_dashboards[name],
                     }
 
         return dashboards_ops
@@ -291,7 +291,8 @@ class DashboardManager:
                 if config["operation"] == DashboardOperation.CREATE:
                     LOGGER.info(f"Creating dashboard '{name}'...")
                     response = self.client.import_dashboard(
-                        dashboard=config["dashboard"])
+                        dashboard=config["dashboard"]
+                    )
                     LOGGER.info(f"Response '{response}'")
                     LOGGER.info(f"'{name}' created successfully.")
 

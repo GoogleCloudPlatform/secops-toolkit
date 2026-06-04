@@ -29,16 +29,16 @@ PROJECT_ID = os.environ.get("PROJECT_ID")
 def main(req):
     """Entrypoint.
 
-  Args:
-    req: Request to execute the cloud function.
+    Args:
+      req: Request to execute the cloud function.
 
-  Returns:
-    string: "Ingestion completed."
-  """
+    Returns:
+      string: "Ingestion completed."
+    """
     client = SecOpsClient()
-    chronicle = client.chronicle(customer_id=SECOPS_CUSTOMER_ID,
-                                 project_id=PROJECT_ID,
-                                 region=SECOPS_REGION)
+    chronicle = client.chronicle(
+        customer_id=SECOPS_CUSTOMER_ID, project_id=PROJECT_ID, region=SECOPS_REGION
+    )
 
     # Expecting values from cloud schedule trigger.
     request_json = req.get_json(silent=True)
@@ -50,34 +50,32 @@ def main(req):
         print("Did not get configuration parameters from request body.")
 
     subscriber = pubsub_v1.SubscriberClient()
-    subscription_path = subscriber.subscription_path(PROJECT_ID,
-                                                     subscription_id)
+    subscription_path = subscriber.subscription_path(PROJECT_ID, subscription_id)
 
-    def get_and_ingest_messages(
-            message: pubsub_v1.subscriber.message.Message) -> None:
+    def get_and_ingest_messages(message: pubsub_v1.subscriber.message.Message) -> None:
         """Get message from the subscription.
 
-    Args:
-      message: Message received from subscription.
+        Args:
+          message: Message received from subscription.
 
-    Raises:
-      ValueError, TypeError: Error when received message is not in json format.
-    """
+        Raises:
+          ValueError, TypeError: Error when received message is not in json format.
+        """
         print(f"Received {message.data!r}.")
         message.ack()
         data = (message.data).decode("utf-8")
         try:
             data = json.loads(data)
         except (ValueError, TypeError) as error:
-            print("ERROR: Unexpected data format received "
-                  "while collecting message details from subscription")
+            print(
+                "ERROR: Unexpected data format received "
+                "while collecting message details from subscription"
+            )
             raise error
 
-        chronicle.ingest_log(log_type=secops_data_type,
-                             log_message=json.dumps(data))
+        chronicle.ingest_log(log_type=secops_data_type, log_message=json.dumps(data))
 
-    future = subscriber.subscribe(subscription_path,
-                                  callback=get_and_ingest_messages)
+    future = subscriber.subscribe(subscription_path, callback=get_and_ingest_messages)
 
     with subscriber:
         try:
