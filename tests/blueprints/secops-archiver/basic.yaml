@@ -32,6 +32,7 @@ values:
   module.cloudbuild-sa[0].google_service_account.service_account[0]:
     account_id: cloudbuild
     create_ignore_already_exists: null
+    deletion_policy: DELETE
     description: null
     disabled: false
     display_name: Terraform-managed.
@@ -44,6 +45,7 @@ values:
     cors: []
     custom_placement_config: []
     default_event_based_hold: null
+    deletion_policy: DELETE
     effective_labels:
       goog-terraform-provisioned: 'true'
     enable_object_retention: null
@@ -93,6 +95,7 @@ values:
         - bucket: pre-gcp-project-id-archiver
           object: bundle-5d5c3c8e5db3e5d3758ff50923b987af.zip
       worker_pool: null
+    deletion_policy: DELETE
     description: Terraform managed.
     effective_labels:
       goog-terraform-provisioned: 'true'
@@ -139,6 +142,7 @@ values:
   module.function.google_service_account.service_account[0]:
     account_id: secops-archiver
     create_ignore_already_exists: null
+    deletion_policy: DELETE
     description: null
     disabled: false
     display_name: secops-archiver
@@ -151,6 +155,7 @@ values:
     cors: []
     custom_placement_config: []
     default_event_based_hold: null
+    deletion_policy: DELETE
     effective_labels:
       goog-terraform-provisioned: 'true'
     enable_object_retention: null
@@ -200,7 +205,7 @@ values:
     content_language: null
     contexts: []
     customer_encryption: []
-    deletion_policy: null
+    deletion_policy: DELETE
     detect_md5hash: null
     event_based_hold: null
     force_empty_content_type: null
@@ -292,48 +297,56 @@ values:
     project: gcp-project-id
     role: roles/vpcaccess.serviceAgent
   module.project.google_project_service.project_services["cloudbuild.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: cloudbuild.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["cloudfunctions.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: cloudfunctions.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["cloudresourcemanager.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: cloudresourcemanager.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["cloudscheduler.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: cloudscheduler.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["dlp.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: dlp.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["run.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: run.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["secretmanager.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: secretmanager.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["vpcaccess.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
@@ -366,6 +379,7 @@ values:
   module.scheduler-sa.google_service_account.service_account[0]:
     account_id: secops-scheduler
     create_ignore_already_exists: null
+    deletion_policy: DELETE
     description: null
     disabled: false
     display_name: Terraform-managed.
