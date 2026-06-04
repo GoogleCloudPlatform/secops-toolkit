@@ -170,9 +170,9 @@ def check_monthly_export(export_month: str, log_types: str):
             "Exports finished successfully for all log types in request.")
     else:
         if in_progress_jobs:
-            raise SystemExit(f'Data Export still in progress')
+            raise SystemExit('Data Export still in progress')
         elif failed_jobs:
-            raise SystemExit(f'Data Export still in progress')
+            raise SystemExit('Data Export still in progress')
         else:
             raise SystemExit(
                 f'Error with checking data export status, no jobs in progress or failures and still {expected_log_types} log types left.'
@@ -214,7 +214,6 @@ def main(request):
     :param request: payload of HTTP request triggering cloud function
     :return:
     """
-    debug = os.environ.get('DEBUG')
     logging.basicConfig(level=logging.INFO)
     LOGGER.info('processing http payload')
     try:

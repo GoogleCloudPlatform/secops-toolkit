@@ -14,12 +14,8 @@
 
 from secops import SecOpsClient
 from google.auth.exceptions import DefaultCredentialsError
-import os
 import json
-import re
-import sys
 import csv
-import subprocess
 
 
 def get_chronicle_client(project_id, location, instance_id):
@@ -47,13 +43,13 @@ def get_chronicle_client(project_id, location, instance_id):
 
 
 def get_curated_rule_sets(chronicle_client):
-    print(f"\nFetching curated rule sets using secops SDK...")
+    print("\nFetching curated rule sets using secops SDK...")
     try:
         result = chronicle_client.list_curated_rule_sets(as_list=True)
-        print(f"Fetched rule sets")
+        print("Fetched rule sets")
         return {"curatedRuleSets": result}
     except Exception as e:
-        print(f"\n--- An Unexpected Error Occurred ---")
+        print("\n--- An Unexpected Error Occurred ---")
         print(f"Error: {e}")
         return {"curatedRuleSets": []}
 
@@ -64,13 +60,13 @@ def get_featured_content_rules(chronicle_client):
     authenticating using Application Default Credentials (ADC), and returns
     the results to a JSON.
     """
-    print(f"\nFetching featured content rules using secops SDK...")
+    print("\nFetching featured content rules using secops SDK...")
     try:
         all_rules = chronicle_client.list_featured_content_rules(as_list=True)
         print(f"Fetched {len(all_rules)} featured content rules.")
         return all_rules
     except Exception as e:
-        print(f"\n--- An Unexpected Error Occurred ---")
+        print("\n--- An Unexpected Error Occurred ---")
         print(f"Error: {e}")
         return []
 
@@ -193,7 +189,6 @@ def write_results_file(recommendation_curated_community,
                 parts = curated_rule.strip().split('/')
                 curated_ruleset = f"{parts[0]}/{parts[1]}" if len(
                     parts) > 1 else 'N/A'
-                rule_name = parts[-1] if parts else 'N/A'
 
                 writer.writerow({
                     'curated rulesSet':

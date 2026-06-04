@@ -22,7 +22,7 @@ from jinja2 import Template
 from shared import utils
 from google.cloud import dlp_v2
 from google.cloud import storage
-from datetime import date, timedelta, datetime
+from datetime import date, datetime
 from secops import SecOpsClient
 
 client = google.cloud.logging.Client()
@@ -235,7 +235,6 @@ def main(request):
     :param request: payload of HTTP request triggering cloud function
     :return:
     """
-    debug = os.environ.get('DEBUG')
     logging.basicConfig(level=logging.INFO)
     LOGGER.info('processing http payload')
     try:

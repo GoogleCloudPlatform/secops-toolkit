@@ -1,4 +1,4 @@
-# Copyright 2025 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -89,15 +89,14 @@ jobs:
         run: |
           python3 tools/check_links.py --no-show-summary .
 
-      - name: Check python formatting
-        id: yapf
-        run: |
-          yapf . \
-            --parallel \
-            --diff \
-            --recursive \
-            --exclude "**/.terraform/" \
-            --exclude "tools/" \
-            --exclude "tests/" \
-            --exclude "**/*.yaml" \
-            --exclude "**/requirements.txt"
+      - name: Ruff format check
+        uses: astral-sh/ruff-action@0ce1b0bf8b818ef400413f810f8a11cdbda0034b # v4.0.0
+        with:
+          args: format --check
+          src: "."
+
+      - name: Ruff check
+        uses: astral-sh/ruff-action@0ce1b0bf8b818ef400413f810f8a11cdbda0034b # v4.0.0
+        with:
+          args: check
+          src: "."

@@ -19,17 +19,12 @@ matching tftest*.yaml and runs plan_validate for each test found.
 
 """
 
-import fnmatch
-import json
-import re
 from pathlib import Path
 
-import jsonschema
 import pytest
 import yaml
 
-from .utils import get_tftest_directive
-from .fixtures import plan_summary, plan_validator
+from .fixtures import plan_validator
 
 _REPO_ROOT = Path(__file__).parents[1]
 
@@ -100,7 +95,7 @@ class TestItem(pytest.Item):
 
   def runtest(self):
     try:
-      summary = plan_validator(self.module, self.inventory,
+      plan_validator(self.module, self.inventory,
                                self.parent.path.parent, self.tf_var_files,
                                self.extra_files, self.extra_dirs)
     except AssertionError:

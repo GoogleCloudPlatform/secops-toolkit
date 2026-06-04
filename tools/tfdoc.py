@@ -314,7 +314,7 @@ def format_tfref_variables(items, show_extra=True):
       if '\n' in title:
         value = title.split('\n')
         # remove indent
-        title = '\n'.join([value[0]] + [l[2:] for l in value[1:]])
+        title = '\n'.join([value[0]] + [line[2:] for line in value[1:]])
         if len(value[0]) >= 18 or len(value[-1]) >= 18:
           value = '…'
         else:
@@ -421,7 +421,7 @@ def parse_outputs(basepath, exclude_files=None):
     try:
       with open(name, encoding='utf-8') as file:
         body = file.read()
-    except (IOError, OSError) as e:
+    except (IOError, OSError):
       raise SystemExit(f'Cannot open outputs file {shortname}.')
     for item in _parse(body, enum=OUT_ENUM, re=OUT_RE, template=OUT_TEMPLATE):
       description = ''.join(item['description'])
@@ -444,7 +444,7 @@ def parse_recipes(module_path, module_url):
             yield Recipe(f'{module_url}/{name}', match.group(1))
           else:
             raise SystemExit(f'No title for recipe {dirpath}')
-      except (IOError, OSError) as e:
+      except (IOError, OSError):
         raise SystemExit(f'Error opening recipe {dirpath}')
 
 
@@ -460,7 +460,7 @@ def parse_variables(basepath, exclude_files=None):
     try:
       with open(name, encoding='utf-8') as file:
         body = file.read()
-    except (IOError, OSError) as e:
+    except (IOError, OSError):
       raise SystemExit(f'Cannot open variables file {shortname}.')
     for item in _parse(body):
       description = (''.join(item['description'])).replace('|', '\\|')
@@ -481,7 +481,7 @@ def render_tfref(readme, doc):
   'Replace document in module\'s README.md file.'
   result = get_tfref_parts(readme)
   if not result:
-    raise SystemExit(f'Mark not found in README')
+    raise SystemExit('Mark not found in README')
   if doc == result['doc']:
     return readme
   return '\n'.join([

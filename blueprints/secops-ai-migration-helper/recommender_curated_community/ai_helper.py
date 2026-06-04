@@ -15,7 +15,6 @@
 #
 #   Generate answer to question using mutimodel LLM
 #
-from google.auth import default
 from google import genai
 from google.genai import types
 
@@ -69,7 +68,6 @@ def generate_answer(input: str,
     # or passing project and location explicitly if needed.
     # In recommender_curated_community.py there are contenthub_project_id and contenthub_location
     import recommender_curated_community
-    import os
 
     # Initialize Google GenAI client for Vertex AI usage
     client = genai.Client(vertexai=True)

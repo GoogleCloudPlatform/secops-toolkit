@@ -18,9 +18,7 @@ import time
 import logging
 import google.auth
 import os
-import urllib.request
 from datetime import datetime, timedelta
-from googleapiclient import _auth
 from google.cloud import pubsub_v1
 from google.auth.transport.requests import AuthorizedSession
 
@@ -145,7 +143,6 @@ def main(request):
         chronicle_assets_config = request_json.get("CHRONICLE_ASSETS_CONFIG")
         content_type = request_json.get("CONTENT_TYPE")
         page_size = request_json.get("PAGE_SIZE")
-        pubsub_project_id = request_json.get("PUBSUB_PROJECT_ID")
     else:
         LOGGER.error("Did not get configuration parameters from request body.")
         raise SystemExit('No configuration sent from Cloud Scheduler')
@@ -171,7 +168,7 @@ def main(request):
                                     "assets"]:  # refactor
                                 assets.append(each_asset)
                         if 'nextPageToken' in fetched_assets:
-                            LOGGER.info(f"More pages available.")
+                            LOGGER.info("More pages available.")
                             LOGGER.info(
                                 f"nextPageToken: {fetched_assets['nextPageToken']}"
                             )
@@ -194,11 +191,11 @@ def main(request):
                                 LOGGER.info("No assets returned from GCP CAI.")
                             more_results = False
                     elif response.status_code == 429:
-                        LOGGER.info(f"Sleeping for 60 seconds.")
+                        LOGGER.info("Sleeping for 60 seconds.")
                         time.sleep(60)
                     else:
                         LOGGER.info(
-                            f"Catch all for any other HTTP error codes.")
+                            "Catch all for any other HTTP error codes.")
                         more_results = False
                         break
 

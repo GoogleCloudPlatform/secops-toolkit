@@ -348,7 +348,7 @@ def e2e_validator(module_path, extra_files, tf_var_files, basedir=None):
             f'{prefix}-{int(time.time())}{os.environ.get("PYTEST_XDIST_WORKER", "0")[-2:]}'
     }
     try:
-      apply = tf.apply(tf_var_file=tf_var_files, tf_vars=tf_vars)
+      tf.apply(tf_var_file=tf_var_files, tf_vars=tf_vars)
       plan = tf.plan(output=True, tf_var_file=tf_var_files, tf_vars=tf_vars)
       changes = {}
       for resource_name, value in plan.resource_changes.items():
@@ -360,7 +360,7 @@ def e2e_validator(module_path, extra_files, tf_var_files, basedir=None):
       plan_before_state = {k: v.get('before') for k, v in changes.items()}
       plan_after_state = {k: v.get('after') for k, v in changes.items()}
 
-      assert plan_before_state == plan_after_state, f'Plan not empty after apply for values'
+      assert plan_before_state == plan_after_state, 'Plan not empty after apply for values'
 
       plan_before_sensitive_state = {
           k: v.get('before_sensitive') for k, v in changes.items()
@@ -368,12 +368,12 @@ def e2e_validator(module_path, extra_files, tf_var_files, basedir=None):
       plan_after_sensitive_state = {
           k: v.get('after_sensitive') for k, v in changes.items()
       }
-      assert plan_before_sensitive_state == plan_after_sensitive_state, f'Plan not empty after apply for sensitive values'
+      assert plan_before_sensitive_state == plan_after_sensitive_state, 'Plan not empty after apply for sensitive values'
 
       # If above did not fail, this should not either, but left as a safety check
       assert changes == {}, f'Plan not empty for following resources: {", ".join(changes.keys())}'
     finally:
-      destroy = tf.destroy(tf_var_file=tf_var_files, tf_vars=tf_vars)
+      tf.destroy(tf_var_file=tf_var_files, tf_vars=tf_vars)
 
 
 @pytest.fixture(name='e2e_validator')

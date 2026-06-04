@@ -25,15 +25,15 @@ File = collections.namedtuple('File', 'path content')
 def get_tftest_directive(s):
   """Scan a code block and return a Directive object if there are any
   tftest directives"""
-  regexp = rf"^ *# *(tftest\S*)(.*)$"
+  regexp = r"^ *# *(tftest\S*)(.*)$"
   if match := re.search(regexp, s, re.M):
     name, body = match.groups()
     args = []
     kwargs = {}
     for arg in body.split():
       if '=' in arg:
-        l, r = arg.split('=', 1)
-        kwargs[l] = r
+        left, right = arg.split('=', 1)
+        kwargs[left] = right
       else:
         args.append(arg)
     return Directive(name, args, kwargs)

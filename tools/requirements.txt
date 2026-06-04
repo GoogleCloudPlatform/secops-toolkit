@@ -5,6 +5,5 @@ iso8601
 marko
 requests
 yamale
-yapf
 jsonschema
 BeautifulSoup4

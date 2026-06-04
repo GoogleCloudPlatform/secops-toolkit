@@ -89,16 +89,16 @@ def main(dirs, external, show_summary=True, scan_files=False):
     if show_summary:
       print(f'----- {dir_name} -----')
     for doc in check_docs(dir_name, external):
-      state = '✓' if all(l.valid for l in doc.links) else '✗'
+      state = '✓' if all(link.valid for link in doc.links) else '✗'
       if show_summary:
         print(f'[{state}] {doc.relpath} ({len(doc.links)})')
       if state == '✗':
         error = [f'{dir_name}/{doc.relpath}']
-        for l in doc.links:
-          if not l.valid:
-            error.append(f'  - {l.dest}')
+        for link in doc.links:
+          if not link.valid:
+            error.append(f'  - {link.dest}')
             if show_summary:
-              print(f'  {l.dest}')
+              print(f'  {link.dest}')
         errors.append('\n'.join(error))
   if errors:
     raise SystemExit('Errors found:\n{}'.format('\n'.join(errors)))

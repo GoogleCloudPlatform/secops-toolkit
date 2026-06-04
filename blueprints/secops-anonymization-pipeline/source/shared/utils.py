@@ -63,7 +63,7 @@ def list_anonymized_folders(bucket_name, folder_name):
     for blob in storage_client.list_blobs(bucket_name,
                                           prefix=f"{folder_name}/"):
         folder_name = blob.name.split('/')[1]
-        if not folder_name in folders:
+        if folder_name not in folders:
             folders.append(folder_name)
 
     return folders

@@ -12,29 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from google.auth import default
-import vertexai
-from vertexai.preview.language_models import TextEmbeddingModel
-from vertexai.preview.language_models import TextGenerationModel
 #from vertexai.preview.language_models import HarmCategory, HarmBlockThreshold
-from vertexai.generative_models import (
-    FinishReason,
-    GenerationConfig,
-    GenerativeModel,
-    HarmBlockThreshold,
-    HarmCategory,
-    Part,
-)
-from vertexai.generative_models._generative_models import SafetySettingsType
 import os
 import json
-import re
 import sys
-import google.auth
-import google.auth.transport.requests
-import requests
-import csv
-import subprocess
 import secops_resources_helper
 import ai_helper
 
@@ -47,8 +28,10 @@ contenthub_instance_id = os.getenv("CONTENTHUB_INSTANCE_ID")
 
 if "--help" not in sys.argv:
     missing_vars = []
-    if not contenthub_project_id: missing_vars.append("CONTENTHUB_PROJECT_ID")
-    if not contenthub_location: missing_vars.append("CONTENTHUB_LOCATION")
+    if not contenthub_project_id:
+        missing_vars.append("CONTENTHUB_PROJECT_ID")
+    if not contenthub_location:
+        missing_vars.append("CONTENTHUB_LOCATION")
     if not contenthub_instance_id:
         missing_vars.append("CONTENTHUB_INSTANCE_ID")
     if missing_vars:
