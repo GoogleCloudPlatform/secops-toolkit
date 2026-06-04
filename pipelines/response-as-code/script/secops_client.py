@@ -64,24 +64,25 @@ class SecOpsClient:
                                                  url,
                                                  params=params,
                                                  json=json_data)
-               
+
                 # Check explicitly for Rate Limiting
                 if response.status_code == 429:
                     if attempt == max_retries:
-                        LOGGER.error(f"Rate limit exceeded. Max retries ({max_retries}) reached.")
+                        LOGGER.error(
+                            f"Rate limit exceeded. Max retries ({max_retries}) reached."
+                        )
                         response.raise_for_status()
-                   
+
                     retry_after = response.headers.get("Retry-After")
                     if retry_after and retry_after.isdigit():
                         sleep_time = int(retry_after)
                     else:
                         sleep_time = random.uniform(0, backoff)
                         backoff *= 2
-                   
+
                     LOGGER.warning(
                         f"Received 429 Too Many Requests. Retrying in {sleep_time:.2f} seconds... "
-                        f"(Attempt {attempt + 1}/{max_retries})"
-                    )
+                        f"(Attempt {attempt + 1}/{max_retries})")
                     time.sleep(sleep_time)
                     continue
 
@@ -91,11 +92,13 @@ class SecOpsClient:
             except requests.HTTPError as e:
                 if e.response is not None and e.response.status_code == 429:
                     continue
-                error_message = f"{e}: {response.content.decode('utf-8')}" if response.content else str(e)
+                error_message = f"{e}: {response.content.decode('utf-8')}" if response.content else str(
+                    e)
                 raise APIError(f"API request failed: {error_message}") from e
             except Exception as e:
                 raise APIError(
-                    f"An unexpected error occurred during API request: {e}") from e
+                    f"An unexpected error occurred during API request: {e}"
+                ) from e
 
     def list_soc_roles(self) -> List[SocRole]:
         """Retrieves a list of all available SOC roles from the Chronicle API."""
@@ -258,7 +261,10 @@ class SecOpsClient:
             parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
             api_path = f"/v1alpha/{parent}/legacyPlaybooks:legacyAddOrUpdatePlaybookCategory"
 
-            response_json = self._make_request(method="POST", path=api_path, json_data={"name": category_name})
+            response_json = self._make_request(
+                method="POST",
+                path=api_path,
+                json_data={"name": category_name})
             return WorkflowCategory(
                 id=response_json.get("id", ""),
                 name=response_json.get("name", ""),
@@ -266,8 +272,7 @@ class SecOpsClient:
                 type=response_json.get("type", ""),
             )
         except Exception as e:
-            raise APIError(
-                f"Failed to create workflow category: {e}") from e
+            raise APIError(f"Failed to create workflow category: {e}") from e
 
     def get_integration_instance_name(self, integration_name: str,
                                       instance_id: str) -> str:
