@@ -75,7 +75,7 @@ def init():
         "SECOPS_CUSTOMER_ID", "SECOPS_PROJECT_ID", "SECOPS_REGION"
     ]
     missing_vars = [
-        v for v in required_vars if not globals().get(v.split("_")[1]) in v
+        v for v in required_vars if globals().get(v.split("_")[1]) not in v
     ]
     if missing_vars:
         _LOGGER.error("Missing required environment variables: %s",

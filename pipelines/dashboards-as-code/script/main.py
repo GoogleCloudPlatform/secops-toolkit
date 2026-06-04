@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import sys
 import json
 import click
@@ -65,7 +64,6 @@ def plan(manager: DashboardManager):
 def apply(manager: DashboardManager):
     LOGGER.info("🚀 Starting Dashboard as Code deployment ...")
     result = {}
-    submitted = []
     has_errors = False
     try:
         LOGGER.info("Deploy Dashboards")

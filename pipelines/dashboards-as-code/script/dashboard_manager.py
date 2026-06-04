@@ -44,7 +44,7 @@ class DashboardManager:
                 allowed_methods=["GET", "POST", "PATCH", "DELETE"],
                 backoff_factor=0.5,
             )
-            self.client = SecOpsClient().chronicle(
+            self.client = SecOpsClient(retry_config=retry_config).chronicle(
                 customer_id=SECOPS_CUSTOMER_ID,
                 project_id=SECOPS_PROJECT_ID,
                 region=SECOPS_REGION)
@@ -124,7 +124,7 @@ class DashboardManager:
 
         except Exception as e:
             LOGGER.error(
-                f"Error: Could not connect to Google SecOps API or list dashboards."
+                "Error: Could not connect to Google SecOps API or list dashboards."
             )
             LOGGER.error(f"Details: {e}")
             return {}

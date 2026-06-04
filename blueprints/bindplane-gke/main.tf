@@ -118,7 +118,9 @@ module "db" {
   databases  = ["bindplane"]
   network_config = {
     connectivity = {
-      psc_allowed_consumer_projects = [module.project.project_id]
+      psc_config = {
+        allowed_consumer_projects = [module.project.project_id]
+      }
     }
   }
   prefix            = var.prefix

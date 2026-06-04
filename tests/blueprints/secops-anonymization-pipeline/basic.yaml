@@ -16,6 +16,7 @@ values:
   google_cloud_scheduler_job.anonymization_jobs["anonymize-data"]:
     app_engine_http_target: []
     attempt_deadline: 320s
+    deletion_policy: DELETE
     description: Trigger SecOps anonymization function.
     http_target:
     - body: eyJBQ1RJT04iOiJBTk9OWU1JWkUtREFUQSJ9
@@ -37,6 +38,7 @@ values:
   google_cloud_scheduler_job.anonymization_jobs["import-data"]:
     app_engine_http_target: []
     attempt_deadline: 320s
+    deletion_policy: DELETE
     description: Trigger SecOps anonymization function.
     http_target:
     - body: eyJBQ1RJT04iOiJJTVBPUlQtREFUQSJ9
@@ -58,6 +60,7 @@ values:
   google_cloud_scheduler_job.anonymization_jobs["trigger-export"]:
     app_engine_http_target: []
     attempt_deadline: 320s
+    deletion_policy: DELETE
     description: Trigger SecOps anonymization function.
     http_target:
     - body: eyJBQ1RJT04iOiJUUklHR0VSLUVYUE9SVCJ9
@@ -549,6 +552,7 @@ values:
     cors: []
     custom_placement_config: []
     default_event_based_hold: null
+    deletion_policy: DELETE
     effective_labels:
       goog-terraform-provisioned: 'true'
     enable_object_retention: null
@@ -630,6 +634,7 @@ values:
   module.cloudbuild-sa[0].google_service_account.service_account[0]:
     account_id: cloudbuild
     create_ignore_already_exists: null
+    deletion_policy: DELETE
     description: null
     disabled: false
     display_name: Terraform-managed.
@@ -642,6 +647,7 @@ values:
     cors: []
     custom_placement_config: []
     default_event_based_hold: null
+    deletion_policy: DELETE
     effective_labels:
       goog-terraform-provisioned: 'true'
     enable_object_retention: null
@@ -725,6 +731,7 @@ values:
         - bucket: pre-gcp-project-id-anonymization
           object: bundle-1e7d729431f30da733a368c853fc045c.zip
       worker_pool: null
+    deletion_policy: DELETE
     description: Terraform managed.
     effective_labels:
       goog-terraform-provisioned: 'true'
@@ -765,6 +772,7 @@ values:
   module.function.google_service_account.service_account[0]:
     account_id: secops-anonymization
     create_ignore_already_exists: null
+    deletion_policy: DELETE
     description: null
     disabled: false
     display_name: secops-anonymization
@@ -777,6 +785,7 @@ values:
     cors: []
     custom_placement_config: []
     default_event_based_hold: null
+    deletion_policy: DELETE
     effective_labels:
       goog-terraform-provisioned: 'true'
     enable_object_retention: null
@@ -826,7 +835,7 @@ values:
     content_language: null
     contexts: []
     customer_encryption: []
-    deletion_policy: null
+    deletion_policy: DELETE
     detect_md5hash: null
     event_based_hold: null
     force_empty_content_type: null
@@ -906,42 +915,49 @@ values:
     project: gcp-project-id
     role: roles/vpcaccess.serviceAgent
   module.project.google_project_service.project_services["cloudbuild.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: cloudbuild.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["cloudresourcemanager.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: cloudresourcemanager.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["cloudscheduler.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: cloudscheduler.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["dlp.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: dlp.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["run.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: run.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["secretmanager.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
     service: secretmanager.googleapis.com
     timeouts: null
   module.project.google_project_service.project_services["vpcaccess.googleapis.com"]:
+    deletion_policy: DELETE
     disable_dependent_services: false
     disable_on_destroy: false
     project: gcp-project-id
@@ -970,6 +986,7 @@ values:
   module.scheduler-sa.google_service_account.service_account[0]:
     account_id: secops-anonymization-scheduler
     create_ignore_already_exists: null
+    deletion_policy: DELETE
     description: null
     disabled: false
     display_name: Terraform-managed.
@@ -977,3 +994,25 @@ values:
     member: serviceAccount:secops-anonymization-scheduler@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     timeouts: null
+
+counts:
+  google_cloud_run_service_iam_binding: 1
+  google_cloud_scheduler_job: 3
+  google_cloudfunctions2_function: 1
+  google_data_loss_prevention_deidentify_template: 1
+  google_data_loss_prevention_inspect_template: 1
+  google_project: 1
+  google_project_iam_binding: 4
+  google_project_iam_member: 13
+  google_project_service: 7
+  google_project_service_identity: 5
+  google_service_account: 3
+  google_storage_bucket: 3
+  google_storage_bucket_iam_binding: 3
+  google_storage_bucket_iam_member: 4
+  google_storage_bucket_object: 1
+  modules: 6
+  resources: 51
+
+outputs:
+  function_sa: secops-anonymization@gcp-project-id.iam.gserviceaccount.com

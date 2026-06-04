@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from enum import Enum
-from typing import List, Optional, Any
+from typing import List, Any
 
 
 class DashboardOperation(Enum):
