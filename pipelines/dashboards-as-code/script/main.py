@@ -80,9 +80,7 @@ def apply(manager: DashboardManager):
 
 
 @cli.command(name="download")
-@click.option('--dashboard',
-              type=str,
-              help="Name of Custom Dashboard to download.")
+@click.option("--dashboard", type=str, help="Name of Custom Dashboard to download.")
 @click.pass_obj
 def download(manager: DashboardManager, dashboard: str):
     LOGGER.info("🚀 Starting dashboard download...")
@@ -96,11 +94,10 @@ def download(manager: DashboardManager, dashboard: str):
 
     for name, data in remote_dashboards.items():
         if name == dashboard:
-            file_path = dashboard_dir / f"{dashboard.replace(' ','_').lower()}.json"
+            file_path = dashboard_dir / f"{dashboard.replace(' ', '_').lower()}.json"
             LOGGER.info(f"  -> Saving dashboard '{name}' to {file_path}...")
             with open(file_path, "w") as f:
-                dashboard_export = manager.export_dashboard(
-                    dashboard_names=[data.name])
+                dashboard_export = manager.export_dashboard(dashboard_names=[data.name])
                 json.dump(dashboard_export["inlineDestination"], f, indent=2)
     LOGGER.info("\n✅ Download complete.")
 

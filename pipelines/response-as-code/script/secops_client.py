@@ -41,31 +41,33 @@ class SecOpsClient:
 
         try:
             google_credentials, _ = google.auth.default(
-                scopes=["https://www.googleapis.com/auth/cloud-platform"])
+                scopes=["https://www.googleapis.com/auth/cloud-platform"]
+            )
             self._session = google.auth.transport.requests.AuthorizedSession(
-                google_credentials)
+                google_credentials
+            )
             LOGGER.info("Google AuthorizedSession initialized successfully.")
         except Exception as e:
-            raise APIError(
-                f"Failed to initialize Google AuthorizedSession: {e}") from e
+            raise APIError(f"Failed to initialize Google AuthorizedSession: {e}") from e
 
-    def _make_request(self,
-                      method: str,
-                      path: str,
-                      params: Dict[str, Any] = None,
-                      json_data: Dict[str, Any] = None,
-                      max_retries: int = 5,
-                      initial_backoff: float = 4.0) -> Dict[str, Any]:
+    def _make_request(
+        self,
+        method: str,
+        path: str,
+        params: Dict[str, Any] = None,
+        json_data: Dict[str, Any] = None,
+        max_retries: int = 5,
+        initial_backoff: float = 4.0,
+    ) -> Dict[str, Any]:
         """Makes an authenticated request to the Chronicle API with built-in 429 retry logic."""
         url = f"{self.base_url}{path}"
         backoff = initial_backoff
 
         for attempt in range(max_retries + 1):
             try:
-                response = self._session.request(method,
-                                                 url,
-                                                 params=params,
-                                                 json=json_data)
+                response = self._session.request(
+                    method, url, params=params, json=json_data
+                )
 
                 # Check explicitly for Rate Limiting
                 if response.status_code == 429:
@@ -84,7 +86,8 @@ class SecOpsClient:
 
                     LOGGER.warning(
                         f"Received 429 Too Many Requests. Retrying in {sleep_time:.2f} seconds... "
-                        f"(Attempt {attempt + 1}/{max_retries})")
+                        f"(Attempt {attempt + 1}/{max_retries})"
+                    )
                     time.sleep(sleep_time)
                     continue
 
@@ -94,8 +97,11 @@ class SecOpsClient:
             except requests.HTTPError as e:
                 if e.response is not None and e.response.status_code == 429:
                     continue
-                error_message = f"{e}: {response.content.decode('utf-8')}" if response.content else str(
-                    e)
+                error_message = (
+                    f"{e}: {response.content.decode('utf-8')}"
+                    if response.content
+                    else str(e)
+                )
                 raise APIError(f"API request failed: {error_message}") from e
             except Exception as e:
                 raise APIError(
@@ -115,9 +121,9 @@ class SecOpsClient:
                 if next_page_token:
                     params["pageToken"] = next_page_token
 
-                response_json = self._make_request(method="GET",
-                                                   path=api_path,
-                                                   params=params)
+                response_json = self._make_request(
+                    method="GET", path=api_path, params=params
+                )
 
                 if "socRoles" in response_json:
                     for role_data in response_json["socRoles"]:
@@ -126,7 +132,8 @@ class SecOpsClient:
                                 name=role_data.get("name", ""),
                                 displayName=role_data.get("displayName", ""),
                                 description=role_data.get("description", ""),
-                            ))
+                            )
+                        )
                 next_page_token = response_json.get("nextPageToken")
                 if not next_page_token:
                     break
@@ -146,9 +153,9 @@ class SecOpsClient:
             # If this is incorrect, it will need to be adjusted.
             payload = {"legacyPayload": ["REGULAR", "NESTED"]}
 
-            response_json = self._make_request(method="POST",
-                                               path=api_path,
-                                               json_data=payload)
+            response_json = self._make_request(
+                method="POST", path=api_path, json_data=payload
+            )
             print(response_json)
 
             if "payload" in response_json:
@@ -160,12 +167,12 @@ class SecOpsClient:
                             name=card_data.get("name", ""),
                             displayName=card_data.get("displayName", ""),
                             categoryName=card_data.get("categoryName", ""),
-                            modification_time=card_data.get(
-                                "modificationTime", ""),
-                            playbookType=card_data.get("playbookType", "")))
+                            modification_time=card_data.get("modificationTime", ""),
+                            playbookType=card_data.get("playbookType", ""),
+                        )
+                    )
         except Exception as e:
-            raise APIError(
-                f"Failed to retrieve legacy workflow menu cards: {e}") from e
+            raise APIError(f"Failed to retrieve legacy workflow menu cards: {e}") from e
         return workflow_menu_cards
 
     def get_playbook(self, identifier: str) -> Dict[str, Any]:
@@ -175,9 +182,8 @@ class SecOpsClient:
             api_path = f"/v1alpha/{parent}/legacyPlaybooks:legacyGetWorkflowFullInfoWithEnvFilterByIdentifier"
 
             response_json = self._make_request(
-                method="GET",
-                path=api_path,
-                params={"workflowIdentifier": identifier})
+                method="GET", path=api_path, params={"workflowIdentifier": identifier}
+            )
             return response_json
         except Exception as e:
             raise APIError(
@@ -190,12 +196,11 @@ class SecOpsClient:
         parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
         api_path = f"/v1alpha/{parent}/legacyPlaybooks:legacySaveWorkflowDefinitions"
 
-        response_json = self._make_request(method="POST",
-                                           path=api_path,
-                                           json_data=playbook.raw_data)
+        response_json = self._make_request(
+            method="POST", path=api_path, json_data=playbook.raw_data
+        )
         return response_json
-        LOGGER.info(
-            f"New workflow '{playbook.name}' was installed successfully")
+        LOGGER.info(f"New workflow '{playbook.name}' was installed successfully")
 
     def get_environment_names(self) -> List[str]:
         """Retrieves a list of environment names from the Chronicle API."""
@@ -208,8 +213,7 @@ class SecOpsClient:
 
             if "environments" in response_json:
                 for environment_data in response_json["environments"]:
-                    environment_names.append(
-                        environment_data.get("displayName", ""))
+                    environment_names.append(environment_data.get("displayName", ""))
         except Exception as e:
             raise APIError(f"Failed to retrieve environment names: {e}") from e
         return environment_names
@@ -224,13 +228,12 @@ class SecOpsClient:
             response_json = self._make_request(method="GET", path=api_path)
 
             if "environmentGroups" in response_json:
-                for environment_group_data in response_json[
-                        "environmentGroups"]:
+                for environment_group_data in response_json["environmentGroups"]:
                     environment_group_names.append(
-                        environment_group_data.get("displayName", ""))
+                        environment_group_data.get("displayName", "")
+                    )
         except Exception as e:
-            raise APIError(
-                f"Failed to retrieve environment group names: {e}") from e
+            raise APIError(f"Failed to retrieve environment group names: {e}") from e
         return environment_group_names
 
     def get_playbook_categories(self) -> List[WorkflowCategory]:
@@ -248,25 +251,25 @@ class SecOpsClient:
                         WorkflowCategory(
                             id=category_data.get("id", ""),
                             name=category_data.get("name", ""),
-                            categoryState=category_data.get(
-                                "categoryState", ""),
+                            categoryState=category_data.get("categoryState", ""),
                             type=category_data.get("type", ""),
-                        ))
+                        )
+                    )
         except Exception as e:
-            raise APIError(
-                f"Failed to retrieve workflow categories: {e}") from e
+            raise APIError(f"Failed to retrieve workflow categories: {e}") from e
         return workflow_categories
 
     def create_playbook_category(self, category_name: str) -> WorkflowCategory:
         """Creates a new workflow category in the Siemplify API."""
         try:
             parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
-            api_path = f"/v1alpha/{parent}/legacyPlaybooks:legacyAddOrUpdatePlaybookCategory"
+            api_path = (
+                f"/v1alpha/{parent}/legacyPlaybooks:legacyAddOrUpdatePlaybookCategory"
+            )
 
             response_json = self._make_request(
-                method="POST",
-                path=api_path,
-                json_data={"name": category_name})
+                method="POST", path=api_path, json_data={"name": category_name}
+            )
             return WorkflowCategory(
                 id=response_json.get("id", ""),
                 name=response_json.get("name", ""),
@@ -276,8 +279,9 @@ class SecOpsClient:
         except Exception as e:
             raise APIError(f"Failed to create workflow category: {e}") from e
 
-    def get_integration_instance_name(self, integration_name: str,
-                                      instance_id: str) -> str:
+    def get_integration_instance_name(
+        self, integration_name: str, instance_id: str
+    ) -> str:
         """Retrieves the display name of an integration instance."""
         try:
             parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
@@ -286,11 +290,9 @@ class SecOpsClient:
             response_json = self._make_request(method="GET", path=api_path)
             return response_json.get("displayName", "")
         except Exception as e:
-            raise APIError(
-                f"Failed to retrieve integration instance name: {e}") from e
+            raise APIError(f"Failed to retrieve integration instance name: {e}") from e
 
-    def get_integrations_instances(self,
-                                   environment: str) -> List[Dict[str, Any]]:
+    def get_integrations_instances(self, environment: str) -> List[Dict[str, Any]]:
         integration_instances: List[Dict[str, Any]] = []
         try:
             parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
@@ -301,6 +303,5 @@ class SecOpsClient:
                 for integration_data in response_json["integrations"]:
                     integration_instances.append(integration_data)
         except Exception as e:
-            raise APIError(
-                f"Failed to retrieve integration instances: {e}") from e
+            raise APIError(f"Failed to retrieve integration instances: {e}") from e
         return integration_instances

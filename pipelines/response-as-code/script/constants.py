@@ -18,7 +18,8 @@ from enum import Enum
 DEFAULT_USERNAME = "None"
 DEFAULT_AUTHOR = "GitSync <gitsync@siemplify.co>"
 COMMIT_AUTHOR_REGEX = (
-    r"[A-Za-z ,.'-]+ <[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}>")
+    r"[A-Za-z ,.'-]+ <[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}>"
+)
 
 ALL_ENVIRONMENTS_IDENTIFIER = "*"
 
@@ -64,7 +65,7 @@ CONDITION_MATCH_TYPES = {
     "IS_EMPTY": "Is Empty",
     "IS_NOT_EMPTY": "Is Not Empty",
     "CUSTOM": "Custom",
-    "EQUALS_ANY": "Equals Any"
+    "EQUALS_ANY": "Equals Any",
 }
 
 #############

@@ -19,7 +19,7 @@ import uuid
 import logging
 from typing import Any, List
 from jinja2 import Template
-from constants import (ALL_ENVIRONMENTS_IDENTIFIER, ROOT_README, STEP_TYPE)
+from constants import ALL_ENVIRONMENTS_IDENTIFIER, ROOT_README, STEP_TYPE
 from models import Workflow, File, WorkflowTypes
 from config import SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION, PLAYBOOKS_PATH
 from models import APIError
@@ -42,13 +42,14 @@ class ResponseManager:
                 "Missing SecOps env vars: SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION."
             )
         try:
-            self.client = SecOpsClient(customer_id=SECOPS_CUSTOMER_ID,
-                                       project_id=SECOPS_PROJECT_ID,
-                                       region=SECOPS_REGION)
+            self.client = SecOpsClient(
+                customer_id=SECOPS_CUSTOMER_ID,
+                project_id=SECOPS_PROJECT_ID,
+                region=SECOPS_REGION,
+            )
             LOGGER.info("Custom SecOps client initialized successfully.")
         except Exception as e:
-            raise APIError(
-                f"Failed to initialize Custom SecOps client: {e}") from e
+            raise APIError(f"Failed to initialize Custom SecOps client: {e}") from e
 
     def get_soc_roles(self) -> List[SocRole]:
         """Retrieves a list of all available SOC roles from the SecOps API."""
@@ -87,18 +88,19 @@ class ResponseManager:
 
         """
         # Validate all playbook environments exist as environments or environment groups
-        environments = (self.client.get_environment_names() +
-                        self.client.get_environment_group_names() +
-                        [ALL_ENVIRONMENTS_IDENTIFIER])
+        environments = (
+            self.client.get_environment_names()
+            + self.client.get_environment_group_names()
+            + [ALL_ENVIRONMENTS_IDENTIFIER]
+        )
         for p in workflows:
-            invalid_environments = [
-                x for x in p.environments if x not in environments
-            ]
+            invalid_environments = [x for x in p.environments if x not in environments]
             if invalid_environments:
                 raise Exception(
                     f"Playbook '{p.name}' is assigned to environment(s) that don't exist: "
                     f"{', '.join(invalid_environments)}. "
-                    f"Available environments: {', '.join(environments)}")
+                    f"Available environments: {', '.join(environments)}"
+                )
 
         # Remove duplicates and split by type
         workflows = list(set(workflows))
@@ -132,36 +134,42 @@ class ResponseManager:
             # Description might be None
             return s.replace("\n", "").strip() if s else s
 
-        integrations = [{
-            "name":
-            integration.definition["DisplayName"],
-            "description":
-            strip_new_lines(integration.definition["Description"]),
-        } for integration in self.content.get_integrations()]
+        integrations = [
+            {
+                "name": integration.definition["DisplayName"],
+                "description": strip_new_lines(integration.definition["Description"]),
+            }
+            for integration in self.content.get_integrations()
+        ]
 
-        playbooks = [{
-            "name": playbook.name,
-            "description": strip_new_lines(playbook.description),
-        } for playbook in self.content.get_playbooks()]
+        playbooks = [
+            {
+                "name": playbook.name,
+                "description": strip_new_lines(playbook.description),
+            }
+            for playbook in self.content.get_playbooks()
+        ]
 
-        connectors = [{
-            "name":
-            connector.name,
-            "description":
-            strip_new_lines(connector.description),
-            "hasMappings": (True if self.content.get_mapping(
-                connector.integration) else False),
-        } for connector in self.content.get_connectors()]
+        connectors = [
+            {
+                "name": connector.name,
+                "description": strip_new_lines(connector.description),
+                "hasMappings": (
+                    True if self.content.get_mapping(connector.integration) else False
+                ),
+            }
+            for connector in self.content.get_connectors()
+        ]
 
-        jobs = [{
-            "name": job.name,
-            "description": strip_new_lines(job.description)
-        } for job in self.content.get_jobs()]
+        jobs = [
+            {"name": job.name, "description": strip_new_lines(job.description)}
+            for job in self.content.get_jobs()
+        ]
 
-        visual_families = [{
-            "name": vf.name,
-            "description": strip_new_lines(vf.description)
-        } for vf in self.content.get_visual_families()]
+        visual_families = [
+            {"name": vf.name, "description": strip_new_lines(vf.description)}
+            for vf in self.content.get_visual_families()
+        ]
 
         readme = Template(ROOT_README)
         return readme.render(
@@ -185,13 +193,13 @@ class ResponseManager:
 
         """
         if base_path and not base_path.endswith(
-                "/"):  # Ensure trailing slash for base_path if not empty
+            "/"
+        ):  # Ensure trailing slash for base_path if not empty
             base_path += "/"
 
         # Ensure content passed to LocalFolderManager is bytes
-        readme_content_bytes = readme.encode('utf-8')
-        update_objects([File("README.md", readme_content_bytes)],
-                       base_path=base_path)
+        readme_content_bytes = readme.encode("utf-8")
+        update_objects([File("README.md", readme_content_bytes)], base_path=base_path)
         LOGGER.info(f"Updated README.md at {base_path}README.md")
 
     def commit_and_push(self, message: str) -> None:
@@ -216,12 +224,15 @@ class ResponseManager:
     ) -> None:
         """Updates name of instances in the steps."""
         for step in workflow.steps:
-            if (step.get("type") == STEP_TYPE
-                    and step.get("actionProvider") == "Scripts"):
+            if (
+                step.get("type") == STEP_TYPE
+                and step.get("actionProvider") == "Scripts"
+            ):
                 self._update_instance_display_names_for_step(workflow, step)
 
-    def _update_instance_display_names_for_step(self, workflow: Workflow,
-                                                step: dict) -> None:
+    def _update_instance_display_names_for_step(
+        self, workflow: Workflow, step: dict
+    ) -> None:
         """Updates display names for integration instance parameters in a step.
 
         Args:
@@ -234,12 +245,12 @@ class ResponseManager:
             param_name = param.get("name")
             param_value = param.get("value")
             try:
-                if not workflow._is_integration_instance_param(
-                        param_name, param_value):
+                if not workflow._is_integration_instance_param(param_name, param_value):
                     continue
 
                 display_name = self.client.get_integration_instance_name(
-                    integration_name, param_value)
+                    integration_name, param_value
+                )
 
                 match param_name:
                     case "IntegrationInstance":
@@ -248,8 +259,7 @@ class ResponseManager:
                         param["FallbackInstanceDisplayName"] = display_name
             except HTTPError as e:
                 # ignoring 404 errors as they expected in migrations between instances.
-                if e.response is not None and hasattr(e.response,
-                                                      'status_code'):
+                if e.response is not None and hasattr(e.response, "status_code"):
                     status_code = e.response.status_code
                     if status_code != 404:
                         raise e
@@ -257,8 +267,7 @@ class ResponseManager:
                     # TIPCommon is re-raising HTTPError without response object
                     # Try to extract status code from the error message itself
                     error_msg = str(e)
-                    status_code_match = re.search(r'(\d{3})\s+Client Error',
-                                                  error_msg)
+                    status_code_match = re.search(r"(\d{3})\s+Client Error", error_msg)
                     if status_code_match:
                         status_code = int(status_code_match.group(1))
                         if status_code != 404:
@@ -299,8 +308,7 @@ class WorkflowInstaller:
 
     def _update_workflow_if_needed(self, workflow: Workflow) -> None:
         if not self._workflow_was_modified(workflow):
-            LOGGER.info(
-                f"Skipped update for unchanged workflow '{workflow.name}'")
+            LOGGER.info(f"Skipped update for unchanged workflow '{workflow.name}'")
             self._filter_and_save_context()
             return
 
@@ -311,7 +319,8 @@ class WorkflowInstaller:
         if self._has_merge_conflicts(workflow):
             LOGGER.warn(
                 "Both the git playbook and local installed playbook were modified."
-                "  Git version will override local changes!", )
+                "  Git version will override local changes!",
+            )
 
     def _has_merge_conflicts(self, workflow: Workflow) -> bool:
         cached_time: int = self._mod_time_cache.get(workflow.name, -1)
@@ -347,8 +356,7 @@ class WorkflowInstaller:
         self._process_steps(workflow)
         self.client.save_playbook(workflow)
         self._save_workflow_mod_time_to_context(workflow)
-        LOGGER.info(
-            f"New Playbook '{workflow.name}' was installed successfully")
+        LOGGER.info(f"New Playbook '{workflow.name}' was installed successfully")
 
     def _process_steps(
         self,
@@ -367,39 +375,53 @@ class WorkflowInstaller:
         # Used for patching step relations
         identifier_mappings = {}
         # Flatten steps to include action containers
-        old_steps = (self._flatten_playbook_steps(
-            installed_workflow.get("steps")) if installed_workflow else None)
-        for step in self._flatten_playbook_steps(
-                workflow.raw_data.get("steps")):
+        old_steps = (
+            self._flatten_playbook_steps(installed_workflow.get("steps"))
+            if installed_workflow
+            else None
+        )
+        for step in self._flatten_playbook_steps(workflow.raw_data.get("steps")):
             provider = step.get("actionProvider")
             step_type = step.get("type")
 
             step["workflowIdentifier"] = workflow.raw_data.get("identifier")
             # Take the step identifier if the same step instance name already exists.
-            existing_step = (next(
-                (x for x in old_steps
-                 if (x.get("instanceName") == step.get("instanceName") and
-                     x.get("actionProvider") == step.get("actionProvider"))),
-                None,
-            ) if old_steps else None)
+            existing_step = (
+                next(
+                    (
+                        x
+                        for x in old_steps
+                        if (
+                            x.get("instanceName") == step.get("instanceName")
+                            and x.get("actionProvider") == step.get("actionProvider")
+                        )
+                    ),
+                    None,
+                )
+                if old_steps
+                else None
+            )
             if existing_step:
                 old_step_identifier = step.get("identifier")
                 identifier_mappings[old_step_identifier] = existing_step.get(
-                    "identifier", )
+                    "identifier",
+                )
                 step["identifier"] = existing_step.get("identifier")
                 step["originalStepIdentifier"] = existing_step.get(
-                    "originalStepIdentifier", )
+                    "originalStepIdentifier",
+                )
 
                 step_debug_data = step.get("debugData")
+                if step_debug_data and step_debug_data.get("originalStepIdentifier"):
+                    step_debug_data["originalStepIdentifier"] = existing_step.get(
+                        "originalStepIdentifier",
+                    )
                 if step_debug_data and step_debug_data.get(
-                        "originalStepIdentifier"):
-                    step_debug_data[
-                        "originalStepIdentifier"] = existing_step.get(
-                            "originalStepIdentifier", )
-                if step_debug_data and step_debug_data.get(
-                        "originalWorkflowIdentifier", ):
+                    "originalWorkflowIdentifier",
+                ):
                     step_debug_data["originalWorkflowIdentifier"] = (
-                        installed_workflow.get("originalPlaybookIdentifier"))
+                        installed_workflow.get("originalPlaybookIdentifier")
+                    )
 
             if step_type == STEP_TYPE and provider == "Scripts":  # Regular Action
                 self._assign_integration_instance_to_step(
@@ -412,26 +434,21 @@ class WorkflowInstaller:
 
         for relation in workflow.raw_data.get("stepsRelations"):
             if relation.get("fromStep") in identifier_mappings:
-                relation["fromStep"] = identifier_mappings.get(
-                    relation.get("fromStep"))
+                relation["fromStep"] = identifier_mappings.get(relation.get("fromStep"))
             if relation.get("toStep") in identifier_mappings:
-                relation["toStep"] = identifier_mappings.get(
-                    relation.get("toStep"))
+                relation["toStep"] = identifier_mappings.get(relation.get("toStep"))
 
         self._adjust_loop_keys_and_parameters(identifier_mappings, workflow)
 
     def _adjust_loop_keys_and_parameters(self, identifier_mappings, workflow):
-        for step in self._flatten_playbook_steps(
-                workflow.raw_data.get("steps")):
+        for step in self._flatten_playbook_steps(workflow.raw_data.get("steps")):
             if step.get("startLoopStepIdentifier"):
-                mapped_id = identifier_mappings.get(
-                    step["startLoopStepIdentifier"])
+                mapped_id = identifier_mappings.get(step["startLoopStepIdentifier"])
                 if mapped_id:
                     step["startLoopStepIdentifier"] = mapped_id
 
             if step.get("endLoopStepIdentifier"):
-                mapped_id = identifier_mappings.get(
-                    step["endLoopStepIdentifier"])
+                mapped_id = identifier_mappings.get(step["endLoopStepIdentifier"])
                 if mapped_id:
                     step["endLoopStepIdentifier"] = mapped_id
 
@@ -441,17 +458,17 @@ class WorkflowInstaller:
                 param_value = param.get("value")
 
                 # Handle Start/EndLoopStepIdentifier parameter
-                if (param_name in {
-                        "StartLoopStepIdentifier", "EndLoopStepIdentifier"
-                } and param_value):
+                if (
+                    param_name in {"StartLoopStepIdentifier", "EndLoopStepIdentifier"}
+                    and param_value
+                ):
                     mapped_id = identifier_mappings.get(param_value)
                     if mapped_id:
                         param["value"] = mapped_id
 
     def _save_workflow_mod_time_to_context(self, workflow: Workflow) -> None:
         self.refresh_cache_item("playbooks")
-        new_mod_time: int = self._get_local_workflow_mod_time(
-            workflow.name, -1)
+        new_mod_time: int = self._get_local_workflow_mod_time(workflow.name, -1)
         self._mod_time_cache[workflow.name] = new_mod_time
         self._filter_and_save_context()
 
@@ -472,10 +489,7 @@ class WorkflowInstaller:
     def _installed_playbooks(self) -> dict[str, WorkflowMenuCard]:
         """Currently installed playbooks and blocks"""
         if "playbooks" not in self._cache:
-            self._cache["playbooks"] = {
-                x.name: x
-                for x in self.client.get_playbooks()
-            }
+            self._cache["playbooks"] = {x.name: x for x in self.client.get_playbooks()}
         return self._cache.get("playbooks")
 
     @property
@@ -483,8 +497,7 @@ class WorkflowInstaller:
         """Currently configured playbook categories"""
         if "categories" not in self._cache:
             self._cache["categories"] = {
-                x.name: x
-                for x in self.client.get_playbook_categories()
+                x.name: x for x in self.client.get_playbook_categories()
             }
         return self._cache.get("categories")
 
@@ -520,8 +533,7 @@ class WorkflowInstaller:
                 existing_step,
                 "IntegrationInstance",
             ).get("value")
-            self._set_step_parameter_by_name(step, "IntegrationInstance",
-                                             instance)
+            self._set_step_parameter_by_name(step, "IntegrationInstance", instance)
             fallback = self._get_step_parameter_by_name(
                 existing_step,
                 "FallbackIntegrationInstance",
@@ -556,8 +568,7 @@ class WorkflowInstaller:
         # If the playbook is for one specific environment, choose the first integration instance
         # from that environment. Otherwise, set the step to dynamic mode and set the first shared
         # integration instance as fallback
-        if len(environments
-               ) == 1 and environments[0] != ALL_ENVIRONMENTS_IDENTIFIER:
+        if len(environments) == 1 and environments[0] != ALL_ENVIRONMENTS_IDENTIFIER:
             integration_instances = self._find_integration_instances_for_step(
                 step.get("integration"),
                 environments[0],
@@ -639,15 +650,15 @@ class WorkflowInstaller:
         """
         cache_key = f"integration_instances_{environment}"
         if cache_key not in self._cache:
-            self._cache[cache_key] = self.client.get_integrations_instances(
-                environment)
+            self._cache[cache_key] = self.client.get_integrations_instances(environment)
 
         instances = self._cache.get(cache_key)
         instances.sort(key=lambda x: x.get("displayName"))
         instances.sort(key=lambda x: x.get("displayName"))
 
         return [
-            x for x in instances
+            x
+            for x in instances
             if x.get("integrationIdentifier") == integration_name
             and x.get("isConfigured")
         ]
@@ -684,12 +695,12 @@ class WorkflowInstaller:
             parameter_value: New value of the parameter
 
         """
-        self._get_step_parameter_by_name(
-            step, parameter_name)["value"] = (parameter_value)
+        self._get_step_parameter_by_name(step, parameter_name)["value"] = (
+            parameter_value
+        )
 
     @staticmethod
-    def _get_step_parameter_by_name(step: dict,
-                                    parameter_name: str) -> dict | None:
+    def _get_step_parameter_by_name(step: dict, parameter_name: str) -> dict | None:
         """Get a workflow step parameter by name
 
         Args:
@@ -701,14 +712,12 @@ class WorkflowInstaller:
 
         """
         return next(
-            (x for x in step.get("parameters")
-             if x.get("name") == parameter_name),
+            (x for x in step.get("parameters") if x.get("name") == parameter_name),
             None,
         )
 
     @staticmethod
-    def _copy_ids_from_existing_workflow(workflow: Workflow,
-                                         other: dict) -> None:
+    def _copy_ids_from_existing_workflow(workflow: Workflow, other: dict) -> None:
         """Reconfigure 'workflow' values according to 'other' workflow
 
         Args:
@@ -719,10 +728,12 @@ class WorkflowInstaller:
         workflow.raw_data["id"] = other.get("id")
         workflow.raw_data["identifier"] = other.get("identifier")
         workflow.raw_data["originalPlaybookIdentifier"] = other.get(
-            "originalPlaybookIdentifier", )
+            "originalPlaybookIdentifier",
+        )
         workflow.raw_data["trigger"]["id"] = other.get("trigger").get("id")
         workflow.raw_data["trigger"]["identifier"] = other.get("trigger").get(
-            "identifier", )
+            "identifier",
+        )
         workflow.raw_data["categoryName"] = other.get("categoryName")
         workflow.raw_data["categoryId"] = other.get("categoryId")
 
@@ -734,7 +745,8 @@ class WorkflowInstaller:
 
         """
         workflow.raw_data["identifier"] = workflow.raw_data[
-            "originalPlaybookIdentifier"] = str(uuid.uuid4())
+            "originalPlaybookIdentifier"
+        ] = str(uuid.uuid4())
         workflow.raw_data["trigger"]["id"] = 0
         workflow.raw_data["trigger"]["identifier"] = str(uuid.uuid4())
 
@@ -753,14 +765,16 @@ class WorkflowInstaller:
             step: A nested workflow step to reconfigure
 
         """
-        if (step.get("name") in self._installed_playbooks
-                and self._installed_playbooks[step.get("name")].playbookType
-                == WorkflowTypes.BLOCK.value):
+        if (
+            step.get("name") in self._installed_playbooks
+            and self._installed_playbooks[step.get("name")].playbookType
+            == WorkflowTypes.BLOCK.value
+        ):
             nested_workflow_identifier = self._get_step_parameter_by_name(
                 step,
                 "NestedWorkflowIdentifier",
             )
             if nested_workflow_identifier:
-                nested_workflow_identifier[
-                    "value"] = self._installed_playbooks[step.get(
-                        "name")].identifier
+                nested_workflow_identifier["value"] = self._installed_playbooks[
+                    step.get("name")
+                ].identifier

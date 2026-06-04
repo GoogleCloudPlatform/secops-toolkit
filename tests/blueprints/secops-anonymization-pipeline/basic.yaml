@@ -729,7 +729,7 @@ values:
       - repo_source: []
         storage_source:
         - bucket: pre-gcp-project-id-anonymization
-          object: bundle-1e7d729431f30da733a368c853fc045c.zip
+          object: bundle-0251559cda058a3aff36aeee5797ea33.zip
       worker_pool: null
     deletion_policy: DELETE
     description: Terraform managed.
@@ -840,10 +840,10 @@ values:
     event_based_hold: null
     force_empty_content_type: null
     metadata: null
-    name: bundle-1e7d729431f30da733a368c853fc045c.zip
+    name: bundle-0251559cda058a3aff36aeee5797ea33.zip
     retention: []
     source: /tmp/bundle-gcp-project-id-secops-anonymization.zip
-    source_md5hash: 1e7d729431f30da733a368c853fc045c
+    source_md5hash: 0251559cda058a3aff36aeee5797ea33
     temporary_hold: null
     timeouts: null
   module.project.google_project.project[0]:
@@ -994,25 +994,3 @@ values:
     member: serviceAccount:secops-anonymization-scheduler@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     timeouts: null
-
-counts:
-  google_cloud_run_service_iam_binding: 1
-  google_cloud_scheduler_job: 3
-  google_cloudfunctions2_function: 1
-  google_data_loss_prevention_deidentify_template: 1
-  google_data_loss_prevention_inspect_template: 1
-  google_project: 1
-  google_project_iam_binding: 4
-  google_project_iam_member: 13
-  google_project_service: 7
-  google_project_service_identity: 5
-  google_service_account: 3
-  google_storage_bucket: 3
-  google_storage_bucket_iam_binding: 3
-  google_storage_bucket_iam_member: 4
-  google_storage_bucket_object: 1
-  modules: 6
-  resources: 51
-
-outputs:
-  function_sa: secops-anonymization@gcp-project-id.iam.gserviceaccount.com

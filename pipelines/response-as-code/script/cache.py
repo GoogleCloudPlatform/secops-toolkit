@@ -24,8 +24,7 @@ _Index: TypeAlias = int
 _Record: TypeAlias = MutableMapping[_KT, _VT]
 _Cache: TypeAlias = MutableSequence[_Record]
 _KeyToIndex: TypeAlias = MutableMapping[_KT, _Index]
-_CacheInitData = collections.namedtuple("_CacheInitData",
-                                        ["cache", "largest_index"])
+_CacheInitData = collections.namedtuple("_CacheInitData", ["cache", "largest_index"])
 JsonStr: TypeAlias = str
 
 CONTEXT_MOD_TIME_KEY: str = "name_to_modification_time_mapping_{0}"
@@ -86,8 +85,7 @@ class Cache(MutableMapping[_KT, _VT], Generic[_KT, _VT]):
 
     # @override
     def __len__(self) -> int:
-        return len(self._new_cache) + sum(
-            len(record) for record in self._cache)
+        return len(self._new_cache) + sum(len(record) for record in self._cache)
 
     # @override
     def __iter__(self) -> Iterator[_KT]:
@@ -127,10 +125,7 @@ class Cache(MutableMapping[_KT, _VT], Generic[_KT, _VT]):
         """Filter keys that don't exist in the platform from the cache."""
         c: _Cache = copy.deepcopy(self._cache)
         for i, record in enumerate(c):
-            self._cache[i] = {
-                k: v
-                for k, v in list(record.items()) if k in keys
-            }
+            self._cache[i] = {k: v for k, v in list(record.items()) if k in keys}
 
     def push_local_to_external(self) -> None:
         """Push the local cache of this object to the external cache storage."""
@@ -142,15 +137,13 @@ class Cache(MutableMapping[_KT, _VT], Generic[_KT, _VT]):
         self._push_regular_cache()
 
     def _distribute_new_items_to_unfilled_existing_rows(self) -> None:
-        row_indexes: Iterable[
-            _Index] = self._get_indexes_sorted_by_content_length()
+        row_indexes: Iterable[_Index] = self._get_indexes_sorted_by_content_length()
         for i in row_indexes:
             self._fill_row_with_new_items(self._cache[i])
 
     def _get_indexes_sorted_by_content_length(self) -> Iterable[_Index]:
         indexes: list[_Index] = list(range(len(self._cache)))
-        return sorted(indexes,
-                      key=lambda i: len(_dump_property_value(self._cache[i])))
+        return sorted(indexes, key=lambda i: len(_dump_property_value(self._cache[i])))
 
     def _fill_row_with_new_items(self, row: _Record[_KT, _VT]) -> None:
         dumped_row: JsonStr = _dump_property_value(row)
@@ -171,11 +164,9 @@ class Cache(MutableMapping[_KT, _VT], Generic[_KT, _VT]):
     def _distribute_new_cache_to_new_rows_and_push(self) -> None:
         while self._new_cache:
             self._largest_row_index += 1
-            self._remove_new_cached_items_and_save_them_to_row(
-                self._largest_row_index)
+            self._remove_new_cached_items_and_save_them_to_row(self._largest_row_index)
 
-    def _remove_new_cached_items_and_save_them_to_row(self,
-                                                      index: _Index) -> None:
+    def _remove_new_cached_items_and_save_them_to_row(self, index: _Index) -> None:
         removed_keys: _Record[_KT, _VT] = {}
         new_cache: _Record[_KT, _VT] = copy.deepcopy(self._new_cache)
         while new_cache:
@@ -188,13 +179,11 @@ class Cache(MutableMapping[_KT, _VT], Generic[_KT, _VT]):
 
         self._new_cache = removed_keys
 
-    def _get_scoped_job_context_property(self,
-                                         index: _Index) -> JsonStr | None:
+    def _get_scoped_job_context_property(self, index: _Index) -> JsonStr | None:
         _key: str = _row_key(index)
         return None
 
-    def _set_scoped_job_context_property(self, index: _Index,
-                                         cache: _Record) -> None:
+    def _set_scoped_job_context_property(self, index: _Index, cache: _Record) -> None:
         _key: str = _row_key(index)
         _value: JsonStr = _dump_property_value(cache)
 

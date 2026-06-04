@@ -22,6 +22,6 @@ SECOPS_CUSTOMER_ID = os.environ.get("SECOPS_CUSTOMER_ID")
 SECOPS_PROJECT_ID = os.environ.get("SECOPS_PROJECT_ID")
 SECOPS_REGION = os.environ.get("SECOPS_REGION")
 
-SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
+SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
 
-GITHUB_OUTPUT_FILE = os.getenv('GITHUB_OUTPUT')
+GITHUB_OUTPUT_FILE = os.getenv("GITHUB_OUTPUT")

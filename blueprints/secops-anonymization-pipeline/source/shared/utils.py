@@ -20,7 +20,7 @@ import csv
 from google.cloud import storage
 from datetime import datetime, timedelta, timezone, time
 
-LOGGER = logging.getLogger('secops')
+LOGGER = logging.getLogger("secops")
 """Utility functions required for ingestion scripts."""
 MAX_FILE_SIZE = 61440000  # Max size supported by DLP
 
@@ -40,9 +40,7 @@ def format_date_time_range(date_input):
     """
     date_obj = datetime.strptime(date_input, "%Y-%m-%d")
 
-    start_of_day = datetime.combine(date_obj.date(),
-                                    time.min,
-                                    tzinfo=timezone.utc)
+    start_of_day = datetime.combine(date_obj.date(), time.min, tzinfo=timezone.utc)
     end_of_day = start_of_day + timedelta(days=1, seconds=-1)
 
     return start_of_day, end_of_day
@@ -51,19 +49,18 @@ def format_date_time_range(date_input):
 def list_anonymized_folders(bucket_name, folder_name):
     """Lists all folders (prefixes) within a specified folder in a GCS bucket.
 
-      Args:
-          bucket_name: Name of the GCS bucket.
-          folder_name: Name of the folder (prefix) to search within.
+    Args:
+        bucket_name: Name of the GCS bucket.
+        folder_name: Name of the folder (prefix) to search within.
 
-      Returns:
-          A list of folder names (prefixes) found.
-      """
+    Returns:
+        A list of folder names (prefixes) found.
+    """
     folders = []
     storage_client = storage.Client()
-    for blob in storage_client.list_blobs(bucket_name,
-                                          prefix=f"{folder_name}/"):
-        folder_name = blob.name.split('/')[1]
-        if not folder_name in folders:
+    for blob in storage_client.list_blobs(bucket_name, prefix=f"{folder_name}/"):
+        folder_name = blob.name.split("/")[1]
+        if folder_name not in folders:
             folders.append(folder_name)
 
     return folders
@@ -96,8 +93,7 @@ def list_log_files(bucket_name, folder_name):
 
     storage_client = storage.Client()
     csv_files = []
-    for blob in storage_client.list_blobs(bucket_name,
-                                          prefix=f"{folder_name}/"):
+    for blob in storage_client.list_blobs(bucket_name, prefix=f"{folder_name}/"):
         if blob.name.endswith(".log") or blob.name.endswith(".csv"):
             csv_files.append(blob.name)
 
@@ -117,7 +113,7 @@ def split_csv(bucket_name, blob_name, file_size):
     blob = bucket.blob(blob_name)
 
     # Download the blob to a local file
-    temp_file = '/tmp/temp.csv'
+    temp_file = "/tmp/temp.csv"
     blob.download_to_filename(temp_file)
 
     file = open(temp_file, encoding="utf8")
@@ -127,29 +123,29 @@ def split_csv(bucket_name, blob_name, file_size):
     chunk_number = math.ceil(numline * MAX_FILE_SIZE / file_size)
     index = 0
     lines = []
-    with open(temp_file, 'r', encoding="utf8") as f_in:
-        reader = csv.reader(f_in, delimiter='\n')
+    with open(temp_file, "r", encoding="utf8") as f_in:
+        reader = csv.reader(f_in, delimiter="\n")
         for line in reader:
             lines.append(line[0] + "\n")
             if len(lines) == chunk_number:
-                chunk_filename = f'{blob_name.split(".")[0]}_{index}.log'
-                chunk_path = f'/tmp/temp-{index}.csv'
-                with open(chunk_path, 'w') as fout:
+                chunk_filename = f"{blob_name.split('.')[0]}_{index}.log"
+                chunk_path = f"/tmp/temp-{index}.csv"
+                with open(chunk_path, "w") as fout:
                     fout.writelines(lines)
-                chunk_blob = bucket.blob(f'{chunk_filename}')
+                chunk_blob = bucket.blob(f"{chunk_filename}")
                 chunk_blob.upload_from_filename(chunk_path)
-                print(f'Uploaded {chunk_filename} to {bucket_name}')
+                print(f"Uploaded {chunk_filename} to {bucket_name}")
                 os.remove(chunk_path)  # Remove the local chunk file
                 index += 1
                 lines = []
 
-        chunk_filename = f'{blob_name.split(".")[0]}_{index}.log'
-        chunk_path = f'/tmp/temp-{index}.csv'
-        with open(chunk_path, 'w') as fout:
+        chunk_filename = f"{blob_name.split('.')[0]}_{index}.log"
+        chunk_path = f"/tmp/temp-{index}.csv"
+        with open(chunk_path, "w") as fout:
             fout.writelines(lines)
-        chunk_blob = bucket.blob(f'{chunk_filename}')
+        chunk_blob = bucket.blob(f"{chunk_filename}")
         chunk_blob.upload_from_filename(chunk_path)
-        print(f'Uploaded {chunk_filename} to {bucket_name}')
+        print(f"Uploaded {chunk_filename} to {bucket_name}")
         os.remove(chunk_path)  # Remove the local chunk file
         index += 1
         lines = []
@@ -189,9 +185,10 @@ def get_secops_export_folders_for_date(bucket_name, export_date):
     for blob in storage_client.list_blobs(bucket_name):
         if "_$folder$" in blob.name:
             continue
-        if blob.time_created.strftime(
-                "%Y-%m-%d") == export_date and blob.name.split(
-                    '/')[0] not in export_ids:
-            export_ids.append(blob.name.split('/')[0])
+        if (
+            blob.time_created.strftime("%Y-%m-%d") == export_date
+            and blob.name.split("/")[0] not in export_ids
+        ):
+            export_ids.append(blob.name.split("/")[0])
 
     return export_ids
