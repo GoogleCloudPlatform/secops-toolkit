@@ -93,7 +93,7 @@ values:
       - repo_source: []
         storage_source:
         - bucket: pre-gcp-project-id-archiver
-          object: bundle-5d5c3c8e5db3e5d3758ff50923b987af.zip
+          object: bundle-b28bff6ab24c3b7cf9470d590e4e34b2.zip
       worker_pool: null
     deletion_policy: DELETE
     description: Terraform managed.
@@ -210,10 +210,10 @@ values:
     event_based_hold: null
     force_empty_content_type: null
     metadata: null
-    name: bundle-5d5c3c8e5db3e5d3758ff50923b987af.zip
+    name: bundle-b28bff6ab24c3b7cf9470d590e4e34b2.zip
     retention: []
     source: /tmp/bundle-gcp-project-id-secops-archiver.zip
-    source_md5hash: 5d5c3c8e5db3e5d3758ff50923b987af
+    source_md5hash: b28bff6ab24c3b7cf9470d590e4e34b2
     temporary_hold: null
     timeouts: null
   module.project.google_project.project[0]:
@@ -387,21 +387,3 @@ values:
     member: serviceAccount:secops-scheduler@gcp-project-id.iam.gserviceaccount.com
     project: gcp-project-id
     timeouts: null
-
-counts:
-  google_cloud_run_service_iam_binding: 1
-  google_cloudfunctions2_function: 1
-  google_project: 1
-  google_project_iam_binding: 4
-  google_project_iam_member: 16
-  google_project_service: 8
-  google_project_service_identity: 6
-  google_service_account: 3
-  google_storage_bucket: 2
-  google_storage_bucket_iam_binding: 1
-  google_storage_bucket_object: 1
-  modules: 5
-  resources: 44
-
-outputs:
-  function_sa: secops-archiver@gcp-project-id.iam.gserviceaccount.com
