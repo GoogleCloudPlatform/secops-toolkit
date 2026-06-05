@@ -22,10 +22,18 @@ variable "billing_project" {
 variable "project_create_config" {
   description = "Create project instead of using an existing one."
   type = object({
-    billing_account = string
-    parent          = optional(string)
+    billing_account  = string
+    parent           = optional(string)
+    bootstrap_folder = optional(bool, false)
   })
   default = null
+
+  validation {
+    condition = var.project_create_config == null ? true : (
+      (var.project_create_config.parent != null ? 1 : 0) + (var.project_create_config.bootstrap_folder == true ? 1 : 0) <= 1
+    )
+    error_message = "Only one of 'parent' or 'bootstrap_folder' can be populated at the same time."
+  }
 }
 
 variable "project_id" {

@@ -1,15 +1,14 @@
-# SecOps Instance
+# SecOps Toolkit Foundation - Stage 1 - SecOps Setup
 
-This blueprint allows automated configuration of SecOps instance at both configuration and application level.
+This stage is responsible for bootstrapping the Google SecOps instance with the required configurations to operate (e.g. Access with IAM and RBAC, Custom Roles, Ingestion credentials, SOAR Environments etc.) based on Google Professional Services best practices.
 
 The following diagram illustrates the high-level design of SecOps instance configuration in both GCP and SecOps instance, which can be adapted to specific requirements via variables.
 
 <p align="center">
-  <img src="images/diagram.png" alt="SecOPs Tenant">
+  <img src="images/diagram.png" alt="SecOps Instance">
 </p>
 
 <!-- BEGIN TOC -->
-
 - [Design overview and choices](#design-overview-and-choices)
   - [Custom Roles](#custom-roles)
   - [Provider and Terraform variables](#provider-and-terraform-variables)
@@ -18,19 +17,18 @@ The following diagram illustrates the high-level design of SecOps instance confi
   - [Running the blueprint](#running-the-blueprint)
 - [Customizations](#customizations)
   - [Data RBAC](#data-rbac)
-  - [SecOps rules and reference list management](#secops-rules-and-reference-list-management)
+  - [SecOps rules and Data Tables management](#secops-rules-and-data-tables-management)
   - [Google Workspace integration](#google-workspace-integration)
   - [SOAR Configurations](#soar-configurations)
   - [SIEM Custom Log Types](#siem-custom-log-types)
 - [Files](#files)
 - [Variables](#variables)
 - [Outputs](#outputs)
-
 <!-- END TOC -->
 
 ## Design overview and choices
 
-The general idea behind this stage is to configure a single SecOps instance for a specific environment with configurations both on SecOps leveraging terraform resources (where available) and `restful_resource` for interacting with the new [SecOps APIs](https://cloud.google.com/chronicle/docs/reference/rest).
+The general idea behind this stage is to configure a single SecOps instance for a specific environment with configurations both on SecOps leveraging terraform resources (where available) and `restful_resource` for interacting with the new [Chronicle APIs](https://cloud.google.com/chronicle/docs/reference/rest).
 
 Some high level features of the current version of the stage are:
 
@@ -204,11 +202,11 @@ secops_iam = {
 Such a variable supports assigning principals custom roles defined via the project factory by simply referencing the role name as per the previous example.
 Be aware that just "Scoped" roles are supported for Data RBAC configuration.
 
-### SecOps rules and reference list management
+### SecOps rules and Data Tables management
 
-This stage leverages the [secops-rules](../../modules/secops-rules) for automated SecOps rules and reference list deployment via Terraform.
+This stage leverages the [secops-rules](../../modules/secops-rules) for automated SecOps rules and Data Tables deployment via Terraform.
 
-By default, the stage will try to deploy sample rule and reference list available in the [rules](./data/rules) and [reference_lists](./data/reference_lists) folders according to the configuration files `secops_rules.yaml` and `secops_reference_lists.yaml`.
+By default, the stage will try to deploy sample rule and data tables available in the [rules](./data/rules) and [data_tables](./data/data_tables) folders according to the configuration files `secops_rules.yaml` and `secops_data_tables.yaml`.
 
 The configuration can be updated via the `factory_config` variable as per the `secops-rules` module [README.md](../../modules/secops-rules/README.md).
 

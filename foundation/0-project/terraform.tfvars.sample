@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+billing_project = "tmp-project"
 project_id = "bruzz-dev-secops-0"
 organization_id = "828467380811"
 essential_contacts = ["test@example.com"]

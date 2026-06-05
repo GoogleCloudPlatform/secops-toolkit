@@ -16,11 +16,18 @@
 
 # tfdoc:file:description Project and APIs.
 
+module "secops_folder" {
+  count  = try(var.project_create_config.bootstrap_folder, false) ? 1 : 0
+  source = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/folder"
+  parent = "organizations/${var.organization_id}"
+  name   = "SecOps"
+}
+
 module "project" {
   source          = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/project"
   name            = var.project_id
   billing_account = try(var.project_create_config.billing_account, null)
-  parent          = try(var.project_create_config.parent, null)
+  parent          = try(var.project_create_config.bootstrap_folder, false) ? module.secops_folder[0].name : try(var.project_create_config.parent, null)
   project_reuse   = var.project_create_config != null ? null : {}
   org_policies    = {
     "iam.disableServiceAccountKeyCreation" = {
