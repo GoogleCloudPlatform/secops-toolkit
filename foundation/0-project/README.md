@@ -1,27 +1,46 @@
-# Cloud Run - Single / Project Setup
+# Google SecOps - Project Bootstrap Setup
 
-This stage is part of the `Cloud Run - Single` factory.
-It is responsible for setting up the Google Cloud project, activating the APIs and granting the roles you need to deploy and manage the resources that enable the AI use case.
+This stage is responsible for bootstrapping the Google SecOps GCP project within an existing GCP Organization. 
 
-It leverages the Cloud Foundation Fabric [`project-factory`](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric/tree/master/modules/project-factory).
+It supports multiple deployment scenarios:
+- **Organization-level** or **Folder-level** project creation.
+- **Reusing an existing project** without creating a new one.
 
-You can refer to the [YAML project configuration](data/projects/project.yaml) for more details about enabled APIs and roles assigned in the project.
+This stage enables the necessary Chronicle APIs and supports configuring VPC Service Controls (VPC-SC) for SecOps. It leverages the [Cloud Foundation Fabric modules](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric) to ensure best practices.
 
-## Required roles
+![Google SecOps Hierarchy Diagram](hierarchy_diagram.png)
 
-To execute this stage, you need these roles:
+## Required roles (Least Privileges)
 
-- `roles/resourcemanager.projectCreator` on the organization or folder where you will create the project.
-- `roles/billing.user` on the billing account you wish to use.
+To apply this configuration with the principle of least privileges, you need the following roles:
 
-Alternatively, you can use the more permissive `roles/owner` on the organization or folder.
+- `roles/resourcemanager.projectCreator` on the Organization or Folder where you will create the project (only if the project needs to be created and does not exist yet).
+- `roles/billing.user` on the Billing Account you wish to link.
+- `roles/serviceusage.serviceUsageAdmin` on the project (to enable Chronicle and other APIs).
+- `roles/accesscontextmanager.policyAdmin` at the Organization level (if VPC Service Controls configurations are enabled).
+
+Alternatively, you can use the more permissive `roles/owner` on the organization or folder, though this is not recommended for production environments.
+
+## Example `terraform.tfvars`
+
+You can use the provided `terraform.tfvars.sample` as a starting point. Below is an example based on the sample available in this folder:
+
+```hcl
+project_id         = "bruzz-dev-secops-0"
+organization_id    = "828467380811"
+essential_contacts = ["test@example.com"]
+
+vpc_sc_config = {
+  enabled = true
+}
+```
 
 ## Deploy the stage
 
 ```shell
 cp terraform.tfvars.sample terraform.tfvars
 
-# Replace prefix, billing account and parent.
+# Edit terraform.tfvars to match your environment.
 
 terraform init
 terraform apply
@@ -31,18 +50,55 @@ You should now see the `providers.tf` and `terraform.auto.tfvars` files in the [
 
 ## Use existing projects
 
-The `project_config` variable allows to configure for different scenarios regarding project creation and management, as described in the [main README](../../README.md).
+The `project_create_config` variable allows you to configure whether to create a new project or reuse an existing one, providing flexibility depending on your environment.
+
+## Customizing VPC Service Controls (VPC-SC)
+
+This project leverages the Cloud Foundation Fabric [`vpc-sc` module](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric/tree/master/modules/vpc-sc) to manage VPC Service Controls. 
+
+Default rules and configurations are available in the `vpcsc/` folder. You can easily extend the access levels configuration by creating or modifying YAML files in the `vpcsc/access-levels/` directory.
+
+### Extending Access Levels
+
+You can restrict access to SecOps APIs based on geographic location, specific user identities, or a list of IP addresses. Here is how you can configure them:
+
+- **By IP Address (`ips.yaml`)**: Define a list of allowed subnets.
+  ```yaml
+  conditions:
+    - ip_subnetworks:
+        - 93.45.67.54/32
+  ```
+
+- **By Geography (`geo.yaml`)**: Restrict access to specific countries using region codes (e.g., `IT` for Italy).
+  ```yaml
+  conditions:
+    - regions:
+        - IT
+  ```
+
+- **By User/Identity (`users.yaml`)**: Allow specific members or service accounts.
+  ```yaml
+  conditions:
+    - members:
+        - user:admin@example.com
+        - serviceAccount:my-sa@my-project.iam.gserviceaccount.com
+  ```
+
+These files act as definitions for the VPC-SC factory to automatically generate the appropriate Access Context Manager rules.
+
 <!-- BEGIN TFDOC -->
 ## Variables
 
 | name | description | type | required | default |
 |---|---|:---:|:---:|:---:|
-| [organization_id](variables.tf#L31) | GCP Organization ID used for VPC SC perimeters. | <code>string</code> | ✓ |  |
-| [project_id](variables.tf#L26) | Project id that references existing project. | <code>string</code> | ✓ |  |
-| [access_policy](variables.tf#L36) | Access policy id (used for tenant-level VPC-SC configurations). | <code>number</code> |  | <code>null</code> |
-| [factories_config](variables.tf#L42) | Paths to folders that enable factory functionality. | <code title="object&#40;&#123;&#10;  dataset &#61; optional&#40;string, &#34;vpcsc&#34;&#41;&#10;  paths &#61; optional&#40;object&#40;&#123;&#10;    access_levels       &#61; optional&#40;string, &#34;access-levels&#34;&#41;&#10;    defaults            &#61; optional&#40;string, &#34;defaults.yaml&#34;&#41;&#10;    egress_policies     &#61; optional&#40;string, &#34;egress-policies&#34;&#41;&#10;    ingress_policies    &#61; optional&#40;string, &#34;ingress-policies&#34;&#41;&#10;    perimeters          &#61; optional&#40;string, &#34;perimeters&#34;&#41;&#10;    restricted_services &#61; optional&#40;string, &#34;restricted-services.yaml&#34;&#41;&#10;  &#125;&#41;, &#123;&#125;&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>&#123;&#125;</code> |
-| [project_create_config](variables.tf#L17) | Create project instead of using an existing one. | <code title="object&#40;&#123;&#10;  billing_account &#61; string&#10;  parent          &#61; optional&#40;string&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>null</code> |
-| [vpc_sc_config](variables.tf#L59) | VPC SC Configuration. | <code title="object&#40;&#123;&#10;  enabled      &#61; optional&#40;bool, false&#41;&#10;  scc_enabled  &#61; optional&#40;bool, false&#41;&#10;  cmek_enabled &#61; optional&#40;bool, false&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>&#123;&#125;</code> |
+| [billing_project](variables.tf#L17) | Billing project id. This project is used as the billing and quota project for the Terraform providers. | <code>string</code> | ✓ |  |
+| [organization_id](variables.tf#L36) | GCP Organization ID used for VPC SC perimeters. | <code>string</code> | ✓ |  |
+| [project_id](variables.tf#L31) | Project id that references existing project. | <code>string</code> | ✓ |  |
+| [access_policy](variables.tf#L41) | Access policy id (used for tenant-level VPC-SC configurations). | <code>number</code> |  | <code>null</code> |
+| [essential_contacts](variables.tf#L64) | List of essential contacts for Google Cloud project for product and platform notifications. | <code>list&#40;string&#41;</code> |  | <code>&#91;&#93;</code> |
+| [factories_config](variables.tf#L47) | Paths to folders that enable factory functionality. | <code title="object&#40;&#123;&#10;  dataset &#61; optional&#40;string, &#34;vpcsc&#34;&#41;&#10;  paths &#61; optional&#40;object&#40;&#123;&#10;    access_levels       &#61; optional&#40;string, &#34;access-levels&#34;&#41;&#10;    defaults            &#61; optional&#40;string, &#34;defaults.yaml&#34;&#41;&#10;    egress_policies     &#61; optional&#40;string, &#34;egress-policies&#34;&#41;&#10;    ingress_policies    &#61; optional&#40;string, &#34;ingress-policies&#34;&#41;&#10;    perimeters          &#61; optional&#40;string, &#34;perimeters&#34;&#41;&#10;    restricted_services &#61; optional&#40;string, &#34;restricted-services.yaml&#34;&#41;&#10;  &#125;&#41;, &#123;&#125;&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>&#123;&#125;</code> |
+| [project_create_config](variables.tf#L22) | Create project instead of using an existing one. | <code title="object&#40;&#123;&#10;  billing_account &#61; string&#10;  parent          &#61; optional&#40;string&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>null</code> |
+| [vpc_sc_config](variables.tf#L70) | VPC SC Configuration. | <code title="object&#40;&#123;&#10;  enabled      &#61; optional&#40;bool, false&#41;&#10;  scc_enabled  &#61; optional&#40;bool, false&#41;&#10;  cmek_enabled &#61; optional&#40;bool, false&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>&#123;&#125;</code> |
 
 ## Outputs
 
