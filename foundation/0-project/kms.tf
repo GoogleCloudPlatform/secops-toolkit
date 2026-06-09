@@ -25,11 +25,6 @@ module "kms" {
   keys = {
     (var.cmek_config.key_name) = {
       rotation_period = var.cmek_config.rotation_period
-      iam = {
-        "roles/cloudkms.cryptoKeyEncrypterDecrypter" = [
-          "serviceAccount:service-org-${var.organization_id}@gcp-sa-chronicle.iam.gserviceaccount.com"
-        ]
-      }
     }
   }
   depends_on = [module.project]
