@@ -21,9 +21,9 @@ resource "restful_resource" "secops_log_type" {
   for_each = var.secops_custom_logtypes
 
   create_method = "POST"
-  path          = "/projects/${var.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/logTypes?logTypeId=${each.key}"
+  path          = "/projects/${var.project_id}/locations/${var.secops_instance_config.region}/instances/${var.secops_instance_config.customer_id}/logTypes?logTypeId=${each.key}"
 
-  read_path = "/projects/${var.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}"
+  read_path = "/projects/${var.project_id}/locations/${var.secops_instance_config.region}/instances/${var.secops_instance_config.customer_id}"
 
   body = {
     customLogTypeLabel = each.value.log_type_label

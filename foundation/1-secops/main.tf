@@ -18,17 +18,15 @@
 
 locals {
   secops_api_key_secret_key   = "secops-feeds-api-key"
-  secops_iam                  = { for k, v in var.secops_iam : k => { roles = [for role in v.roles : (contains(keys(module.project.custom_role_id), role) ? module.project.custom_role_id[role] : role)], scopes = v.scopes } }
+  secops_iam                  = { for k, v in var.iam : k => { roles = [for role in v.roles : (contains(keys(module.project.custom_role_id), role) ? module.project.custom_role_id[role] : role)], scopes = v.scopes } }
   secops_workspace_int_sa_key = "secops-workspace-ing-sa-key"
-  secops_feeds_api_path       = "projects/${module.project.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/feeds"
+  secops_feeds_api_path       = "projects/${module.project.project_id}/locations/${var.secops_instance_config.region}/instances/${var.secops_instance_config.customer_id}/feeds"
 }
 
 module "project" {
-  source          = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/project"
-  name            = var.project_id
-  billing_account = try(var.project_create_config.billing_account, null)
-  parent          = try(var.project_create_config.parent, null)
-  project_reuse   = var.project_create_config != null ? null : {}
+  source        = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/project"
+  name          = var.project_id
+  project_reuse = {}
   services = concat([
     "apikeys.googleapis.com",
     "compute.googleapis.com",
@@ -56,7 +54,7 @@ module "project" {
     "${group}-editors" => { member = "group:${group}", role = "roles/chronicle.editor" } },
     { for group in var.secops_group_principals.editors :
     "${group}-viewers" => { member = "group:${group}", role = "roles/chronicle.viewer" } },
-    { for k, v in var.secops_iam :
+    { for k, v in var.iam :
       k => {
         member = k
         role   = "roles/chronicle.restrictedDataAccess"

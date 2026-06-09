@@ -20,6 +20,16 @@ variable "_tests" {
   default     = false
 }
 
+variable "iam" {
+  description = "IAM configuration in {PRINCIPAL => {roles => [ROLES], scopes => [SCOPES]}} format."
+  type = map(object({
+    roles  = list(string)
+    scopes = optional(list(string))
+  }))
+  default  = {}
+  nullable = false
+}
+
 variable "monitoring_config" {
   description = "Cloud Monitoring configuration for SecOps."
   type = object({
@@ -27,15 +37,6 @@ variable "monitoring_config" {
     notification_emails = optional(list(string), [])
   })
   default = {}
-}
-
-variable "project_create_config" {
-  description = "Create project instead of using an existing one."
-  type = object({
-    billing_account = string
-    parent          = optional(string)
-  })
-  default = null
 }
 
 variable "project_id" {
@@ -173,17 +174,7 @@ variable "secops_group_principals" {
   default = {}
 }
 
-variable "secops_iam" {
-  description = "SecOps IAM configuration in {PRINCIPAL => {roles => [ROLES], scopes => [SCOPES]}} format."
-  type = map(object({
-    roles  = list(string)
-    scopes = optional(list(string))
-  }))
-  default  = {}
-  nullable = false
-}
-
-variable "secops_tenant_config" {
+variable "secops_instance_config" {
   description = "SecOps Tenant configuration."
   type = object({
     customer_id = string

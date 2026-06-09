@@ -16,7 +16,7 @@
 
 locals {
   # fail if we have no valid defaults
-  _defaults        = yamldecode(file(local.paths.defaults))
+  _defaults           = yamldecode(file(local.paths.defaults))
   restricted_services = yamldecode(file(local.paths.restricted_services))
   # extend context with our own data
   ctx = {
@@ -52,8 +52,8 @@ locals {
 }
 
 module "vpc-sc" {
-  for_each = var.vpc_sc_config.enabled ? { secops = {} } : {}
-  source   = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/vpc-sc"
+  for_each      = var.vpc_sc_config.enabled ? { secops = {} } : {}
+  source        = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/vpc-sc"
   access_policy = var.access_policy
   access_policy_create = var.access_policy != null ? null : {
     parent = "organizations/${var.organization_id}"

@@ -16,7 +16,7 @@
 
 module "webhook_feeds" {
   source = "../../modules/secops-feeds"
-  secops_config = merge(var.secops_tenant_config, {
+  secops_config = merge(var.secops_instance_config, {
     project = module.project.project_id
   })
   feeds = { for key, value in var.webhook_feeds_config : key => {
@@ -38,7 +38,7 @@ resource "restful_operation" "webhook_feeds_secret" {
 module "azure_ad_feeds" {
   count  = var.third_party_integration_config.azure_ad == null ? 0 : 1
   source = "../../modules/secops-feeds"
-  secops_config = merge(var.secops_tenant_config, {
+  secops_config = merge(var.secops_instance_config, {
     project = module.project.project_id
   })
   feeds = {
@@ -91,7 +91,7 @@ module "azure_ad_feeds" {
 module "okta_feeds" {
   count  = var.third_party_integration_config.okta == null ? 0 : 1
   source = "../../modules/secops-feeds"
-  secops_config = merge(var.secops_tenant_config, {
+  secops_config = merge(var.secops_instance_config, {
     project = module.project.project_id
   })
   feeds = {

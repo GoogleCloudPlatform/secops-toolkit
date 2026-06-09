@@ -17,8 +17,25 @@
 billing_project = "tmp-project"
 project_id = "bruzz-dev-secops-0"
 organization_id = "828467380811"
-essential_contacts = ["test@example.com"]
+essential_contacts = []
 
+project_create_config = {
+  billing_account = "XXXXXXXXX"
+  bootstrap_folder = true
+}
+
+# VPC Service Controls configuration
 vpc_sc_config = {
-  enabled = true
+  enabled      = true
+  scc_enabled  = true
+  cmek_enabled = false
+}
+
+# CMEK configuration for SecOps
+cmek_config = {
+  enabled         = false
+  location        = "europe"
+  keyring_name    = "secops-keyring"
+  key_name        = "secops-key"
+  rotation_period = "7776000s" # 90 days
 }

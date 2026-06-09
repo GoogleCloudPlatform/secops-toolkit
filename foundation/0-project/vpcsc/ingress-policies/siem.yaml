@@ -17,6 +17,8 @@
 from:
   identities:
   - user:malachite-data-plane-api@prod.google.com
+  access_levels:
+  - "*"
 to:
   operations:
   - service_name: storage.googleapis.com

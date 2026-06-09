@@ -17,6 +17,8 @@
 from:
     identities:
     - $identity_sets:secops_ingress_identities
+    access_levels:
+    - "*"
 to:
   operations:
   - service_name: chronicle.googleapis.com

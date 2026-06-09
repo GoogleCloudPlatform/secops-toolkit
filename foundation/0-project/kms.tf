@@ -14,17 +14,23 @@
  * limitations under the License.
  */
 
-data "google_client_config" "default" {
-  count = var._tests ? 0 : 1
-}
-
-provider "restful" {
-  base_url = "https://chronicle.${var.secops_instance_config.region}.rep.googleapis.com/v1alpha"
-  security = {
-    http = {
-      token = {
-        token = var._tests ? "" : data.google_client_config.default[0].access_token
+module "kms" {
+  source     = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/kms"
+  count      = var.cmek_config.enabled ? 1 : 0
+  project_id = module.project.project_id
+  keyring = {
+    location = var.cmek_config.location
+    name     = var.cmek_config.keyring_name
+  }
+  keys = {
+    (var.cmek_config.key_name) = {
+      rotation_period = var.cmek_config.rotation_period
+      iam = {
+        "roles/cloudkms.cryptoKeyEncrypterDecrypter" = [
+          "serviceAccount:service-org-${var.organization_id}@gcp-sa-chronicle.iam.gserviceaccount.com"
+        ]
       }
     }
   }
+  depends_on = [module.project]
 }

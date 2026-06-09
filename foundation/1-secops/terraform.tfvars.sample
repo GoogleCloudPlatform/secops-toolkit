@@ -13,7 +13,7 @@
 # limitations under the License.
 
 project_id = "test-project"
-secops_tenant_config = {
+secops_instance_config = {
   customer_id = "xxxxxxx-xxxxx-xxxxxx-xxxxxxx"
   region      = "europe"
 }

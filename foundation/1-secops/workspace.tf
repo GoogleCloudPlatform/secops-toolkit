@@ -30,7 +30,7 @@ resource "google_service_account_key" "workspace_integration_key" {
 module "workspace-feeds" {
   source = "../../modules/secops-feeds"
   count  = var.third_party_integration_config.workspace == null ? 0 : 1
-  secops_config = merge(var.secops_tenant_config, {
+  secops_config = merge(var.secops_instance_config, {
     project = module.project.project_id
   })
   feeds = {

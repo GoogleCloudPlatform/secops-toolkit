@@ -14,8 +14,55 @@
  * limitations under the License.
  */
 
+variable "access_policy" {
+  description = "Access policy id (used for tenant-level VPC-SC configurations)."
+  type        = number
+  default     = null
+}
+
 variable "billing_project" {
   description = "Billing project id. This project is used as the billing and quota project for the Terraform providers."
+  type        = string
+}
+
+variable "cmek_config" {
+  description = "CMEK Configuration for Google SecOps."
+  type = object({
+    enabled         = optional(bool, false)
+    location        = optional(string, "europe")
+    keyring_name    = optional(string, "secops-keyring")
+    key_name        = optional(string, "secops-key")
+    rotation_period = optional(string)
+  })
+  nullable = false
+  default  = {}
+}
+
+variable "essential_contacts" {
+  description = "List of essential contacts for Google Cloud project for product and platform notifications."
+  type        = list(string)
+  default     = []
+}
+
+variable "factories_config" {
+  description = "Paths to folders that enable factory functionality."
+  type = object({
+    dataset = optional(string, "vpcsc")
+    paths = optional(object({
+      access_levels       = optional(string, "access-levels")
+      defaults            = optional(string, "defaults.yaml")
+      egress_policies     = optional(string, "egress-policies")
+      ingress_policies    = optional(string, "ingress-policies")
+      perimeters          = optional(string, "perimeters")
+      restricted_services = optional(string, "restricted-services.yaml")
+    }), {})
+  })
+  nullable = false
+  default  = {}
+}
+
+variable "organization_id" {
+  description = "GCP Organization ID used for VPC SC perimeters."
   type        = string
 }
 
@@ -39,40 +86,6 @@ variable "project_create_config" {
 variable "project_id" {
   description = "Project id that references existing project."
   type        = string
-}
-
-variable "organization_id" {
-  description = "GCP Organization ID used for VPC SC perimeters."
-  type        = string
-}
-
-variable "access_policy" {
-  description = "Access policy id (used for tenant-level VPC-SC configurations)."
-  type        = number
-  default     = null
-}
-
-variable "factories_config" {
-  description = "Paths to folders that enable factory functionality."
-  type = object({
-    dataset = optional(string, "vpcsc")
-    paths = optional(object({
-      access_levels       = optional(string, "access-levels")
-      defaults            = optional(string, "defaults.yaml")
-      egress_policies     = optional(string, "egress-policies")
-      ingress_policies    = optional(string, "ingress-policies")
-      perimeters          = optional(string, "perimeters")
-      restricted_services = optional(string, "restricted-services.yaml")
-    }), {})
-  })
-  nullable = false
-  default  = {}
-}
-
-variable "essential_contacts" {
-  description = "List of essential contacts for Google Cloud project for product and platform notifications."
-  type        = list(string)
-  default     = []
 }
 
 variable "vpc_sc_config" {

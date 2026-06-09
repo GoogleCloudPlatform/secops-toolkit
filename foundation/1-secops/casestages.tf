@@ -21,15 +21,15 @@ resource "restful_resource" "secops_case_stage" {
   for_each = var.secops_case_stages
 
   create_method = "POST"
-  path          = "/projects/${var.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/caseStageDefinitions"
+  path          = "/projects/${var.project_id}/locations/${var.secops_instance_config.region}/instances/${var.secops_instance_config.customer_id}/caseStageDefinitions"
 
-  read_path = "/projects/${var.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/caseStageDefinitions/$base(body.name)"
+  read_path = "/projects/${var.project_id}/locations/${var.secops_instance_config.region}/instances/${var.secops_instance_config.customer_id}/caseStageDefinitions/$base(body.name)"
 
   update_method = "PATCH"
-  update_path   = "/projects/${var.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/caseStageDefinitions/$base(body.name)?updateMask=displayName,order"
+  update_path   = "/projects/${var.project_id}/locations/${var.secops_instance_config.region}/instances/${var.secops_instance_config.customer_id}/caseStageDefinitions/$base(body.name)?updateMask=displayName,order"
 
   delete_method = "DELETE"
-  delete_path   = "/projects/${var.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/caseStageDefinitions/$base(body.name)"
+  delete_path   = "/projects/${var.project_id}/locations/${var.secops_instance_config.region}/instances/${var.secops_instance_config.customer_id}/caseStageDefinitions/$base(body.name)"
 
   force_new_attrs = [
     "displayName",

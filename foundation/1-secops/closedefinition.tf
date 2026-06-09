@@ -21,15 +21,15 @@ resource "restful_resource" "secops_case_close_definition" {
   for_each = var.secops_case_close_definitions
 
   create_method = "POST"
-  path          = "/projects/${var.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/caseCloseDefinitions"
+  path          = "/projects/${var.project_id}/locations/${var.secops_instance_config.region}/instances/${var.secops_instance_config.customer_id}/caseCloseDefinitions"
 
-  read_path = "/projects/${var.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/caseCloseDefinitions/$base(body.name)"
+  read_path = "/projects/${var.project_id}/locations/${var.secops_instance_config.region}/instances/${var.secops_instance_config.customer_id}/caseCloseDefinitions/$base(body.name)"
 
   update_method = "PATCH"
-  update_path   = "/projects/${var.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/caseCloseDefinitions/$base(body.name)?updateMask=closeReason,rootCause"
+  update_path   = "/projects/${var.project_id}/locations/${var.secops_instance_config.region}/instances/${var.secops_instance_config.customer_id}/caseCloseDefinitions/$base(body.name)?updateMask=closeReason,rootCause"
 
   delete_method = "DELETE"
-  delete_path   = "/projects/${var.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/caseCloseDefinitions/$base(body.name)"
+  delete_path   = "/projects/${var.project_id}/locations/${var.secops_instance_config.region}/instances/${var.secops_instance_config.customer_id}/caseCloseDefinitions/$base(body.name)"
 
   body = {
     closeReason = each.value.close_reason

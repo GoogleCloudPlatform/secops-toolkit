@@ -16,6 +16,8 @@
 
 from:
   identity_type: ANY_SERVICE_ACCOUNT
+  access_levels:
+  - "*"
 to:
   operations:
   - service_name: secretmanager.googleapis.com

@@ -21,15 +21,15 @@ resource "restful_resource" "secops_environment" {
   for_each = var.secops_envs
 
   create_method = "POST"
-  path          = "/projects/${var.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/environments"
+  path          = "/projects/${var.project_id}/locations/${var.secops_instance_config.region}/instances/${var.secops_instance_config.customer_id}/environments"
 
-  read_path = "/projects/${var.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/environments/$base(body.name)"
+  read_path = "/projects/${var.project_id}/locations/${var.secops_instance_config.region}/instances/${var.secops_instance_config.customer_id}/environments/$base(body.name)"
 
   update_method = "PATCH"
-  update_path   = "/projects/${var.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/environments/$base(body.name)?updateMask=displayName,description,contact,contactEmails,contactPhone,instanceUri,aliasesJson,retentionDuration"
+  update_path   = "/projects/${var.project_id}/locations/${var.secops_instance_config.region}/instances/${var.secops_instance_config.customer_id}/environments/$base(body.name)?updateMask=displayName,description,contact,contactEmails,contactPhone,instanceUri,aliasesJson,retentionDuration"
 
   delete_method = "DELETE"
-  delete_path   = "/projects/${var.project_id}/locations/${var.secops_tenant_config.region}/instances/${var.secops_tenant_config.customer_id}/environments/$base(body.name)"
+  delete_path   = "/projects/${var.project_id}/locations/${var.secops_instance_config.region}/instances/${var.secops_instance_config.customer_id}/environments/$base(body.name)"
 
   body = {
     displayName       = each.value.display_name

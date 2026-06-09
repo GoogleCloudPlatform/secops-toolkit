@@ -27,18 +27,21 @@ module "project" {
   source          = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/project"
   name            = var.project_id
   billing_account = try(var.project_create_config.billing_account, null)
-  parent          = try(var.project_create_config.bootstrap_folder, false) ? module.secops_folder[0].name : try(var.project_create_config.parent, null)
+  parent          = try(var.project_create_config.bootstrap_folder, false) ? module.secops_folder[0].id : try(var.project_create_config.parent, null)
   project_reuse   = var.project_create_config != null ? null : {}
-  org_policies    = {
+  org_policies = {
     "iam.disableServiceAccountKeyCreation" = {
       rules = [{ enforce = false }]
     }
   }
-  services = [
-    "chronicle.googleapis.com",
-    "essentialcontacts.googleapis.com"
-  ]
+  services = concat(
+    [
+      "chronicle.googleapis.com",
+      "essentialcontacts.googleapis.com"
+    ],
+    var.cmek_config.enabled ? ["cloudkms.googleapis.com"] : []
+  )
   contacts = {
-    for email in var.essential_contacts: email => ["ALL"]
+    for email in var.essential_contacts : email => ["ALL"]
   }
 }

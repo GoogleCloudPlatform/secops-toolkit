@@ -17,9 +17,9 @@
 module "secops-data-rbac" {
   source = "../../modules/secops-data-rbac"
   secops_config = {
-    customer_id = var.secops_tenant_config.customer_id
+    customer_id = var.secops_instance_config.customer_id
     project     = module.project.project_id
-    region      = var.secops_tenant_config.region
+    region      = var.secops_instance_config.region
   }
   labels = var.secops_data_rbac_config.labels
   scopes = var.secops_data_rbac_config.scopes
@@ -28,24 +28,22 @@ module "secops-data-rbac" {
 module "secops-rules" {
   source = "../../modules/secops-rules"
   secops_config = {
-    customer_id = var.secops_tenant_config.customer_id
+    customer_id = var.secops_instance_config.customer_id
     project     = module.project.project_id
-    region      = var.secops_tenant_config.region
+    region      = var.secops_instance_config.region
   }
   factories_config = {
-    rules                = "./data/secops_rules.yaml"
-    rules_defs           = "./data/rules"
-    reference_lists      = "./data/secops_reference_lists.yaml"
-    reference_lists_defs = "./data/reference_lists"
+    rules      = "./data/secops_rules.yaml"
+    rules_defs = "./data/rules"
   }
 }
 
 module "secops_data_tables" {
   source = "../../modules/secops-data-tables"
   secops_config = {
-    customer_id = var.secops_tenant_config.customer_id
+    customer_id = var.secops_instance_config.customer_id
     project     = module.project.project_id
-    region      = var.secops_tenant_config.region
+    region      = var.secops_instance_config.region
   }
   factories_config = {
     data_tables      = "./data/secops_data_tables.yaml"
