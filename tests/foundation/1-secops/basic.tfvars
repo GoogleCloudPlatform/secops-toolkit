@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-_tests = true
+_tests     = true
 project_id = "test-project"
 secops_instance_config = {
   customer_id = "xxxxxxx-xxxxx-xxxxxx-xxxxxxx"

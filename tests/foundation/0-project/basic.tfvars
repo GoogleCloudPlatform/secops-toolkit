@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-billing_project = "xxx-secops-toolkit-bootstrap"
-project_id = "xxx-prod-secops-0"
-organization_id = "0231203213321"
+billing_project    = "xxx-secops-toolkit-bootstrap"
+project_id         = "xxx-prod-secops-0"
+organization_id    = "0231203213321"
 essential_contacts = []
 
 project_create_config = {
-  billing_account = "xxxxxxxxxxxxxx"
+  billing_account  = "xxxxxxxxxxxxxx"
   bootstrap_folder = true
 }
 
