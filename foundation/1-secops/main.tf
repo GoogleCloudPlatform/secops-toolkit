@@ -26,7 +26,7 @@ locals {
 module "project" {
   source        = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/project"
   name          = var.project_id
-  project_reuse = {}
+  project_reuse = var._tests ? null : {}
   services = concat([
     "apikeys.googleapis.com",
     "compute.googleapis.com",

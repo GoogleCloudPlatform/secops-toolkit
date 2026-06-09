@@ -12,12 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+_tests = true
 project_id = "test-project"
-project_create_config = {
-  billing_account = "12345-ABCDEF-12345"
-  parent          = "folders/2345678901"
-}
-secops_tenant_config = {
+secops_instance_config = {
   customer_id = "xxxxxxx-xxxxx-xxxxxx-xxxxxxx"
   region      = "europe"
 }

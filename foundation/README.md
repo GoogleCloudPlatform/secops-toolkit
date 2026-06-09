@@ -24,7 +24,7 @@ SecOps Toolkit Foundations also aims to minimize the number of permissions grant
 
 Being originated and highly dependant of the [Google Cloud Foundation Toolkit](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric), SecOps Toolkit Foundations is also built using the same resource factory paradigm. A resource factory consumes a simple representation of a resource (e.g., in YAML) and deploys it (e.g., using Terraform). Used correctly, factories can help decrease the management overhead of large-scale configuration deployments. See "[Resource Factories: A descriptive approach to Terraform](https://medium.com/google-cloud/resource-factories-a-descriptive-approach-to-terraform-581b3ebb59c)" for more details and the rationale behind factories.
 
-SecOps Toolkit Foundations uses YAML-based factories to deploy VPC Service Control configuration in stage [0-project](./stages/0-project/) and Rules, Data Tables, Custom Roles and more in stage [2-secops](./stages/2-secops/).
+SecOps Toolkit Foundations uses YAML-based factories to deploy VPC Service Control configuration in stage [0-project](./0-project/) and Rules, Data Tables, Custom Roles and more in stage [1-secops](./1-secops/).
 
 ## Implementation
 
@@ -42,7 +42,7 @@ SecOps Toolkit Foundations hinerits from [Cloud Foundation Fabric](https://githu
   - Assign proper Feature RBAC roles to give people access to SecOps
   - Start configuring Google SecOps
 
-While the second step of this process cannot be automated and requires human interaction to complete the setup process following the instructions in the [Official Doc](https://docs.cloud.google.com/chronicle/docs/onboard/link-chronicle-cloud#instance-to-new-subscription), the first and third steps are fully automated via Terraform by leveraging this SecOps Toolkit Foundation and respectively map to stages [0-project](./stages/0-project/) and [1-secops](./stages/1-secops/) of this repository.
+While the second step of this process cannot be automated and requires human interaction to complete the setup process following the instructions in the [Official Doc](https://docs.cloud.google.com/chronicle/docs/onboard/link-chronicle-cloud#instance-to-new-subscription), the first and third steps are fully automated via Terraform by leveraging this SecOps Toolkit Foundation and respectively map to stages [0-project](./0-project/) and [1-secops](./1-secops/) of this repository.
 
 Below is a diagram of the SecOps Toolkit Foundations stages and how they map with the configurations of GCP folder/project as well as SecOps configurations:
 
