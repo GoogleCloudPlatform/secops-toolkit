@@ -1,0 +1,296 @@
+# SecOps Toolkit Foundation - Stage 1 - SecOps Setup
+
+This stage is responsible for bootstrapping the Google SecOps instance with the required configurations to operate (e.g. Access with IAM and RBAC, Custom Roles, Ingestion credentials, SOAR Environments etc.) based on Google Professional Services best practices.
+
+The following diagram illustrates the high-level design of SecOps instance configuration in both GCP and SecOps instance, which can be adapted to specific requirements via variables.
+
+<p align="center">
+  <img src="images/diagram.png" alt="SecOps Instance">
+</p>
+
+<!-- BEGIN TOC -->
+- [Design overview and choices](#design-overview-and-choices)
+  - [Custom Roles](#custom-roles)
+  - [Provider and Terraform variables](#provider-and-terraform-variables)
+  - [Impersonating the automation service account](#impersonating-the-automation-service-account)
+  - [Variable configuration](#variable-configuration)
+  - [Running the blueprint](#running-the-blueprint)
+- [Customizations](#customizations)
+  - [Data RBAC](#data-rbac)
+  - [SecOps rules and Data Tables management](#secops-rules-and-data-tables-management)
+  - [Google Workspace integration](#google-workspace-integration)
+  - [SOAR Configurations](#soar-configurations)
+  - [SIEM Custom Log Types](#siem-custom-log-types)
+- [Files](#files)
+- [Variables](#variables)
+- [Outputs](#outputs)
+<!-- END TOC -->
+
+## Design overview and choices
+
+The general idea behind this stage is to configure a single SecOps instance for a specific environment with configurations both on SecOps leveraging terraform resources (where available) and `restful_resource` for interacting with the new [Chronicle APIs](https://cloud.google.com/chronicle/docs/reference/rest).
+
+Some high level features of the current version of the stage are:
+
+- API/Services enablement
+- Data RBAC configuration with labels and scopes
+- IAM setup for the SecOps instance based on groups from Cloud Identity or WIF (with supports for Data RBAC)
+- Detection Rules and reference lists management via terraform (leveraging [secops-rules](../../modules/secops-rules) module)
+- API Key setup for Webhook feeds
+- Integration with Workspace for alerts and logs ingestion via SecOps Feeds
+- Environment management for segregated log routing and scoping
+- SOAR Case Management configuration (Case Stages and Closure Codes)
+- Custom Log Type definition
+
+### Custom Roles
+
+This blueprint offer a set of custom roles for Google SecOps, those roles are tailor-made permission sets that allow you to grant granular access to security features.
+Instead of relying on broad, predefined roles, you can apply the principle of least-privilege, giving users access to only the tools and data they need to perform their specific duties.
+
+Please find below the predefined set of custom roles available in the blueprint in the folder [custom_roles](./data/custom_roles) as YAML files. Those YAML files are consumed by the project factory to generate the corresponding custom roles on the GCP project. If you are not using such a blueprint please feel free to leverage the permissions in the YAML file to set up your own custom roles.
+
+
+| Feature                  | Permissions                   | SecOps Onboarding Engineer | SecOps Scoped Onboarding Engineer | SecOps Detection Engineer | SecOps Scoped Detection Engineer | SecOps Analyst | SecOps Scoped Analyst |
+| ------------------------ | ----------------------------- | -------------------------- | --------------------------------- | ------------------------- | -------------------------------- | -------------- | --------------------- |
+| Global Scope             |                               |                            |                                   |                           |                                  |                |                       |
+|                          | GlobalDataAccessScopes        | view                       | x                                 | view                      | x                                | view           | x                     |
+| Basic Instances          |                               |                            |                                   |                           |                                  |                |                       |
+|                          | Projects                      | view                       | view                              | view                      | view                             | view           | view                  |
+|                          | Instances                     | view                       | view                              | view                      | view                             | view           | view                  |
+|                          | ErrorNotificationConfigs      | x                          | x                                 | x                         | x                                | x              | x                     |
+|                          | PreferenceSets                | view                       | view                              | view                      | view                             | view           | view                  |
+| Data RBAC                |                               |                            |                                   |                           |                                  |                |                       |
+|                          | DataAccessLabels              | view                       | view                              | view                      | view                             | view           | view                  |
+|                          | DataAccessScopes              | view                       | view                              | view                      | view                             | view           | view                  |
+| Data Export              |                               |                            |                                   |                           |                                  |                |                       |
+|                          | DataExports                   | x                          | x                                 | x                         | x                                | x              | x                     |
+|                          | DataTaps                      | x                          | x                                 | x                         | x                                | x              | x                     |
+| Forwarder management     |                               |                            |                                   |                           |                                  |                |                       |
+|                          | Collectors                    | admin                      | admin                             | x                         | x                                | x              | x                     |
+|                          | Forwarders                    | admin                      | admin                             | x                         | x                                | x              | x                     |
+| Feed management          |                               |                            |                                   |                           |                                  |                |                       |
+|                          | Feeds                         | admin                      | admin                             | x                         | x                                | x              | x                     |
+|                          | FeedPacks                     | admin                      | admin                             | x                         | x                                | x              | x                     |
+|                          | FeedServiceAccounts           | admin                      | admin                             | x                         | x                                | x              | x                     |
+|                          | FeedSourceTypeSchemas         | admin                      | admin                             | x                         | x                                | x              | x                     |
+|                          | Logs                          | view                       | view                              | x                         | x                                | x              | x                     |
+|                          | LogTypes                      | admin                      | admin                             | x                         | x                                | x              | x                     |
+|                          | LogTypeSchemas                | admin                      | admin                             | x                         | x                                | x              | x                     |
+|                          | LogTypeSettings               | admin                      | admin                             | x                         | x                                | x              | x                     |
+|                          | IngestionLogLabels            | admin                      | admin                             | x                         | x                                | x              | x                     |
+|                          | IngestionLogNamespaces        | admin                      | admin                             | x                         | x                                | x              | x                     |
+| Parser management        |                               |                            |                                   |                           |                                  |                |                       |
+|                          | Parsers                       | admin                      | admin                             | x                         | x                                | x              | x                     |
+|                          | ParserExtensions              | admin                      | admin                             | x                         | x                                | x              | x                     |
+|                          | ValidationReports             | admin                      | admin                             | x                         | x                                | x              | x                     |
+|                          | ExtensionValidationReports    | admin                      | admin                             | x                         | x                                | x              | x                     |
+|                          | ParsingErrors                 | admin                      | admin                             | x                         | x                                | x              | x                     |
+|                          | ValidationErrors              | admin                      | admin                             | x                         | x                                | x              | x                     |
+|                          | ValidationReports             | admin                      | admin                             | x                         | x                                | x              | x                     |
+| Curated detections       |                               |                            |                                   |                           |                                  |                |                       |
+|                          | CuratedRules                  | x                          | x                                 | admin                     | admin                            | view           | view                  |
+|                          | CuratedRuleSets               | x                          | x                                 | admin                     | admin                            | view           | view                  |
+|                          | CuratedRuleSetDeployments     | x                          | x                                 | admin                     | admin                            | view           | view                  |
+|                          | CuratedRuleSetCategories      | x                          | x                                 | admin                     | admin                            | view           | view                  |
+|                          | FeaturedContentRules          | x                          | x                                 | admin                     | admin                            | view           | view                  |
+|                          | FindingsRefinementDeployments | x                          | x                                 | admin                     | admin                            | view           | view                  |
+|                          | FindingsRefinements           | x                          | x                                 | admin                     | admin                            | view           | view                  |
+| Risk Analytics           |                               |                            |                                   |                           |                                  |                |                       |
+|                          | Entities                      | view                       | view                              | admin                     | admin                            | view           | view                  |
+|                          | RiskConfigs                   | view                       | view                              | admin                     | admin                            | view           | view                  |
+|                          | Watchlists                    | view                       | view                              | admin                     | admin                            | view           | view                  |
+|                          | EnrichmentControls            | view                       | view                              | admin                     | admin                            | view           | view                  |
+|                          | FindingsGraphs                | view                       | view                              | admin                     | admin                            | view           | view                  |
+| Rules                    |                               |                            |                                   |                           |                                  |                |                       |
+|                          | Rules                         | x                          | x                                 | admin                     | admin                            | view           | view                  |
+|                          | RuleDeployments               | x                          | x                                 | admin                     | admin                            | view           | view                  |
+|                          | RuleExecutionErrors           | x                          | x                                 | admin                     | admin                            | view           | view                  |
+|                          | Retrohunts                    | x                          | x                                 | admin                     | admin                            | view           | view                  |
+|                          | IocMatches                    | x                          | x                                 | admin                     | admin                            | view           | view                  |
+|                          | IocState                      | x                          | x                                 | admin                     | admin                            | view           | view                  |
+|                          | Iocs                          | x                          | x                                 | admin                     | admin                            | view           | view                  |
+|                          | ThreatCollections             | x                          | x                                 | admin                     | admin                            | view           | view                  |
+| Reference list resources |                               |                            |                                   |                           |                                  |                |                       |
+|                          | ReferenceLists                | x                          | x                                 | admin                     | admin                            | view           | view                  |
+| Data Tables resources    |                               |                            |                                   |                           |                                  |                |                       |
+|                          | DataTables                    | x                          | x                                 | admin                     | admin                            | view           | view                  |
+|                          | DataTableRows                 | x                          | x                                 | admin                     | admin                            | view           | view                  |
+|                          | DataTableOperationErrors      | x                          | x                                 | admin                     | admin                            | view           | view                  |
+| Dashboards resources     |                               |                            |                                   |                           |                                  |                |                       |
+|                          | Dashboards                    | admin                      | admin                             | admin                     | admin                            | view           | view                  |
+|                          | DashboardCharts               | admin                      | admin                             | admin                     | admin                            | view           | view                  |
+|                          | DashboardQueries              | admin                      | admin                             | admin                     | admin                            | view           | view                  |
+|                          | NativeDashboards              | admin                      | admin                             | admin                     | admin                            | view           | view                  |
+| Search                   |                               |                            |                                   |                           |                                  |                |                       |
+|                          | Events                        | view                       | view                              | view                      | view                             | view           | view                  |
+|                          | Entities                      | view                       | view                              | view                      | view                             | view           | view                  |
+| Operations resources     |                               |                            |                                   |                           |                                  |                |                       |
+|                          | Operations                    | admin                      | admin                             | admin                     | admin                            | view           | view                  |
+| User data                |                               |                            |                                   |                           |                                  |                |                       |
+|                          | SearchQueries                 | view                       | view                              | view                      | view                             | view           | view                  |
+|                          | PreferenceSets                | view                       | view                              | view                      | view                             | view           | view                  |
+| Gemini                   |                               |                            |                                   |                           |                                  |                |                       |
+|                          | AIS                           | view                       | view                              | view                      | view                             | view           | view                  |
+|                          | Conversations                 | view                       | view                              | view                      | view                             | view           | view                  |
+|                          | Messages                      | view                       | view                              | view                      | view                             | view           | view                  |
+| Multitenant              |                               |                            |                                   |                           |                                  |                |                       |
+|                          | MultitenantDirectories        | x                          | x                                 | x                         | x                                | x              | x                     |
+| Legacy resources         |                               |                            |                                   |                           |                                  |                |                       |
+
+### Provider and Terraform variables
+
+### Impersonating the automation service account
+
+It is recommended to adopt a provider file that leverages impersonation to run with a dedicated stage's automation service account's credentials. The groups operating such a script should have the necessary IAM bindings in place to do that, so make sure the current user is a member of one of those groups.
+
+### Variable configuration
+
+Variables in this blueprint control this script's behaviour and customizations, and can to be set in a custom `terraform.tfvars` file (a sample `terraform.tfvars.sample` was provided for easier adoption of this automation).
+
+The latter set is explained in the [Customization](#customizations) sections below, and the full list can be found in the [Variables](#variables) table at the bottom of this document.
+
+### Running the blueprint
+
+Once provider and variable values are in place and the correct user is configured, the stage can be run:
+
+```bash
+terraform init
+terraform apply
+```
+
+## Customizations
+
+This blueprint is designed with few basic integrations provided out of the box which can be customized as per the following sections.
+
+### Data RBAC
+
+This stage supports configuration of [SecOps Data RBAC](https://cloud.google.com/chronicle/docs/administration/datarbac-overview) using two separate variables:
+
+- `secops_data_rbac_config`: specifies Data RBAC [label and scopes](https://cloud.google.com/chronicle/docs/administration/configure-datarbac-users) in Google SecOps
+- `secops_iam`: defines SecOps IAM configuration in {PRINCIPAL => {roles => [ROLES], scopes => [SCOPES]}} format referencing previously defined scopes. When scope is populated a [IAM condition](https://cloud.google.com/chronicle/docs/administration/configure-datarbac-users#assign-scope-to-users) restrict access to those scopes.
+
+Example of a Data RBAC configuration is reported below.
+
+```hcl
+secops_data_rbac_config = {
+  labels = {
+    google = {
+      description = "Google logs"
+      label_id    = "google"
+      udm_query   = "principal.hostname=\"google.com\""
+    }
+  }
+  scopes = {
+    google = {
+      description = "Google logs"
+      scope_id    = "gscope"
+      allowed_data_access_labels = [{
+        data_access_label = "google"
+      }]
+    }
+  }
+}
+secops_iam = {
+  "user:bruzzechesse@google.com" = {
+    roles  = ["SecOpsScopedOnboaardingEngineer"]
+    scopes = ["gscope"]
+  }
+}
+# tftest skip
+```
+
+Such a variable supports assigning principals custom roles defined via the project factory by simply referencing the role name as per the previous example.
+Be aware that just "Scoped" roles are supported for Data RBAC configuration.
+
+### SecOps rules and Data Tables management
+
+This stage leverages the [secops-rules](../../modules/secops-rules) for automated SecOps rules and Data Tables deployment via Terraform.
+
+By default, the stage will try to deploy sample rule and data tables available in the [rules](./data/rules) and [data_tables](./data/data_tables) folders according to the configuration files `secops_rules.yaml` and `secops_data_tables.yaml`.
+
+The configuration can be updated via the `factory_config` variable as per the `secops-rules` module [README.md](../../modules/secops-rules/README.md).
+
+### Google Workspace integration
+
+The stage supports automatic integration of Google Workspace as a SecOps source leveraging [SecOps Feeds](https://cloud.google.com/chronicle/docs/ingestion/default-parsers/collect-workspace-logs#configure_a_feed_in_to_ingest_logs) integration.
+
+Integration is enabled via the `workspace_integration_config` variable as per the following sample:
+
+```hcl
+workspace_integration_config = {
+  delegated_user        = "secops-feed@..."
+  workspace_customer_id = "CXXXXXXX"
+}
+# tftest skip
+```
+
+Where `delegated_user` should be the email of the user created in Cloud Identity following the configuration instructions available [here](https://cloud.google.com/chronicle/docs/ingestion/default-parsers/collect-workspace-logs#configure_a_feed_in_to_ingest_logs).
+
+Please be aware the Service Account Client ID needed during domain wide delegation setup is available in the key of the service account stored in Secret Manager.
+
+### SOAR Configurations
+
+This blueprint allows further tailoring of the SecOps instance to match specific operational workflows:
+
+* **Environments:** Define custom environments for log routing and RBAC scoping using the `environments` variable. 
+    * **Parameters:** Accepts configurations such as `display_name`, `description`, `aliases`, `contact` (name, email, phone), and `retention_duration`. Optional fields will fall back to built-in defaults if omitted.
+* **SOAR Case Management:** Configure `case_stages` and `case_closure_codes` variables to standardize incident response workflows.
+    * **Case Stages:** Defines the `display_name` and `order` of stages. Both fields are immutable.
+        * **Limitation:** Before creating case stages, ensure that no other stage exists with the same name or order. You must delete all but one existing stage, set its order to `20` before applying Terraform, and then natively delete this placeholder stage afterward.
+    * **Case Closure Codes:** Defines the `close_reason` and `root_cause` for case resolution.
+        * **Limitation:** Allowed `close_reason` values are strictly limited to: `CLOSE_REASON_UNSPECIFIED`, `MALICIOUS`, `NOT_MALICIOUS`, `MAINTENANCE`, or `INCONCLUSIVE`.
+
+### SIEM Custom Log Types
+
+* **Custom Log Types:** Register new parser log types using the `custom_log_types` variable to support bespoke data sources. 
+    * **Parameters:** Requires `log_type_label`, `display_name`, and `product_source`.
+    * **Limitation:** The `log_type_label` must end in `_CUSTOM` and the `product_source` must end in ` Custom`.
+* **Rate Limits:** The SecOps API strictly limits deployments to a maximum of **8 custom log types per hour**. You must batch your deployments accordingly to avoid rate-limiting errors.
+* **Immutable Infrastructure (Create-Only):** The API only supports the creation of Custom Log Types. It does **not** support updates (`PATCH`) or deletions (`DELETE`). The Terraform module enforces this by preventing destruction and ignoring changes to the body after creation.
+
+<!-- TFDOC OPTS files:1 show_extra:1 exclude:3-secops-dev-providers.tf -->
+<!-- BEGIN TFDOC -->
+## Files
+
+| name | description | modules | resources |
+|---|---|---|---|
+| [casestages.tf](./casestages.tf) | None |  | <code>restful_resource</code> |
+| [closedefinition.tf](./closedefinition.tf) | None |  | <code>restful_resource</code> |
+| [environments.tf](./environments.tf) | None |  | <code>restful_resource</code> |
+| [feeds.tf](./feeds.tf) | None | <code>secops-feeds</code> | <code>restful_operation</code> |
+| [logtypes.tf](./logtypes.tf) | None |  | <code>restful_resource</code> |
+| [main.tf](./main.tf) | Project and IAM. | <code>project</code> | <code>google_apikeys_key</code> |
+| [monitoring.tf](./monitoring.tf) | Cloud Monitoring. |  | <code>google_monitoring_alert_policy</code> · <code>google_monitoring_notification_channel</code> |
+| [outputs.tf](./outputs.tf) | Module outputs. |  |  |
+| [secops-providers.tf](./secops-providers.tf) | None |  |  |
+| [secops.tf](./secops.tf) | None | <code>secops-data-rbac</code> · <code>secops-data-tables</code> · <code>secops-rules</code> |  |
+| [secrets.tf](./secrets.tf) | None | <code>secret-manager</code> |  |
+| [variables.tf](./variables.tf) | Module variables. |  |  |
+| [versions.tf](./versions.tf) | Version pins. |  |  |
+| [workspace.tf](./workspace.tf) | None | <code>iam-service-account</code> · <code>secops-feeds</code> | <code>google_service_account_key</code> |
+
+## Variables
+
+| name | description | type | required | default | producer |
+|---|---|:---:|:---:|:---:|:---:|
+| [project_id](variables.tf#L42) | Project id that references existing project. | <code>string</code> | ✓ |  |  |
+| [secops_instance_config](variables.tf#L177) | SecOps Tenant configuration. | <code title="object&#40;&#123;&#10;  customer_id &#61; string&#10;  region      &#61; string&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> | ✓ |  |  |
+| [_tests](variables.tf#L17) | Dummy variable populated by tests pipeline. | <code>bool</code> |  | <code>false</code> |  |
+| [iam](variables.tf#L23) | IAM configuration in {PRINCIPAL => {roles => [ROLES], scopes => [SCOPES]}} format. | <code title="map&#40;object&#40;&#123;&#10;  roles  &#61; list&#40;string&#41;&#10;  scopes &#61; optional&#40;list&#40;string&#41;&#41;&#10;&#125;&#41;&#41;">map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |  |
+| [monitoring_config](variables.tf#L33) | Cloud Monitoring configuration for SecOps. | <code title="object&#40;&#123;&#10;  enabled             &#61; optional&#40;bool, false&#41;&#10;  notification_emails &#61; optional&#40;list&#40;string&#41;, &#91;&#93;&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>&#123;&#125;</code> |  |
+| [regions](variables.tf#L47) | Region definitions. | <code title="object&#40;&#123;&#10;  primary   &#61; string&#10;  secondary &#61; string&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code title="&#123;&#10;  primary   &#61; &#34;europe-west8&#34;&#10;  secondary &#61; &#34;europe-west1&#34;&#10;&#125;">&#123;&#8230;&#125;</code> |  |
+| [secops_case_close_definitions](variables.tf#L59) | A map of SecOps Case Close Definitions to provision. | <code title="map&#40;object&#40;&#123;&#10;  close_reason &#61; string&#10;  root_cause   &#61; string&#10;&#125;&#41;&#41;">map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |  |
+| [secops_case_stages](variables.tf#L81) | A map of SecOps Case Stages to provision. Both display_name and order are immutable. | <code title="map&#40;object&#40;&#123;&#10;  display_name &#61; string&#10;  order        &#61; number&#10;&#125;&#41;&#41;">map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |  |
+| [secops_custom_logtypes](variables.tf#L90) | A map of custom LogType IDs to their configurations. Note: LogTypes cannot be natively updated or destroyed after creation. | <code title="map&#40;object&#40;&#123;&#10;  log_type_label    &#61; string&#10;  display_name      &#61; string&#10;  product_source    &#61; string&#10;  is_custom         &#61; optional&#40;bool, true&#41;&#10;  has_custom_parser &#61; optional&#40;bool, true&#41;&#10;&#125;&#41;&#41;">map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |  |
+| [secops_data_rbac_config](variables.tf#L118) | SecOps Data RBAC scope and labels config. | <code title="object&#40;&#123;&#10;  labels &#61; optional&#40;map&#40;object&#40;&#123;&#10;    description &#61; string&#10;    label_id    &#61; string&#10;    udm_query   &#61; string&#10;  &#125;&#41;&#41;, &#123;&#125;&#41;&#10;  scopes &#61; optional&#40;map&#40;object&#40;&#123;&#10;    description &#61; string&#10;    scope_id    &#61; string&#10;    allowed_data_access_labels &#61; optional&#40;list&#40;object&#40;&#123;&#10;      data_access_label &#61; optional&#40;string&#41;&#10;      log_type          &#61; optional&#40;string&#41;&#10;      asset_namespace   &#61; optional&#40;string&#41;&#10;      ingestion_label &#61; optional&#40;object&#40;&#123;&#10;        ingestion_label_key   &#61; string&#10;        ingestion_label_value &#61; optional&#40;string&#41;&#10;      &#125;&#41;&#41;&#10;    &#125;&#41;&#41;, &#91;&#93;&#41;&#10;    denied_data_access_labels &#61; optional&#40;list&#40;object&#40;&#123;&#10;      data_access_label &#61; optional&#40;string&#41;&#10;      log_type          &#61; optional&#40;string&#41;&#10;      asset_namespace   &#61; optional&#40;string&#41;&#10;      ingestion_label &#61; optional&#40;object&#40;&#123;&#10;        ingestion_label_key   &#61; string&#10;        ingestion_label_value &#61; optional&#40;string&#41;&#10;      &#125;&#41;&#41;&#10;    &#125;&#41;&#41;, &#91;&#93;&#41;&#10;  &#125;&#41;&#41;, &#123;&#125;&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>&#123;&#125;</code> |  |
+| [secops_envs](variables.tf#L152) | A map of SecOps environments to provision. Optional fields fall back to these built-in defaults if omitted. | <code title="map&#40;object&#40;&#123;&#10;  display_name       &#61; string&#10;  description        &#61; string&#10;  aliases            &#61; optional&#40;list&#40;string&#41;, &#91;&#93;&#41;&#10;  contact            &#61; string&#10;  contact_email      &#61; string&#10;  contact_phone      &#61; string&#10;  retention_duration &#61; number&#10;  instance_uri       &#61; optional&#40;string, null&#41;&#10;&#125;&#41;&#41;">map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |  |
+| [secops_group_principals](variables.tf#L167) | Groups ID in IdP assigned to SecOps admins, editors, viewers roles. | <code title="object&#40;&#123;&#10;  admins  &#61; optional&#40;list&#40;string&#41;, &#91;&#93;&#41;&#10;  editors &#61; optional&#40;list&#40;string&#41;, &#91;&#93;&#41;&#10;  viewers &#61; optional&#40;list&#40;string&#41;, &#91;&#93;&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>&#123;&#125;</code> |  |
+| [third_party_integration_config](variables.tf#L185) | SecOps Feeds configuration for Workspace logs and entities ingestion. | <code title="object&#40;&#123;&#10;  azure_ad &#61; optional&#40;object&#40;&#123;&#10;    secret_manager_config &#61; optional&#40;object&#40;&#123;&#10;      region      &#61; string&#10;      secret_name &#61; string&#10;      version     &#61; optional&#40;string&#41;&#10;    &#125;&#41;&#41;&#10;    oauth_credentials &#61; object&#40;&#123;&#10;      client_id     &#61; string&#10;      client_secret &#61; optional&#40;string&#41;&#10;    &#125;&#41;&#10;    retrieve_devices &#61; optional&#40;bool, true&#41;&#10;    retrieve_groups  &#61; optional&#40;bool, true&#41;&#10;    tenant_id        &#61; string&#10;  &#125;&#41;&#41;&#10;  okta &#61; optional&#40;object&#40;&#123;&#10;    api_key                    &#61; string&#10;    hostname                   &#61; string&#10;    manager_id_reference_field &#61; string&#10;    secret_manager_config &#61; optional&#40;object&#40;&#123;&#10;      region      &#61; string&#10;      secret_name &#61; string&#10;      version     &#61; optional&#40;string&#41;&#10;    &#125;&#41;&#41;&#10;  &#125;&#41;&#41;&#10;  workspace &#61; optional&#40;object&#40;&#123;&#10;    customer_id    &#61; string&#10;    delegated_user &#61; string&#10;    applications &#61; optional&#40;list&#40;string&#41;, &#91;&#34;access_transparency&#34;, &#34;admin&#34;, &#34;calendar&#34;, &#34;chat&#34;, &#34;drive&#34;, &#34;gcp&#34;,&#10;      &#34;gplus&#34;, &#34;groups&#34;, &#34;groups_enterprise&#34;, &#34;jamboard&#34;, &#34;login&#34;, &#34;meet&#34;, &#34;mobile&#34;, &#34;rules&#34;, &#34;saml&#34;, &#34;token&#34;,&#10;      &#34;user_accounts&#34;, &#34;context_aware_access&#34;, &#34;chrome&#34;, &#34;data_studio&#34;, &#34;keep&#34;,&#10;    &#93;&#41;&#10;  &#125;&#41;&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>&#123;&#125;</code> |  |
+| [webhook_feeds_config](variables.tf#L224) | SecOps Webhook feeds config. | <code title="map&#40;object&#40;&#123;&#10;  display_name    &#61; optional&#40;string&#41;&#10;  log_type        &#61; string&#10;  split_delimiter &#61; optional&#40;string&#41;&#10;&#125;&#41;&#41;">map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |  |
+
+## Outputs
+
+| name | description | sensitive | consumers |
+|---|---|:---:|---|
+| [project_id](outputs.tf#L15) | SecOps project id. |  |  |
+<!-- END TFDOC -->

@@ -10,6 +10,12 @@
 
 This repository provides a comprehensive collection of Terraform blueprints, modules, and CICD pipelines designed to automate the implementation of custom integrations, agents, and configurations for Google Cloud SecOps (formerly Chronicle). It aims to provide modular and scalable solutions for various SecOps automation needs.
 
+# Foundation
+
+<a href="./foundation/" title="SecOps Toolkit Foundation"><img src="./foundation/stages.png" align="left" width="300px"></a> <p style="margin-left: 340px">The [SecOps Toolkit Foundation](./foundation/) provides a comprehensive automated solution and reference implementation for setting up a production-ready Google SecOps tenant. Designed with a security-first approach, it seamlessly integrates with both new and existing GCP organizations, addressing common deployment challenges using best practices, Terraform, and YAML-based resource factories. It covers the end-to-end setup across multiple stages, from GCP project provisioning and VPC Service Controls to bootstrapping the SecOps instance with RBAC, rules, and configurations.</p>
+
+<br clear="left">
+
 # Blueprints
 
 This section details the available Terraform blueprints for deploying and managing Google Cloud SecOps components and integrations.
@@ -41,12 +47,6 @@ This section details the available Terraform blueprints for deploying and managi
 ### SecOps GKE Forwarder
 
 <a href="./blueprints/secops-gke-forwarder/" title="SecOps GKE Forwarder"><img src="./blueprints/secops-gke-forwarder/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/secops-gke-forwarder/) is a modular and scalable solution for setting up a SecOps forwarder on Google Kubernetes Engine (GKE). This forwarder is designed to handle multi-tenant data ingestion, ensuring secure and efficient log forwarding to your SecOps SIEM instances.</p>
-
-<br clear="left">
-
-## SecOps Instance
-
-<a href="./blueprints/secops-instance/" title="SecOps Instance"><img src="./blueprints/secops-instance/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [blueprint](./blueprints/secops-instance/) allows automated configuration of SecOps instance at both infrastructure and application level.</p>
 
 <br clear="left">
 
