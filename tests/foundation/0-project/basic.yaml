@@ -25,11 +25,6 @@ values:
     terraform_labels:
       goog-terraform-provisioned: 'true'
     timeouts: null
-  module.kms[0].google_kms_crypto_key_iam_binding.authoritative["secops-key.roles/cloudkms.cryptoKeyEncrypterDecrypter"]:
-    condition: []
-    members:
-    - serviceAccount:service-org-0231203213321@gcp-sa-chronicle.iam.gserviceaccount.com
-    role: roles/cloudkms.cryptoKeyEncrypterDecrypter
   module.kms[0].google_kms_key_ring.default[0]:
     location: europe-west1
     name: secops-keyring
@@ -375,7 +370,6 @@ counts:
   google_access_context_manager_service_perimeter: 1
   google_folder: 1
   google_kms_crypto_key: 1
-  google_kms_crypto_key_iam_binding: 1
   google_kms_key_ring: 1
   google_org_policy_policy: 1
   google_project: 1
@@ -383,7 +377,7 @@ counts:
   google_project_service: 3
   google_project_service_identity: 2
   modules: 4
-  resources: 17
+  resources: 16
 
 outputs:
   vpc_sc_perimeter_default: null
