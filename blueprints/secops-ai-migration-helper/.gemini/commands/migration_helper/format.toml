@@ -13,5 +13,5 @@ Output the final, merged result as a single code block.
 """
 
 #first: /clark:format @./migraiton_rules/demo_kql_9101.md rule_9904_audit_log_deleted_dc.yaral
-#then:  /copy
+
 

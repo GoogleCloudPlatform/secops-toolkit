@@ -2,13 +2,15 @@
 
 **PROTOTYPE**
 
-Migration helper is a tool that helps you migrate rules from a SIEM to Google SecOps and reduce the migration time significantly. It uses GenAI to help you migrate the rules in multiple steps. 
+Migration helper is a tool that helps you migrate rules from a SIEM to Google SecOps and reduce the migration time significantly. It uses [Antigravity CLI](https://antigravity.google/docs/cli-overview)  or alternatively [Gemini CLI](https://github.com/google-gemini/gemini-cli) to help you migrate the rules in multiple steps. 
 
-- The AI helper operates in clearly defined small steps, each with specific inputs and outputs. 
+- The AI helper operates in clearly defined small steps, each with specific inputs and outputs. After you tune to your environment you can run all steps in one shot, see *Tune the Gemini CLI commands to your use case* .
 - A SecOps Consultant (Human in the loop) validates the output after every step. For example: formatting an original rule, then manual visual validation, then adding comments, etc.
-- A general all-in-one approach (migrating everything without considering equivalence to curated rules) is counterproductive. 
+- A general all-in-one approach without tuning to your environment (e.g.  migrating everything without considering equivalence to curated rules) is counterproductive. 
 - The more rules are migrated, the knowledge base of the GenAI tool increases and migration becomes more accurate. 
 - The tool is flexible by understanding different formats of rules from a SIEM. It is not limited to the original language of the rule. 
+
+**NOTE:** The step can be also executed with [Antigravity CLI](https://antigravity.google/docs/cli-overview)
 
 Migration Steps overview ![Migration Steps Overview](./misc/yaral/images/steps_overview.png)
 
@@ -22,13 +24,17 @@ Migration Steps overview ![Migration Steps Overview](./misc/yaral/images/steps_o
 
 ## Installation
 
+### Antigravity CLI 
+
+Follow [Antigravity CLI](https://antigravity.google/docs/cli-getting-started)
+
 ### Gemini CLI 
 
 Follow [Gemini CLI](https://github.com/google-gemini/gemini-cli)
 
-### Setup SecOps MCP integration and Gemini CLI  
+### Setup SecOps MCP integration and Gemini CLI and Antigravity CLI
 
-Before using gemini-cli please issue the following command to set the environment variable required for Vertex AI:
+Before using gemini-cli or antigravity-cli please issue the following command to set the environment variable required for Vertex AI:
 
 ```bash
 export GOOGLE_CLOUD_PROJECT="<your_gcp_project_id>"
@@ -65,7 +71,7 @@ Before accessing the Gemini CLI, make sure to configure the ~/.gemini/settings.j
 ./generate_settings.sh <secops_project_id> <secops_region> <secops_instance_id>
 ```
 
-The script will generate a settings.json file in the ~/.gemini/ directory.
+The script will generate a settings.json file in the ~/.gemini/ directory and/or in the ~/.antigravitycli/ directory.
 
 Please then run the following command to verify the MCP server integration:
 
@@ -89,21 +95,43 @@ More information on how to configure gemini-cli with Google SecOps hosted MCP se
 
 Start the Gemini CLI and execute a command with `/<command>` arguments. Following are described the commands and their arguments:
 
-### Tune the Gemini CLI commands to your use case 
-Every migration is different and it is very important to adapt the Gemini CLI commands in `.gemini` to your particular use case. Take one sample rule, execute it multiple times and adjust the commands accordingly until you get the desired output. After this, start the mass migration of the rules.
+### Tune the skill/commands to your use case 
+Every migration is different and it is very important to adapt the following Antigravity CLI skills (`.agents/skills/`) or Gemini CLI commands (`.gemini`) to your particular use case. Take several sample rules from your SIEM from different product types (e.g. EDR, WAF etc.) execute all steps one by one (/migration_helper:init, /migration_helper:format, /migration_helper:generate_yaral, /migration_helper:author_notes, /migration_helper:generate_log) and manually validate the output of each step. Adjust the command arguments accordingly until you get the desired output. After this, start the mass migration of the rules using the command /migration_helper:migrate_rule.
 
 ### Evaluate curated and community rules to replace legacy rules: 
 
 Note: You can execute the recommendation also as a standalone Python script and set up parameters via environment variables. See [recommender_curated_community/README.md](./recommender_curated_community/README.md)
 
-- `extract <file_path>`: Using Agent Space to explore and understand the logic of the rules and map them to curated rules.
-- `recommend <file_path>`: Recommend curated rules and coverage. Decide which rules need to be migrated or decommissioned. Evaluate curated and community rules to replace legacy rules. 
+*All steps are with prefix `migration_helper` example gemini: /migration_helper:extract .. or antigravity /migration_helper_extract*
+
+- `extract <file_path>`: Extracts the existing rules from a file in common formats like TXT, CSV, MD etc. to a structured JSON file. The input file format is not limited and automatically detected. The output format is structured JSON with the following fields:
+  - **id**: Unique identifier of the rule
+  - **title**: Title of the rule
+  - **description**: Description of the rule
+  - **rule**: Rule definition
+
+
+- `recommend <file_path>`: Recommends curated and community detection rules that provide the same coverage as the input rules from the previous step. The input is a JSON file with structured rules from the previous step. The output is saved to the **work_dir** (see examples in `blueprints/secops-ai-migration-helper/recommender_curated_community/resources`): 
+  - **recommendation_curated_community.json** is JSON file with recommendations
+    - Format:
+
+   `[ { "ucid": "customer identifier", "title": "Title of the rule", "description": "Description of the rule", "rule": "rule definition",
+    "curated rules": "category, ruleset and rule name curated rules with same objective",
+    "curated rules coverage": "yes|partially|no",
+    "curated rationale": "crisp rationale and log sources needed",
+    "community rules": "category/rule_set/rules_name",
+    "community rules coverage": "yes",
+    "community rationale": "crisp rationale"}...]`
+  - **curated_community_recommendation.csv** is CSV file with recommendations suitable for table view 
+  - **recommendation_curated_rulesets.csv** is CSV with recommended rulesets suitable a reverse lookup, a.k.a. which rulesets are recommended for the rules in this batch
+
+
 
 ### Migrate a rule to a custom rule: 
-
+- `migrate <file_path>`: Migrate a rule to a custom rule, executing all the steps below in sequence.  This should be executed after you have tuned the prompt to your environment and executed all steps one by one manually multiple times. 
 - `init <new_rule_name>`: Create new directory structure & `.yaral` rule from template 
 - `format <migrating_rule_path> <new_rule_name>`: Take a migrating rule and format its contents for readability 
-- `migrate_rule <new_rule_path>`: Generate equivalent YARA-L rule from any source 
+- `generate_yaral <new_rule_path>`: Generate equivalent YARA-L rule from any source 
 - `generate_log <new_rule_path>`: Generate a sample log that would trigger on a given YARA-L rule 
 - `author_notes <new_rule_path>`: Author rule notes, including dependencies, tuning, testing, docs and rule parameters 
 - `validate <new_rule_path>`: Validate a rule’s YARA-L syntax against the SecOps MCP server, self-correcting as necessary 
@@ -113,7 +141,7 @@ Note: You can execute the recommendation also as a standalone Python script and 
 Main files and directories:
 - `recommender_curated_community/`: The Python recommender tool for discovering relevant curated or community rules, powered by Vertex AI models.
 - `migration_rules/`: Examples and demonstration files of rules from distinct SIEM platforms (e.g., KQL, ArcSight, SPL). Place here the rule you want to migrate.
-- `rules/`: Repository for the resulting YARA-L detection rules, with dedicated subdirectories for each rule including optional `sample_logs`. It contatin some sample.
+- `rules/`: Repository for the resulting YARA-L detection rules, with dedicated subdirectories for each rule including optional `sample_logs`. It contains some samples.
 
 ### Contributing
 Contributions are welcome! Please feel free to submit a pull request with any improvements or bug fixes.

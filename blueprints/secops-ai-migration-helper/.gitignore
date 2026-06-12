@@ -9,3 +9,4 @@
 **/.venv/**
 **/script_output.log
 **/script_pid.txt
+**/.jetskicli/*

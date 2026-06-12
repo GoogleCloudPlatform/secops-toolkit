@@ -59,6 +59,10 @@ curated_rulesets_file = os.getenv(
     "CURATED_RULESETS_FILE", "./resources/curated_rulesets.json"
 )
 
+curated_rules_just_download = (
+    os.getenv("CURATED_RULES_JUST_DOWNLOAD", "False").lower() == "true"
+)
+
 # Output files
 curated_rules_output_file = os.getenv(
     "CURATED_RULES_OUTPUT_FILE", "./work_dir/curated_rules.json"
@@ -136,6 +140,7 @@ CONFIGURATION (via Environment Variables):
   CURATED_USE_PRELOADED_FILE: Set to "True" to use local files instead of fetching from the API. (Default: "{curated_use_preloaded_file}")
   CURATED_RULES_FILE:         Path to the preloaded curated rules JSON file. (Default: "{curated_rules_file}")
   CURATED_RULESETS_FILE:      Path to the preloaded curated rulesets JSON file. (Default: "{curated_rulesets_file}")
+  CURATED_RULES_JUST_DOWNLOAD: Set to "True" to just download curated rules and exit. (Default: "False")
 
   [Output Files]
   CURATED_RULES_OUTPUT_FILE:       Where to save fetched curated rules. (Default: "{curated_rules_output_file}")
@@ -175,6 +180,10 @@ if __name__ == "__main__":
         print(
             f"\nSuccessfully curated rulesets saved to {curated_rulesets_output_file}"
         )
+
+    if curated_rules_just_download:
+        print("CURATED_RULES_JUST_DOWNLOAD is true. Skipping recommendation logic.")
+        sys.exit(0)
 
     # make recommendation
     print("Start processing")

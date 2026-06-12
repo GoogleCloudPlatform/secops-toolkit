@@ -18,5 +18,8 @@
 /**/.idea
 /**/terraform.tfstate.*
 /**/.terraform
+/**/.antigravitycli/**
+.vscode/
+/**/terraform.tf
 .vscode/
 /**/terraform.tf

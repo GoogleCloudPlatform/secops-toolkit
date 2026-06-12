@@ -1,6 +1,6 @@
-# SecOps migraiton helper: recommender for curated and community rules based on custom rules  
+# SecOps migration helper: recommender for curated and community rules based on custom rules  
 
-**A GenAI powered migraiton**. The tool recommends curated and community rules that provide the simular security objective as the input rule that can be from different SIEM plattfrom, like Auzre Log Analytics, etc
+**A GenAI powered migration**. The tool recommends curated and community rules that provide the similar security objective as the input rule that can be from different SIEM platforms, like Azure Log Analytics, etc
 
 **DESCRIPTION:**
   This script analyzes a set of customer-provided detection rules, like KQL, ArcSight, SPL etc, and recommends relevant
@@ -9,12 +9,13 @@
 
 **FUNCTIONALITY:**
 - Loads latest curated rules from SecOps ContentHub instance. 
-- Loads latest rule sets  from SecOps ContentHub instance
+- Loads latest rule sets from SecOps ContentHub instance
 - Combines rule with rulesets rules with needed log sources
 - Uses GenAI to classify the required log sources from the input rules
-- Loads all community rules form flat file in the repo 
-- Recommends curated and community rules with the same security objective to the input rules. Provides rational, log sources, rules sets, category and rule name
-- Export the result to JSOn and CSV
+- Loads all community rules from flat file in the repo 
+- Recommends curated and community rules with the same security objective to the input rules. Provides rationale, log sources, rules sets, category and rule name
+- Export the result to JSON and CSV
+- Supports downloading curated rules only, without performing recommendations or requiring input files.
 
 **USAGE:**
   python recommender_curated_community.py
@@ -22,6 +23,10 @@
 **CONFIGURATION (via Environment Variables)**:
   The script's behavior is configured through environment variables.
   Default values are shown in parentheses.
+
+  [Google Cloud]
+  - GOOGLE_CLOUD_PROJECT:       Required for recommendations. The GCP project ID for Vertex AI.
+  - GOOGLE_CLOUD_LOCATION:      Required for recommendations. The GCP region for Vertex AI.
 
   [Content Hub Connection]
 
@@ -32,6 +37,7 @@
   [AI Configuration]
 
   - AI_MODEL:                   The Vertex AI model to use for generation. (Default: "gemini-2.5-pro")
+  
 
   [Input Files]
 
@@ -45,6 +51,7 @@
   - CURATED_USE_PRELOADED_FILE: Set to "True" to use local files instead of fetching from the API. (Default: "False")
   - CURATED_RULES_FILE:         Path to the preloaded curated rules JSON file. (Default: "./resources/curated_rules.json")
   - CURATED_RULESETS_FILE:      Path to the preloaded curated rulesets JSON file. (Default: "./resources/curated_rulesets.json")
+  - CURATED_RULES_JUST_DOWNLOAD: Set to "True" to just download curated rules and exit. (Default: "False")
 
   [Output Files]
 
@@ -54,7 +61,7 @@
 
 **COMMUNITY RULES DUMP:**
 
-Community rules are currently as one big dump file part of the repo, see file `./resources/all_community_rules_20250816.txt`  The size of file allows adding all in the LLM context. Cutomers prefer to focus on curated due to google support. You can generate the dump by 1) cloning the repo 2) `find . -type f -name "*.yaral" -print0 | xargs -0 cat > all_community_rules.txt`
+Community rules are currently as one big dump file part of the repo, see file `./resources/all_community_rules_20250816.txt`  The size of file allows adding all in the LLM context. Customers prefer to focus on curated due to google support. You can generate the dump by 1) cloning the repo 2) `find . -type f -name "*.yaral" -print0 | xargs -0 cat > all_community_rules.txt`
 
 **OUTPUT:**
 
@@ -62,18 +69,18 @@ Community rules are currently as one big dump file part of the repo, see file `.
   - **recommendation_curated_community.json** is JSON file with recommendations
     - Format:
 
-   `[ { "ucid": "customer idenfifyer", "title": "Title of the rule" "description": "Desciption of the rule", "rule": "rule definition" }, "curated rules": "category, ruleset and rule name curated rules with same objecitve",
+   `[ { "ucid": "customer identifier", "title": "Title of the rule", "description": "Description of the rule", "rule": "rule definition" }, "curated rules": "category, ruleset and rule name curated rules with same objective",
     "curated rules coverage": "yes|partially|no",
     "curated rationale": "crisp rationale and log sources needed",
-    "community rules": "cathegory/rule_set/rules_name",
+    "community rules": "category/rule_set/rules_name",
     "community rules coverage": "yes",
     "community rationale": "crisp rationale"}...]`
-  - **curated_commjunity_recommendaiton.csv** is CSV file with recommendations suitable for table view 
-  - **recommendation_curated_rulesets.csv** is CSV with recommended rulesets suitable a reverce lookupaka, which ruleset are recommended for the rules in thei batch
+  - **curated_community_recommendation.csv** is CSV file with recommendations suitable for table view 
+  - **recommendation_curated_rulesets.csv** is CSV with recommended rulesets suitable a reverse lookup, a.k.a. which rulesets are recommended for the rules in this batch
 
 
 **Status:** PROTOTYPE
 
 **TODO:**
 
- - (FEATURE) Missing unity tests 
+ - (FEATURE) Missing unit tests 
