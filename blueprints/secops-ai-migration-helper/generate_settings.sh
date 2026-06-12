@@ -35,10 +35,25 @@ if [ ! -f "$TEMPLATE_FILE" ]; then
     exit 1
 fi
 
-# Replace variables in the template and output to settings.json
-sed -e "s/\${SECOPS_PROJECT}/$SECOPS_PROJECT/g" \
+# Generate settings content
+SETTINGS_CONTENT=$(sed -e "s/\${SECOPS_PROJECT}/$SECOPS_PROJECT/g" \
     -e "s/\${SECOPS_REGION}/$SECOPS_REGION/g" \
     -e "s/\${SECOPS_INSTANCE}/$SECOPS_INSTANCE/g" \
-    "$TEMPLATE_FILE" > "$OUTPUT_FILE"
+    "$TEMPLATE_FILE")
 
-echo "Successfully generated $OUTPUT_FILE"
+# Handle .gemini
+if [ -d "$DIR/.gemini" ]; then
+    echo "$SETTINGS_CONTENT" > "$OUTPUT_FILE"
+    echo "Successfully generated $OUTPUT_FILE"
+else
+    echo "Skipping Gemini settings: .gemini directory does not exist."
+fi
+
+# Handle .antigravitycli
+OUTPUT_FILE_ANTIGRAVITY="$DIR/.antigravitycli/settings.json"
+if [ -d "$DIR/.antigravitycli" ]; then
+    echo "$SETTINGS_CONTENT" > "$OUTPUT_FILE_ANTIGRAVITY"
+    echo "Successfully generated $OUTPUT_FILE_ANTIGRAVITY"
+else
+    echo "Skipping Antigravity settings: .antigravitycli directory does not exist."
+fi

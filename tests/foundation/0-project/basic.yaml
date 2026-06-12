@@ -1,0 +1,383 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+values:
+  module.kms[0].google_kms_crypto_key.default["secops-key"]:
+    deletion_policy: DELETE
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    labels: null
+    name: secops-key
+    purpose: ENCRYPT_DECRYPT
+    rotation_period: null
+    skip_initial_version_creation: false
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+  module.kms[0].google_kms_key_ring.default[0]:
+    location: europe-west1
+    name: secops-keyring
+    project: xxx-prod-secops-0
+    timeouts: null
+  module.project.google_org_policy_policy.default["iam.disableServiceAccountKeyCreation"]:
+    dry_run_spec: []
+    name: projects/xxx-prod-secops-0/policies/iam.disableServiceAccountKeyCreation
+    parent: projects/xxx-prod-secops-0
+    spec:
+    - inherit_from_parent: null
+      reset: null
+      rules:
+      - allow_all: null
+        condition: []
+        deny_all: null
+        enforce: 'FALSE'
+        parameters: null
+        values: []
+    timeouts: null
+  module.project.google_project.project[0]:
+    auto_create_network: false
+    billing_account: xxxxxxxxxxxxxx
+    deletion_policy: DELETE
+    effective_labels:
+      goog-terraform-provisioned: 'true'
+    labels: null
+    name: xxx-prod-secops-0
+    project_id: xxx-prod-secops-0
+    tags: null
+    terraform_labels:
+      goog-terraform-provisioned: 'true'
+    timeouts: null
+  module.project.google_project_iam_member.service_agents["chronicle"]:
+    condition: []
+    project: xxx-prod-secops-0
+    role: roles/chronicle.serviceAgent
+  module.project.google_project_iam_member.service_agents["cloudkms"]:
+    condition: []
+    project: xxx-prod-secops-0
+    role: roles/cloudkms.serviceAgent
+  module.project.google_project_service.project_services["chronicle.googleapis.com"]:
+    deletion_policy: DELETE
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: xxx-prod-secops-0
+    service: chronicle.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["cloudkms.googleapis.com"]:
+    deletion_policy: DELETE
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: xxx-prod-secops-0
+    service: cloudkms.googleapis.com
+    timeouts: null
+  module.project.google_project_service.project_services["essentialcontacts.googleapis.com"]:
+    deletion_policy: DELETE
+    disable_dependent_services: false
+    disable_on_destroy: false
+    project: xxx-prod-secops-0
+    service: essentialcontacts.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["chronicle.googleapis.com"]:
+    project: xxx-prod-secops-0
+    service: chronicle.googleapis.com
+    timeouts: null
+  module.project.google_project_service_identity.default["cloudkms.googleapis.com"]:
+    project: xxx-prod-secops-0
+    service: cloudkms.googleapis.com
+    timeouts: null
+  module.secops_folder[0].google_folder.folder[0]:
+    deletion_policy: DELETE
+    deletion_protection: false
+    display_name: SecOps
+    parent: organizations/0231203213321
+    tags: null
+    timeouts: null
+  module.vpc-sc["secops"].google_access_context_manager_access_level.basic["geo"]:
+    basic:
+    - combining_function: AND
+      conditions:
+      - device_policy: []
+        ip_subnetworks: []
+        members: []
+        negate: null
+        regions:
+        - IT
+        required_access_levels: []
+        vpc_network_sources: []
+    custom: []
+    description: null
+    timeouts: null
+    title: geo
+  module.vpc-sc["secops"].google_access_context_manager_access_level.basic["ips"]:
+    basic:
+    - combining_function: AND
+      conditions:
+      - device_policy: []
+        ip_subnetworks:
+        - 93.45.67.54/32
+        members: []
+        negate: null
+        regions: []
+        required_access_levels: []
+        vpc_network_sources: []
+    custom: []
+    description: null
+    timeouts: null
+    title: ips
+  module.vpc-sc["secops"].google_access_context_manager_access_policy.default[0]:
+    parent: organizations/0231203213321
+    timeouts: null
+    title: secops
+  module.vpc-sc["secops"].google_access_context_manager_service_perimeter.regular["secops"]:
+    description: null
+    perimeter_type: PERIMETER_TYPE_REGULAR
+    spec:
+    - egress_policies:
+      - egress_from:
+        - identities: null
+          identity_type: null
+          source_restriction: SOURCE_RESTRICTION_DISABLED
+          sources: []
+        egress_to:
+        - external_resources: null
+          operations:
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: cloudasset.googleapis.com
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: compute.googleapis.com
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: iam.googleapis.com
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: pubsub.googleapis.com
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: securitycenter.googleapis.com
+          resources:
+          - '*'
+          roles: []
+        title: secops
+      ingress_policies:
+      - ingress_from:
+        - identities: null
+          identity_type: null
+          sources:
+          - access_level: '*'
+            resource: null
+        ingress_to:
+        - operations:
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: cloudkms.googleapis.com
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: secretmanager.googleapis.com
+          roles: []
+        title: cmek
+      - ingress_from:
+        - identities:
+          - user:malachite-data-plane-api@prod.google.com
+          identity_type: null
+          sources:
+          - access_level: '*'
+            resource: null
+        ingress_to:
+        - operations:
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: storage.googleapis.com
+          roles: []
+        title: siem
+      - ingress_from:
+        - identities: null
+          identity_type: ANY_SERVICE_ACCOUNT
+          sources:
+          - access_level: '*'
+            resource: null
+        ingress_to:
+        - operations:
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: secretmanager.googleapis.com
+          roles: []
+        title: soar
+      - ingress_from:
+        - identities: null
+          identity_type: null
+          sources:
+          - access_level: '*'
+            resource: null
+        ingress_to:
+        - operations:
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: chronicle.googleapis.com
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: cloudasset.googleapis.com
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: compute.googleapis.com
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: dns.googleapis.com
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: iam.googleapis.com
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: monitoring.googleapis.com
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: orgpolicy.googleapis.com
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: securitycenter.googleapis.com
+          - method_selectors:
+            - method: '*'
+              permission: null
+            service_name: serviceusage.googleapis.com
+          roles: []
+        title: scc
+      restricted_services:
+      - accessapproval.googleapis.com
+      - adsdatahub.googleapis.com
+      - aiplatform.googleapis.com
+      - apigee.googleapis.com
+      - apigeeconnect.googleapis.com
+      - artifactregistry.googleapis.com
+      - assuredworkloads.googleapis.com
+      - automl.googleapis.com
+      - bigquery.googleapis.com
+      - bigquerydatatransfer.googleapis.com
+      - bigtable.googleapis.com
+      - binaryauthorization.googleapis.com
+      - chronicle.googleapis.com
+      - chronicleservicemanager.googleapis.com
+      - cloudasset.googleapis.com
+      - cloudbuild.googleapis.com
+      - cloudfunctions.googleapis.com
+      - cloudkms.googleapis.com
+      - cloudprofiler.googleapis.com
+      - cloudresourcemanager.googleapis.com
+      - cloudsearch.googleapis.com
+      - cloudtrace.googleapis.com
+      - composer.googleapis.com
+      - compute.googleapis.com
+      - connectgateway.googleapis.com
+      - contactcenterinsights.googleapis.com
+      - container.googleapis.com
+      - containeranalysis.googleapis.com
+      - containerregistry.googleapis.com
+      - containerthreatdetection.googleapis.com
+      - datacatalog.googleapis.com
+      - dataflow.googleapis.com
+      - datafusion.googleapis.com
+      - dataproc.googleapis.com
+      - datastream.googleapis.com
+      - dialogflow.googleapis.com
+      - dlp.googleapis.com
+      - dns.googleapis.com
+      - documentai.googleapis.com
+      - eventarc.googleapis.com
+      - file.googleapis.com
+      - gameservices.googleapis.com
+      - gkeconnect.googleapis.com
+      - gkehub.googleapis.com
+      - healthcare.googleapis.com
+      - iam.googleapis.com
+      - iaptunnel.googleapis.com
+      - language.googleapis.com
+      - lifesciences.googleapis.com
+      - logging.googleapis.com
+      - managedidentities.googleapis.com
+      - memcache.googleapis.com
+      - meshca.googleapis.com
+      - metastore.googleapis.com
+      - ml.googleapis.com
+      - monitoring.googleapis.com
+      - networkconnectivity.googleapis.com
+      - networkmanagement.googleapis.com
+      - networksecurity.googleapis.com
+      - networkservices.googleapis.com
+      - notebooks.googleapis.com
+      - opsconfigmonitoring.googleapis.com
+      - osconfig.googleapis.com
+      - oslogin.googleapis.com
+      - privateca.googleapis.com
+      - pubsub.googleapis.com
+      - pubsublite.googleapis.com
+      - recaptchaenterprise.googleapis.com
+      - recommender.googleapis.com
+      - redis.googleapis.com
+      - run.googleapis.com
+      - secretmanager.googleapis.com
+      - servicecontrol.googleapis.com
+      - servicedirectory.googleapis.com
+      - spanner.googleapis.com
+      - speakerid.googleapis.com
+      - speech.googleapis.com
+      - sqladmin.googleapis.com
+      - storage.googleapis.com
+      - storagetransfer.googleapis.com
+      - texttospeech.googleapis.com
+      - tpu.googleapis.com
+      - trafficdirector.googleapis.com
+      - transcoder.googleapis.com
+      - translate.googleapis.com
+      - videointelligence.googleapis.com
+      - vision.googleapis.com
+      - vpcaccess.googleapis.com
+      vpc_accessible_services: []
+    status: []
+    timeouts: null
+    title: secops
+    use_explicit_dry_run_spec: true
+
+counts:
+  google_access_context_manager_access_level: 2
+  google_access_context_manager_access_policy: 1
+  google_access_context_manager_service_perimeter: 1
+  google_folder: 1
+  google_kms_crypto_key: 1
+  google_kms_key_ring: 1
+  google_org_policy_policy: 1
+  google_project: 1
+  google_project_iam_member: 2
+  google_project_service: 3
+  google_project_service_identity: 2
+  modules: 4
+  resources: 16
+
+outputs:
+  vpc_sc_perimeter_default: null

@@ -1,0 +1,20 @@
+description = "Migrate a source rule and place it into a specific template."
+
+prompt = """
+Your task is to take the rule content provided in {{args1}} and migrate it to YARA-L and provide syntetic log. 
+
+Follow these constraints strictly:
+1) Use the rule name and title provised in {{args1}} to create a target YARA-L rule name (target_rule_name). Notation  <UCID>_<KeyWords>.yaral. Example target_rule_name is 9101_RareScriptingSoftwareDetected.yaral   
+2) Execute step init with argument target_rule_name
+3) Execute step format with arguments  {{args1}} and target_rule_name
+4) Execute step generate_yaral with argument target_rule_name. 
+5) Execute step author_notes with argument target_rule_name
+6) Execute step generate_log with argument target_rule_name
+7) Manualy validate YARA-L agains the log sample and update rule and log if needed.
+
+Present the reult rule and log. 
+
+Provide the message to the use "The next step is validaito if you have MCP server with YARA-L plugin you can execute step validate with argument target_rule_name. If you don't have MCP server with YARA-L plugin, you can manually validate the rule by following the instructions in the author_notes section. 
+"""
+
+#first: /clark:migrate ./migration_rules/demo_kql_9101.md

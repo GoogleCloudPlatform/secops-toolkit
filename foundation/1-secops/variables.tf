@@ -1,0 +1,233 @@
+/**
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+variable "_tests" {
+  description = "Dummy variable populated by tests pipeline."
+  type        = bool
+  default     = false
+}
+
+variable "iam" {
+  description = "IAM configuration in {PRINCIPAL => {roles => [ROLES], scopes => [SCOPES]}} format."
+  type = map(object({
+    roles  = list(string)
+    scopes = optional(list(string))
+  }))
+  default  = {}
+  nullable = false
+}
+
+variable "monitoring_config" {
+  description = "Cloud Monitoring configuration for SecOps."
+  type = object({
+    enabled             = optional(bool, false)
+    notification_emails = optional(list(string), [])
+  })
+  default = {}
+}
+
+variable "project_id" {
+  description = "Project id that references existing project."
+  type        = string
+}
+
+variable "regions" {
+  description = "Region definitions."
+  type = object({
+    primary   = string
+    secondary = string
+  })
+  default = {
+    primary   = "europe-west8"
+    secondary = "europe-west1"
+  }
+}
+
+variable "secops_case_close_definitions" {
+  description = "A map of SecOps Case Close Definitions to provision."
+  type = map(object({
+    close_reason = string
+    root_cause   = string
+  }))
+  default = {}
+
+  validation {
+    condition = alltrue([
+      for k, v in var.secops_case_close_definitions : contains([
+        "CLOSE_REASON_UNSPECIFIED",
+        "MALICIOUS",
+        "NOT_MALICIOUS",
+        "MAINTENANCE",
+        "INCONCLUSIVE"
+      ], v.close_reason)
+    ])
+    error_message = "Invalid close_reason. Allowed values are: CLOSE_REASON_UNSPECIFIED, MALICIOUS, NOT_MALICIOUS, MAINTENANCE, INCONCLUSIVE."
+  }
+}
+
+variable "secops_case_stages" {
+  description = "A map of SecOps Case Stages to provision. Both display_name and order are immutable."
+  type = map(object({
+    display_name = string
+    order        = number
+  }))
+  default = {}
+}
+
+variable "secops_custom_logtypes" {
+  description = "A map of custom LogType IDs to their configurations. Note: LogTypes cannot be natively updated or destroyed after creation."
+  type = map(object({
+    log_type_label    = string
+    display_name      = string
+    product_source    = string
+    is_custom         = optional(bool, true)
+    has_custom_parser = optional(bool, true)
+  }))
+  default = {}
+
+  validation {
+    # Check that every log_type_label matches the required SecOps format
+    condition = alltrue([
+      for k, v in var.secops_custom_logtypes : can(regex("^[A-Z0-9_]+_CUSTOM$", v.log_type_label))
+    ])
+    error_message = "Every log_type_label must consist of only uppercase letters, numbers, and underscores, and must strictly end with the suffix '_CUSTOM' (e.g., 'FIREWALL_LOGS_CUSTOM')."
+  }
+
+  validation {
+    # Check that every product_source ends with ' Custom'
+    condition = alltrue([
+      for k, v in var.secops_custom_logtypes : can(regex(" Custom$", v.product_source))
+    ])
+    error_message = "Every product_source must strictly end with the suffix ' Custom' (e.g., 'Internal Firewall Appliance Custom')."
+  }
+}
+
+variable "secops_data_rbac_config" {
+  description = "SecOps Data RBAC scope and labels config."
+  type = object({
+    labels = optional(map(object({
+      description = string
+      label_id    = string
+      udm_query   = string
+    })), {})
+    scopes = optional(map(object({
+      description = string
+      scope_id    = string
+      allowed_data_access_labels = optional(list(object({
+        data_access_label = optional(string)
+        log_type          = optional(string)
+        asset_namespace   = optional(string)
+        ingestion_label = optional(object({
+          ingestion_label_key   = string
+          ingestion_label_value = optional(string)
+        }))
+      })), [])
+      denied_data_access_labels = optional(list(object({
+        data_access_label = optional(string)
+        log_type          = optional(string)
+        asset_namespace   = optional(string)
+        ingestion_label = optional(object({
+          ingestion_label_key   = string
+          ingestion_label_value = optional(string)
+        }))
+      })), [])
+    })), {})
+  })
+  default = {}
+}
+
+variable "secops_envs" {
+  description = "A map of SecOps environments to provision. Optional fields fall back to these built-in defaults if omitted."
+  type = map(object({
+    display_name       = string
+    description        = string
+    aliases            = optional(list(string), [])
+    contact            = string
+    contact_email      = string
+    contact_phone      = string
+    retention_duration = number
+    instance_uri       = optional(string, null)
+  }))
+  default = {}
+}
+
+variable "secops_group_principals" {
+  description = "Groups ID in IdP assigned to SecOps admins, editors, viewers roles."
+  type = object({
+    admins  = optional(list(string), [])
+    editors = optional(list(string), [])
+    viewers = optional(list(string), [])
+  })
+  default = {}
+}
+
+variable "secops_instance_config" {
+  description = "SecOps Tenant configuration."
+  type = object({
+    customer_id = string
+    region      = string
+  })
+}
+
+variable "third_party_integration_config" {
+  description = "SecOps Feeds configuration for Workspace logs and entities ingestion."
+  type = object({
+    azure_ad = optional(object({
+      secret_manager_config = optional(object({
+        region      = string
+        secret_name = string
+        version     = optional(string)
+      }))
+      oauth_credentials = object({
+        client_id     = string
+        client_secret = optional(string)
+      })
+      retrieve_devices = optional(bool, true)
+      retrieve_groups  = optional(bool, true)
+      tenant_id        = string
+    }))
+    okta = optional(object({
+      api_key                    = string
+      hostname                   = string
+      manager_id_reference_field = string
+      secret_manager_config = optional(object({
+        region      = string
+        secret_name = string
+        version     = optional(string)
+      }))
+    }))
+    workspace = optional(object({
+      customer_id    = string
+      delegated_user = string
+      applications = optional(list(string), ["access_transparency", "admin", "calendar", "chat", "drive", "gcp",
+        "gplus", "groups", "groups_enterprise", "jamboard", "login", "meet", "mobile", "rules", "saml", "token",
+        "user_accounts", "context_aware_access", "chrome", "data_studio", "keep",
+      ])
+    }))
+  })
+  default = {}
+}
+
+variable "webhook_feeds_config" {
+  description = "SecOps Webhook feeds config."
+  type = map(object({
+    display_name    = optional(string)
+    log_type        = string
+    split_delimiter = optional(string)
+  }))
+  default  = {}
+  nullable = false
+}

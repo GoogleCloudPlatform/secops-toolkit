@@ -15,8 +15,6 @@
 
 import os
 from pathlib import Path
-import logging
-import sys
 from dotenv import load_dotenv
 
 load_dotenv()

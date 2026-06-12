@@ -26,7 +26,7 @@ SECOPS_REGION = os.environ.get("SECOPS_REGION")
 
 # --- Application Constants ---
 # Scopes for Google Cloud authentication
-SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
+SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
 
 # Filesystem paths and filenames
 PARSERS_ROOT_DIR = "./parsers"
@@ -37,4 +37,4 @@ LOGS_FOLDER_NAME = "logs"
 EVENTS_FOLDER_NAME = "events"
 
 # Environment variable to get the path to the GitHub Actions output file
-GITHUB_OUTPUT_FILE = os.getenv('GITHUB_OUTPUT')
+GITHUB_OUTPUT_FILE = os.getenv("GITHUB_OUTPUT")

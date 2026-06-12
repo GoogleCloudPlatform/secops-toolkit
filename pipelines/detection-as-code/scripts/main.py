@@ -31,8 +31,7 @@ from data_tables import DataTables
 # --- Global Logger Setup ---
 _LOGGER = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 _LOGGER.addHandler(handler)
 _LOGGER.setLevel(logging.INFO)
@@ -56,14 +55,14 @@ def cli(ctx: AppContext):
     """A CLI tool for managing SecOps rules and data tables."""
     try:
         client = SecOpsClient()
-        ctx.chronicle_client = client.chronicle(customer_id=CUSTOMER_ID,
-                                                project_id=PROJECT_ID,
-                                                region=REGION)
+        ctx.chronicle_client = client.chronicle(
+            customer_id=CUSTOMER_ID, project_id=PROJECT_ID, region=REGION
+        )
         _LOGGER.info("SecOpsClient for Chronicle initialized successfully.")
     except Exception as e:
-        _LOGGER.error("Failed to initialize SecOpsClient for Chronicle: %s",
-                      e,
-                      exc_info=True)
+        _LOGGER.error(
+            "Failed to initialize SecOpsClient for Chronicle: %s", e, exc_info=True
+        )
         sys.exit(1)
 
 
@@ -71,15 +70,12 @@ def cli(ctx: AppContext):
 def init():
     """Check for required environment variables."""
     _LOGGER.info("Checking for required environment variables...")
-    required_vars = [
-        "SECOPS_CUSTOMER_ID", "SECOPS_PROJECT_ID", "SECOPS_REGION"
-    ]
-    missing_vars = [
-        v for v in required_vars if not globals().get(v.split("_")[1]) in v
-    ]
+    required_vars = ["SECOPS_CUSTOMER_ID", "SECOPS_PROJECT_ID", "SECOPS_REGION"]
+    missing_vars = [v for v in required_vars if globals().get(v.split("_")[1]) not in v]
     if missing_vars:
-        _LOGGER.error("Missing required environment variables: %s",
-                      ", ".join(missing_vars))
+        _LOGGER.error(
+            "Missing required environment variables: %s", ", ".join(missing_vars)
+        )
         sys.exit(1)
     _LOGGER.info("All required environment variables are set.")
 
@@ -89,7 +85,8 @@ def init():
 def update_data_tables(ctx: AppContext):
     """Update SecOps Data Tables based on local Data Tables."""
     data_table_updates = DataTables.update_remote_data_tables(
-        chronicle_client=ctx.chronicle_client)
+        chronicle_client=ctx.chronicle_client
+    )
     if not data_table_updates:
         _LOGGER.info("No data table updates to apply.")
         return
@@ -97,15 +94,20 @@ def update_data_tables(ctx: AppContext):
     _LOGGER.info("Summary of data table changes:")
     for update_type, names in data_table_updates.items():
         if names:
-            _LOGGER.info("  %s: %s", update_type.capitalize(),
-                         ", ".join(names))
+            _LOGGER.info("  %s: %s", update_type.capitalize(), ", ".join(names))
 
 
 @cli.command()
 @pass_context
 def pull_rules(ctx: AppContext):
     """Pull all rules from SecOps and populate local files."""
-    from config import SECOPS_RULES_CONFIG_PATH, BASE_RULES_DIR, PROJECT_ID, REGION, CUSTOMER_ID
+    from config import (
+        SECOPS_RULES_CONFIG_PATH,
+        BASE_RULES_DIR,
+        PROJECT_ID,
+        REGION,
+        CUSTOMER_ID,
+    )
     import ruamel.yaml
 
     _LOGGER.info("Fetching rules from SecOps...")
@@ -114,14 +116,12 @@ def pull_rules(ctx: AppContext):
         _LOGGER.info("Retrieved %d rules.", len(rules_data))
 
         deployments_data = ctx.chronicle_client.list_rule_deployments().get(
-            "ruleDeployments", [])
+            "ruleDeployments", []
+        )
         _LOGGER.info("Retrieved %d rule deployments.", len(deployments_data))
 
         # Build a mapping of ruleId -> deployment details
-        deployments_map = {
-            d.get("name"): d
-            for d in deployments_data if d.get("name")
-        }
+        deployments_map = {d.get("name"): d for d in deployments_data if d.get("name")}
 
         yaml = ruamel.yaml.YAML()
         yaml.preserve_quotes = True
@@ -143,8 +143,8 @@ def pull_rules(ctx: AppContext):
             match = re.search(r"rule\s+([a-zA-Z0-9_]+)\s*\{", rule_text)
             if not match:
                 _LOGGER.warning(
-                    "Could not extract rule name for rule ID %s. Skipping.",
-                    rule_id)
+                    "Could not extract rule name for rule ID %s. Skipping.", rule_id
+                )
                 continue
 
             rule_name = match.group(1)
@@ -161,8 +161,7 @@ def pull_rules(ctx: AppContext):
             rules_config[rule_name]["enabled"] = dep.get("enabled", False)
             rules_config[rule_name]["alerting"] = dep.get("alerting", False)
             rules_config[rule_name]["archived"] = dep.get("archived", False)
-            rules_config[rule_name]["run_frequency"] = dep.get(
-                "runFrequency", "LIVE")
+            rules_config[rule_name]["run_frequency"] = dep.get("runFrequency", "LIVE")
 
             # Generate terraform import commands
             tf_parent = f"projects/{PROJECT_ID}/locations/{REGION}/instances/{CUSTOMER_ID}/rules/{rule_id}"
@@ -176,8 +175,9 @@ def pull_rules(ctx: AppContext):
         with open(SECOPS_RULES_CONFIG_PATH, "w", encoding="utf-8") as f:
             yaml.dump(rules_config, f)
 
-        _LOGGER.info("Successfully pulled rules and updated %s.",
-                     SECOPS_RULES_CONFIG_PATH.name)
+        _LOGGER.info(
+            "Successfully pulled rules and updated %s.", SECOPS_RULES_CONFIG_PATH.name
+        )
 
         if import_commands:
             click.echo("\n--- Terraform Import Commands ---")
@@ -206,8 +206,7 @@ def verify_rules(ctx: AppContext):
         try:
             rule_text = path.read_text()
             _validate_rule_file(name, rule_text)
-            _validate_rule_with_chronicle(ctx.chronicle_client, name,
-                                          rule_text)
+            _validate_rule_with_chronicle(ctx.chronicle_client, name, rule_text)
         except (ValueError, IOError) as e:
             _LOGGER.error("Error processing rule %s: %s", name, e)
             errors.append(name)
@@ -271,8 +270,9 @@ def _handle_data_table_error(rule_name: str, error_message: str):
     local_tables = DataTables.load_data_table_config().keys()
 
     if table_name in local_tables:
-        _LOGGER.info("Rule %s verified (data table '%s' is local).", rule_name,
-                     table_name)
+        _LOGGER.info(
+            "Rule %s verified (data table '%s' is local).", rule_name, table_name
+        )
     else:
         raise ValueError(f"Data table '{table_name}' not found.")
 

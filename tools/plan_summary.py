@@ -16,34 +16,31 @@
 
 import click
 import sys
-import tempfile
 import yaml
 
 from pathlib import Path
 
 try:
-  import fixtures
+    import fixtures
 except ImportError:
-  BASEDIR = Path(__file__).parents[1]
-  sys.path.append(str(BASEDIR / 'tests'))
-  import fixtures
+    BASEDIR = Path(__file__).parents[1]
+    sys.path.append(str(BASEDIR / "tests"))
+    import fixtures
 
 
 @click.command()
-@click.option('--extra-files', default=[], multiple=True)
-@click.argument('module', type=click.Path(), nargs=1)
-@click.argument('tfvars', type=click.Path(exists=True), nargs=-1)
+@click.option("--extra-files", default=[], multiple=True)
+@click.argument("module", type=click.Path(), nargs=1)
+@click.argument("tfvars", type=click.Path(exists=True), nargs=-1)
 def main(module, tfvars, extra_files):
-  module = BASEDIR / module
+    module = BASEDIR / module
 
-  summary = fixtures.plan_summary(module, Path(), tfvars, extra_files)
-  print(yaml.dump({'values': summary.values}))
-  print(yaml.dump({'counts': summary.counts}))
-  outputs = {
-      k: v.get('value', '__missing__') for k, v in summary.outputs.items()
-  }
-  print(yaml.dump({'outputs': outputs}))
+    summary = fixtures.plan_summary(module, Path(), tfvars, extra_files)
+    print(yaml.dump({"values": summary.values}))
+    print(yaml.dump({"counts": summary.counts}))
+    outputs = {k: v.get("value", "__missing__") for k, v in summary.outputs.items()}
+    print(yaml.dump({"outputs": outputs}))
 
 
-if __name__ == '__main__':
-  main()
+if __name__ == "__main__":
+    main()

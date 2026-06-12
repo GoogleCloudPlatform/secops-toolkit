@@ -13,15 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
 import logging
 import os
 import subprocess
 import sys
-import yaml
 from config import PARSERS_ROOT_DIR, LOGS_FOLDER_NAME, EVENTS_FOLDER_NAME
-from utils import compare_yaml_files, process_data_for_dump, generate_event_files
-from models import ParserError, ParserState, ParserExtensionState, ParserType
+from utils import compare_yaml_files, generate_event_files
+from models import ParserState, ParserExtensionState
 import base64
 
 LOGGER = logging.getLogger("pac")
@@ -40,6 +38,7 @@ class ParserComparator:
             self.client = client
         else:
             from parser_manager import ParserManager
+
             self.manager = ParserManager()
             self.client = self.manager.client
 
@@ -50,18 +49,17 @@ class ParserComparator:
         with open(path, "r", encoding="utf-8") as f:
             return f.read()
 
-    def _read_git_file(self,
-                       filename: str,
-                       branch: str = "main") -> str | None:
+    def _read_git_file(self, filename: str, branch: str = "main") -> str | None:
         """Reads a file from a specific git branch."""
         try:
             repo_path = f"parsers/{self.log_type}/{filename}"
-            LOGGER.info(
-                f"Attempting to fetch {repo_path} from branch '{branch}'...")
-            result = subprocess.run(["git", "show", f"{branch}:{repo_path}"],
-                                    capture_output=True,
-                                    text=True,
-                                    check=True)
+            LOGGER.info(f"Attempting to fetch {repo_path} from branch '{branch}'...")
+            result = subprocess.run(
+                ["git", "show", f"{branch}:{repo_path}"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
             return result.stdout
         except subprocess.CalledProcessError as e:
             LOGGER.warning(
@@ -72,21 +70,22 @@ class ParserComparator:
             LOGGER.error(f"Error fetching from git: {e}")
             return None
 
-    def _flatten_single_event_dict(self, d, parent_key='', sep='.'):
+    def _flatten_single_event_dict(self, d, parent_key="", sep="."):
         items = []
         for k, v in d.items():
             new_key = f"{parent_key}{sep}{k}" if parent_key else k
             if isinstance(v, dict):
                 items.extend(
-                    self._flatten_single_event_dict(v, new_key,
-                                                    sep=sep).items())
+                    self._flatten_single_event_dict(v, new_key, sep=sep).items()
+                )
             elif isinstance(v, list):
                 for i, item in enumerate(v):
                     if isinstance(item, dict):
                         items.extend(
-                            self._flatten_single_event_dict(item,
-                                                            f"{new_key}[{i}]",
-                                                            sep=sep).items())
+                            self._flatten_single_event_dict(
+                                item, f"{new_key}[{i}]", sep=sep
+                            ).items()
+                        )
                     else:
                         items.append((f"{new_key}[{i}]", item))
             else:
@@ -100,17 +99,17 @@ class ParserComparator:
         if isinstance(events_data, list):
             for entry in events_data:
                 # Check for "events" wrapper (legacy/specific format) or just raw list
-                if isinstance(entry,
-                              dict) and "events" in entry and isinstance(
-                                  entry["events"], list):
+                if (
+                    isinstance(entry, dict)
+                    and "events" in entry
+                    and isinstance(entry["events"], list)
+                ):
                     for sub in entry["events"]:
-                        flat_events.append(
-                            self._flatten_single_event_dict(sub))
+                        flat_events.append(self._flatten_single_event_dict(sub))
                 # Handle list of lists (batch results from run_parser)
                 elif isinstance(entry, list):
                     for sub in entry:
-                        flat_events.append(
-                            self._flatten_single_event_dict(sub))
+                        flat_events.append(self._flatten_single_event_dict(sub))
                 else:
                     flat_events.append(self._flatten_single_event_dict(entry))
         elif isinstance(events_data, dict):
@@ -150,8 +149,9 @@ class ParserComparator:
 
         return changed_keys
 
-    def compare_content(self, old_parser: str, old_ext: str | None,
-                        new_parser: str, new_ext: str | None) -> str:
+    def compare_content(
+        self, old_parser: str, old_ext: str | None, new_parser: str, new_ext: str | None
+    ) -> str:
         """Compares events generated by old and new parser/extension content for all log files."""
         report = []
 
@@ -159,20 +159,24 @@ class ParserComparator:
         # New -> <filename>.yaml
         # Old -> <filename>_old.yaml
 
-        results_new = generate_event_files(self.client,
-                                           self.log_type,
-                                           new_parser,
-                                           new_ext,
-                                           self.logs_dir,
-                                           self.events_dir,
-                                           file_suffix="")
-        results_old = generate_event_files(self.client,
-                                           self.log_type,
-                                           old_parser,
-                                           old_ext,
-                                           self.logs_dir,
-                                           self.events_dir,
-                                           file_suffix="_old")
+        results_new = generate_event_files(
+            self.client,
+            self.log_type,
+            new_parser,
+            new_ext,
+            self.logs_dir,
+            self.events_dir,
+            file_suffix="",
+        )
+        results_old = generate_event_files(
+            self.client,
+            self.log_type,
+            old_parser,
+            old_ext,
+            self.logs_dir,
+            self.events_dir,
+            file_suffix="_old",
+        )
 
         if not results_new and not results_old:
             return "Skipped comparison: No logs processed or generation failed."
@@ -181,26 +185,25 @@ class ParserComparator:
         total_events_old = 0
         total_events_new = 0
         all_diffs = []
-        all_hierarchical_changes = {
-        }  # Key: field_name, Value: set of change types
+        all_hierarchical_changes = {}  # Key: field_name, Value: set of change types
 
         # Iterate over all logs found in either result set
         all_logs = sorted(set(results_new.keys()) | set(results_old.keys()))
 
         for log_file in all_logs:
-            path_new, count_new, events_new = results_new.get(
-                log_file, (None, 0, []))
-            path_old, count_old, events_old = results_old.get(
-                log_file, (None, 0, []))
+            path_new, count_new, events_new = results_new.get(log_file, (None, 0, []))
+            path_old, count_old, events_old = results_old.get(log_file, (None, 0, []))
 
             total_events_new += count_new
             total_events_old += count_old
 
             if path_new and path_old:
                 # Compare per file
-                file_diffs = compare_yaml_files(path_old, path_new, [
-                    "eventTimestamp", "timestamp", "collectedTimestamp", "etag"
-                ])
+                file_diffs = compare_yaml_files(
+                    path_old,
+                    path_new,
+                    ["eventTimestamp", "timestamp", "collectedTimestamp", "etag"],
+                )
                 if file_diffs:
                     all_diffs.append(f"--- Diff for {log_file} ---")
                     all_diffs.extend(file_diffs)
@@ -237,9 +240,7 @@ class ParserComparator:
                 add_line(f" - {k} ({types})")
         else:
             add_line("-" * 60)
-            add_line(
-                "No field-level changes detected (excluding timestamps/etags)."
-            )
+            add_line("No field-level changes detected (excluding timestamps/etags).")
 
         add_line("-" * 60)
 
@@ -250,12 +251,10 @@ class ParserComparator:
 
             # Print full details to stderr so they appear in logs but not PR comment
             print("-" * 40, file=sys.stderr)
-            print(f"RAW LINE DISCREPANCIES ({len(all_diffs)} lines):",
-                  file=sys.stderr)
+            print(f"RAW LINE DISCREPANCIES ({len(all_diffs)} lines):", file=sys.stderr)
             if len(all_diffs) > 500:
                 print("\n".join(all_diffs[:500]), file=sys.stderr)
-                print(f"... and {len(all_diffs) - 500} more lines.",
-                      file=sys.stderr)
+                print(f"... and {len(all_diffs) - 500} more lines.", file=sys.stderr)
             else:
                 print("\n".join(all_diffs), file=sys.stderr)
             print("-" * 40, file=sys.stderr)
@@ -265,27 +264,27 @@ class ParserComparator:
 
         return "\n".join(report)
 
-    def _get_active_content(self, log_type: str,
-                            is_extension: bool) -> str | None:
+    def _get_active_content(self, log_type: str, is_extension: bool) -> str | None:
         """Fetches the content of an active parser or extension from SecOps."""
         try:
             if is_extension:
                 extensions = self.client.list_parser_extensions(log_type)
-                if not "parserExtensions" in extensions:
+                if "parserExtensions" not in extensions:
                     return None
                 for ext in extensions["parserExtensions"]:
-                    if ext.get(
-                            "state"
-                    ) == ParserExtensionState.LIVE.value and "cbnSnippet" in ext:
-                        return base64.b64decode(
-                            ext["cbnSnippet"]).decode('utf-8')
+                    if (
+                        ext.get("state") == ParserExtensionState.LIVE.value
+                        and "cbnSnippet" in ext
+                    ):
+                        return base64.b64decode(ext["cbnSnippet"]).decode("utf-8")
             else:
                 parsers = self.client.list_parsers(log_type)
                 for parser in parsers:
-                    if parser.get(
-                            "state"
-                    ) == ParserState.ACTIVE.value and "cbn" in parser:
-                        return base64.b64decode(parser["cbn"]).decode('utf-8')
+                    if (
+                        parser.get("state") == ParserState.ACTIVE.value
+                        and "cbn" in parser
+                    ):
+                        return base64.b64decode(parser["cbn"]).decode("utf-8")
         except Exception as e:
             LOGGER.error(f"Failed to fetch active content: {e}")
             return None
@@ -302,18 +301,15 @@ class ParserComparator:
         parser_ext_new = self._read_file("parser_extension.conf")
 
         # Fetch from SecOps
-        parser_old = self._get_active_content(self.log_type,
-                                              is_extension=False)
-        parser_ext_old = self._get_active_content(self.log_type,
-                                                  is_extension=True)
+        parser_old = self._get_active_content(self.log_type, is_extension=False)
+        parser_ext_old = self._get_active_content(self.log_type, is_extension=True)
 
         if not parser_old and branch:
             LOGGER.info(
                 f"No active parser found in SecOps. Falling back to git branch '{branch}'..."
             )
             parser_old = self._read_git_file("parser.conf", branch)
-            parser_ext_old = self._read_git_file("parser_extension.conf",
-                                                 branch)
+            parser_ext_old = self._read_git_file("parser_extension.conf", branch)
             target = f"git branch '{branch}'"
 
         if not parser_new:
@@ -326,5 +322,6 @@ class ParserComparator:
             return f"Baseline configuration not found (checked SecOps Active and git '{branch}')."
 
         LOGGER.info(f"Comparing against {target}...")
-        return self.compare_content(parser_old, parser_ext_old, parser_new,
-                                    parser_ext_new)
+        return self.compare_content(
+            parser_old, parser_ext_old, parser_new, parser_ext_new
+        )
