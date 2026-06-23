@@ -43,7 +43,7 @@ jobs:
     steps:
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - id: vars-plan
         if: github.event.pull_request.merged != true && success()
