@@ -578,10 +578,8 @@ class ParserManager:
         try:
             # List all parsers with pagination
             all_parsers = []
-            response = self.client.list_parsers(
-                log_type="-", page_size=1000, page_token=None
-            )
-            all_parsers.extend(response["parsers"])
+            response = self.client.list_parsers()
+            all_parsers.extend(response)
 
             log_types = set()
             for p in all_parsers:
