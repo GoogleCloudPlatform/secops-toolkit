@@ -139,7 +139,7 @@ parsers/MY_CUSTOM_PARSER/
 **Workflow:**
 1. Write parser code in `parser.conf`
 2. Add sample logs to `logs/`
-3. Generate events: `python3 script/main.py generate-events --parser MY_CUSTOM_PARSER`
+3. Generate events: `python3 script/main.py generate-events --log-type MY_CUSTOM_PARSER`
 4. Commit changes and create PR
 5. Pipeline validates, submits, and (after merge) activates
 
@@ -167,7 +167,7 @@ parsers/MY_PREBUILT_PARSER/
 **Workflow:**
 1. Write extension code in `parser_extension.conf`
 2. Add sample logs to `logs/`
-3. Generate events: `python3 script/main.py generate-events --parser MY_PREBUILT_PARSER`
+3. Generate events: `python3 script/main.py generate-events --log-type MY_PREBUILT_PARSER`
    - The script automatically fetches the PREBUILT parser from Chronicle for validation
 4. Commit changes and create PR
 5. Pipeline validates extension output, submits extension, and (after merge) activates
@@ -276,7 +276,7 @@ The `main.py` script uses [Click](https://click.palletsprojects.com/) for its co
     ```
   To generate events for only one specific parser:
     ```bash
-    python3 script/main.py generate-events --parser <LOG_TYPE_NAME>
+    python3 script/main.py generate-events --log-type <LOG_TYPE_NAME>
     ```
 
   **What it does:**
@@ -503,4 +503,4 @@ Role: roles/chronicle.admin (easiest) or a custom role with the following permis
 ## License
 
 Copyright 2026 Google. This software is provided as-is, without warranty or representation for any use or purpose. Your
-use of it is subject to your agreement with Google.  
+use of it is subject to your agreement with Google.
