@@ -12,20 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-variable "data_tables_config" {
-  description = "SecOps Data Tables configuration."
-  type = map(object({
-    description = string
-    columns = list(object({
-      column_type        = optional(string, "STRING")
-      key_column         = optional(bool, false)
-      mapped_column_path = optional(string)
-      original_column    = string
-    }))
-    row_time_to_live = optional(string)
-  }))
-  default = {}
-}
 
 variable "factories_config" {
   description = "Paths to YAML config expected in 'data_tables'. Path to folder containing data tables content (csv files) for the corresponding _defs keys."

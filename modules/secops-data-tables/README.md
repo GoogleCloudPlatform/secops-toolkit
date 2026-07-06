@@ -2,9 +2,10 @@
 
 This module manages Google SecOps (Chronicle) Data Tables and their content.
 
-- data table definitions and content are managed as files in data folder as per the `factories_config` variable and sample code.
-- data table deployments exclusively leverage YAML configuration files specified in the `factories_config` variable.
-- data table rows use an MD5 hash of their values as the resource key to safely handle row reordering.
+- **Note:** The `data_tables_config` variable has been completely removed. It is now **mandatory** to use the YAML factory approach for provisioning data tables via `factories_config`.
+- Data table definitions and content are managed as files in the data folder as per the `factories_config` variable and sample code.
+- Data table deployments exclusively leverage YAML configuration files specified in the `factories_config` variable.
+- Data table rows use an MD5 hash of their values as the resource key to safely handle row reordering.
 
 <p align="center">
   <img src="images/diagram.png" alt="SecOPs Data Tables module">
@@ -60,7 +61,6 @@ sample_data_table_domains:
 
 | name | description | type | required | default |
 |---|---|:---:|:---:|:---:|
-| [secops_config](variables.tf#L40) | SecOps configuration. | <code title="object&#40;&#123;&#10;  customer_id &#61; string&#10;  project     &#61; string&#10;  region      &#61; string&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> | ✓ |  |
-| [data_tables_config](variables.tf#L15) | SecOps Data Tables configuration. | <code title="map&#40;object&#40;&#123;&#10;  description &#61; string&#10;  columns &#61; list&#40;object&#40;&#123;&#10;    column_type        &#61; optional&#40;string, &#34;STRING&#34;&#41;&#10;    key_column         &#61; optional&#40;bool, false&#41;&#10;    mapped_column_path &#61; optional&#40;string&#41;&#10;    original_column    &#61; string&#10;  &#125;&#41;&#41;&#10;  row_time_to_live &#61; optional&#40;string&#41;&#10;&#125;&#41;&#41;">map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
-| [factories_config](variables.tf#L30) | Paths to YAML config expected in 'data_tables'. Path to folder containing data tables content (csv files) for the corresponding _defs keys. | <code title="object&#40;&#123;&#10;  data_tables      &#61; optional&#40;string&#41;&#10;  data_tables_defs &#61; optional&#40;string, &#34;data_tables&#34;&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>&#123;&#125;</code> |
+| [factories_config](variables.tf#L17) | Paths to YAML config expected in 'data_tables'. Path to folder containing data tables content (csv files) for the corresponding _defs keys. | <code title="object&#40;&#123;&#10;  data_tables      &#61; optional&#40;string&#41;&#10;  data_tables_defs &#61; optional&#40;string, &#34;data_tables&#34;&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>&#123;&#125;</code> |
+| [secops_config](variables.tf#L27) | SecOps configuration. | <code title="object&#40;&#123;&#10;  customer_id &#61; string&#10;  project     &#61; string&#10;  region      &#61; string&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> | ✓ |  |
 <!-- END TFDOC -->
