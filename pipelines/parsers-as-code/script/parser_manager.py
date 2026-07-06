@@ -433,24 +433,25 @@ class ParserManager:
                         break  # Assume only one valid release candidate
 
             # Activate Parser Extension
-            exts_response = self.client.list_parser_extensions(config.log_type)
-            if "parserExtensions" in exts_response:
-                for ext in exts_response["parserExtensions"]:
-                    if ext.get("state") == ParserExtensionState.VALIDATED.value:
-                        ext_content = base64.b64decode(ext["cbnSnippet"]).decode(
-                            "utf-8"
-                        )
-                        if ext_content.strip() == config.parser_ext.strip():
-                            ext_id = ext["name"].split("/")[-1]
-                            self.client.activate_parser_extension(
-                                config.log_type, ext_id
+            if config.parser_ext is not None:
+                exts_response = self.client.list_parser_extensions(config.log_type)
+                if "parserExtensions" in exts_response:
+                    for ext in exts_response["parserExtensions"]:
+                        if ext.get("state") == ParserExtensionState.VALIDATED.value:
+                            ext_content = base64.b64decode(ext["cbnSnippet"]).decode(
+                                "utf-8"
                             )
-                            activated_count += 1
-                        else:
-                            LOGGER.warning(
-                                f"[{config.log_type}] Validated extension content mismatch. Skipping."
-                            )
-                        break  # Assume only one valid release candidate
+                            if ext_content.strip() == config.parser_ext.strip():
+                                ext_id = ext["name"].split("/")[-1]
+                                self.client.activate_parser_extension(
+                                    config.log_type, ext_id
+                                )
+                                activated_count += 1
+                            else:
+                                LOGGER.warning(
+                                    f"[{config.log_type}] Validated extension content mismatch. Skipping."
+                                )
+                            break  # Assume only one valid release candidate
         return activated_count
 
     def generate_events(self, target_log_type: str = None):
