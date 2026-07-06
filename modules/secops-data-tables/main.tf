@@ -59,7 +59,7 @@ resource "google_chronicle_data_table" "default" {
 }
 
 resource "google_chronicle_data_table_row" "default" {
-  provider         = google-beta
+  provider = google-beta
   #for_each         = { for r in local.flattened_rows : r.key => r }
   for_each         = { for r in local.flattened_rows : "${r.table_id}_${md5(jsonencode(r.values))}" => r }
   project          = var.secops_config.project
