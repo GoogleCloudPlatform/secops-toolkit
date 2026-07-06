@@ -2,8 +2,9 @@
 
 This module manages Google SecOps (Chronicle) Data Tables and their content.
 
-- data table definitions and content are managed as files in data folder as per the `factories_config` variable and sample code
-- data table deployments can leverage both `data_tables_config` and YAML file still specified in the `factories_config` variable.
+- data table definitions and content are managed as files in data folder as per the `factories_config` variable and sample code.
+- data table deployments exclusively leverage YAML configuration files specified in the `factories_config` variable.
+- data table rows use an MD5 hash of their values as the resource key to safely handle row reordering.
 
 <p align="center">
   <img src="images/diagram.png" alt="SecOPs Data Tables module">
@@ -11,57 +12,15 @@ This module manages Google SecOps (Chronicle) Data Tables and their content.
 
 <!-- BEGIN TOC -->
 - [Examples](#examples)
-  - [Sample SecOps Data Tables deployment](#sample-secops-data-tables-deployment)
   - [SecOps Data Tables Factory](#secops-data-tables-factory)
 - [Variables](#variables)
 <!-- END TOC -->
 
 ## Examples
 
-### Sample SecOps Data Tables deployment
-
-This is a sample usage of the `secops-data-tables` module for deploying a data table named `sample_data_table_domains`. The definition of the data table is available in the corresponding file in the `data` folder. Deployment configuration for the data table is passed as an input to the module using the `data_tables_config` variable.
-
-```hcl
-module "secops" {
-  source        = "./secops-toolkit/modules/secops-data-tables"
-  secops_config = var.secops_config
-  data_tables_config = {
-    "sample_data_table_domains" = {
-      description = "Sample data table"
-      columns = [
-        {
-          column_type : "STRING"
-          key_column : null
-          mapped_column_path : null
-          original_column : "rank"
-        },
-        {
-          column_type : "STRING"
-          key_column : null
-          mapped_column_path : null
-          original_column : "domain"
-        }
-      ]
-    }
-  }
-  factories_config = {
-    data_tables_defs = "./data_tables"
-  }
-}
-# tftest modules=1 resources=4 files=data_table_content inventory=basic.yaml
-```
-
-```
-rank,domain
-1,google.com
-2,www.google.com
-# tftest-file id=data_table_content path=data_tables/sample_data_table_domains.csv ,_
-```
-
 ### SecOps Data Tables Factory
 
-The module includes a secops data tables factory (see [Resource Factories](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric/tree/master/blueprints/factories)) for the configuration of data tables leveraging YAML configuration files. Each configuration file for data tables contains more than one data table with a structure that reflects the `data_tables_config` variable. Again data table definition is available in the corresponding yaral and txt files in the data folder.
+The module includes a secops data tables factory (see [Resource Factories](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric/tree/master/blueprints/factories)) for the configuration of data tables leveraging YAML configuration files. Each configuration file for data tables contains more than one data table with a structure that defines its schema and optionally its description. Data table content is provided via corresponding CSV files in the data folder.
 
 ```hcl
 module "secops" {

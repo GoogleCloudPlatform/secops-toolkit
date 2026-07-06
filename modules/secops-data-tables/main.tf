@@ -13,7 +13,8 @@
 # limitations under the License.
 
 locals {
-  data_tables = try(yamldecode(file(var.factories_config.data_tables)), var.data_tables_config)
+  #data_tables = try(yamldecode(file(var.factories_config.data_tables)), var.data_tables_config)
+  data_tables = yamldecode(file(var.factories_config.data_tables))
 
   # Map of table_id to CSV content
   data_tables_csv = {
@@ -43,7 +44,7 @@ resource "google_chronicle_data_table" "default" {
   location      = var.secops_config.region
   instance      = var.secops_config.customer_id
   data_table_id = each.key
-  description   = each.value.description
+  description   = try(each.value.description, "Table without description")
 
   dynamic "column_info" {
     for_each = each.value.columns
@@ -59,7 +60,8 @@ resource "google_chronicle_data_table" "default" {
 
 resource "google_chronicle_data_table_row" "default" {
   provider         = google-beta
-  for_each         = { for r in local.flattened_rows : r.key => r }
+  #for_each         = { for r in local.flattened_rows : r.key => r }
+  for_each         = { for r in local.flattened_rows : "${r.table_id}_${md5(jsonencode(r.values))}" => r }
   project          = var.secops_config.project
   location         = var.secops_config.region
   instance         = var.secops_config.customer_id
@@ -70,7 +72,8 @@ resource "google_chronicle_data_table_row" "default" {
   depends_on = [google_chronicle_data_table.default]
   lifecycle {
     ignore_changes = [
-      values
+      values,
+      row_time_to_live
     ]
   }
 }
