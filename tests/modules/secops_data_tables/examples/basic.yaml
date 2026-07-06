@@ -36,7 +36,7 @@ values:
     row_time_to_live: null
     scope_info: []
     timeouts: null
-  module.secops.google_chronicle_data_table_row.default["sample_data_table_domains_0"]:
+  module.secops.google_chronicle_data_table_row.default["sample_data_table_domains_a61bd0bb389c740d803529b7b8dfe158"]:
     data_table_id: sample_data_table_domains
     instance: xxxxxxxxxxxxx
     location: europe
@@ -46,7 +46,7 @@ values:
     values:
     - '1'
     - google.com
-  module.secops.google_chronicle_data_table_row.default["sample_data_table_domains_1"]:
+  module.secops.google_chronicle_data_table_row.default["sample_data_table_domains_fce5e6b4127408542a44c6b35ba0a904"]:
     data_table_id: sample_data_table_domains
     instance: xxxxxxxxxxxxx
     location: europe
@@ -56,7 +56,7 @@ values:
     values:
     - '2'
     - www.google.com
-  module.secops.google_chronicle_data_table_row.default["sample_data_table_domains_2"]:
+  module.secops.google_chronicle_data_table_row.default["sample_data_table_domains_3b022401eab43f39dc1a9457647924d8"]:
     data_table_id: sample_data_table_domains
     instance: xxxxxxxxxxxxx
     location: europe
