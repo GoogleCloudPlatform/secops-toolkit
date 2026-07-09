@@ -13,8 +13,7 @@
 # limitations under the License.
 
 locals {
-  #data_tables = try(yamldecode(file(var.factories_config.data_tables)), var.data_tables_config)
-  data_tables = yamldecode(file(var.factories_config.data_tables))
+  data_tables = fileexists(var.factories_config.data_tables) ? yamldecode(file(var.factories_config.data_tables)) : var.data_tables_config
 
   # Map of table_id to CSV content
   data_tables_csv = {
