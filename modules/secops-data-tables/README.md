@@ -13,6 +13,7 @@ This module manages Google SecOps (Chronicle) Data Tables and their content.
 
 <!-- BEGIN TOC -->
 - [Examples](#examples)
+  - [Sample SecOps Data Tables deployment](#sample-secops-data-tables-deployment)
   - [SecOps Data Tables Factory](#secops-data-tables-factory)
 - [Variables](#variables)
 <!-- END TOC -->
