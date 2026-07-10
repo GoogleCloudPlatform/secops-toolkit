@@ -110,6 +110,13 @@ class Workflow(Content):
         self.version = self.raw_data.get("version")
         self.trigger = self.raw_data.get("trigger", {})
         self.steps = self.raw_data.get("steps", [])
+        for step in self.steps:
+            step.pop("logsExplorerUrl", None)
+            for param in step.get("parameters", []):
+                param.pop("creationTimeUnixTimeInMs", None)
+                param.pop("modificationTimeUnixTimeInMs", None)
+                param.pop("additionalProperties", None)
+                param.pop("InstanceDisplayName", None)
         self.isEnabled = self.raw_data.get("isEnabled")
         self.category = self.raw_data.get("categoryName", "Default")
         self.environments = self.raw_data.get("environments", [])
