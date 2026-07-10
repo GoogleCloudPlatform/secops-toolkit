@@ -2,8 +2,10 @@
 
 This module manages Google SecOps (Chronicle) Data Tables and their content.
 
-- data table definitions and content are managed as files in data folder as per the `factories_config` variable and sample code
-- data table deployments can leverage both `data_tables_config` and YAML file still specified in the `factories_config` variable.
+- **Note:** The `data_tables_config` variable has been completely removed. It is now **mandatory** to use the YAML factory approach for provisioning data tables via `factories_config`.
+- Data table definitions and content are managed as files in the data folder as per the `factories_config` variable and sample code.
+- Data table deployments exclusively leverage YAML configuration files specified in the `factories_config` variable.
+- Data table rows use an MD5 hash of their values as the resource key to safely handle row reordering.
 
 <p align="center">
   <img src="images/diagram.png" alt="SecOPs Data Tables module">
@@ -61,7 +63,7 @@ rank,domain
 
 ### SecOps Data Tables Factory
 
-The module includes a secops data tables factory (see [Resource Factories](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric/tree/master/blueprints/factories)) for the configuration of data tables leveraging YAML configuration files. Each configuration file for data tables contains more than one data table with a structure that reflects the `data_tables_config` variable. Again data table definition is available in the corresponding yaral and txt files in the data folder.
+The module includes a secops data tables factory (see [Resource Factories](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric/tree/master/blueprints/factories)) for the configuration of data tables leveraging YAML configuration files. Each configuration file for data tables contains more than one data table with a structure that defines its schema and optionally its description. Data table content is provided via corresponding CSV files in the data folder.
 
 ```hcl
 module "secops" {
