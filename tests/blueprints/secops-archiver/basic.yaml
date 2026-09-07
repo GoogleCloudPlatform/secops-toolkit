@@ -93,7 +93,7 @@ values:
       - repo_source: []
         storage_source:
         - bucket: pre-gcp-project-id-archiver
-          object: bundle-b28bff6ab24c3b7cf9470d590e4e34b2.zip
+          object: bundle-874eb83c232dd4140a6b679aa3bcf842.zip
       worker_pool: null
     deletion_policy: DELETE
     description: Terraform managed.
