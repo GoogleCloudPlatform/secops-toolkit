@@ -57,7 +57,10 @@ def check_docs(dir_name, external=False):
     dir_path = BASEDIR / dir_name
     parser = marko.parser.Parser()
     for readme_path in sorted(dir_path.glob("**/*.md")):
-        if ".terraform" in str(readme_path) or ".pytest" in str(readme_path):
+        if any(
+            part in str(readme_path)
+            for part in (".terraform", ".pytest", "workspace", ".agents")
+        ):
             continue
 
         root = parser.parse(readme_path.read_text())

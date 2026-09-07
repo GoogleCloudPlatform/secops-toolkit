@@ -27,7 +27,6 @@ import enum
 import pathlib
 
 import click
-
 import tfdoc
 
 BASEDIR = pathlib.Path(__file__).resolve().parents[1]
