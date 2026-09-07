@@ -214,7 +214,7 @@ if __name__ == "__main__":
         for attempt in range(max_retries):
             try:
                 return func(*args)
-            except Exception as e:  # noqa: BLE001, PERF203
+            except Exception as e:
                 if attempt == max_retries - 1:
                     raise
                 print(

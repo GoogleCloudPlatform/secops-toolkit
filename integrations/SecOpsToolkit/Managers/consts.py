@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import timedelta
 import re
+from datetime import timedelta
 
+from SiemplifyDataModel import EntityTypes
 from TIPCommon.base.action.data_models import EntityTypesEnum
 from TIPCommon.types import SingleJson
-from SiemplifyDataModel import EntityTypes
 
 API_URL = "https://backstory.googleapis.com"
 SCOPES = ("https://www.googleapis.com/auth/chronicle-backstory",)

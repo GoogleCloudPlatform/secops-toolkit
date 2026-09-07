@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from consts import INTEGRATION_NAME
+from SecOpsToolkitManager import SecOpsToolkitManager
 from SiemplifyJob import SiemplifyJob
 from SiemplifyUtils import output_handler
 from TIPCommon.extraction import extract_action_param, extract_configuration_param
-from SecOpsToolkitManager import SecOpsToolkitManager
-from consts import INTEGRATION_NAME
 
 
 class JobParametersParser:
@@ -110,7 +110,7 @@ def send_notification_email(
 
     except Exception as e:
         logger.error(f"Failed to send email notification: {e}")
-        logger.exception(e)
+        logger.exception("Failed to send email notification")
 
 
 @output_handler
@@ -175,7 +175,7 @@ def main():
             manager.get_data_table(table_name)
             data_table_exists = True
             siemplify.LOGGER.info(f"Data table '{table_name}' exists.")
-        except Exception:
+        except Exception:  # noqa: BLE001
             siemplify.LOGGER.info(
                 f"Data table '{table_name}' does not exist. Will create it."
             )
@@ -187,7 +187,7 @@ def main():
                 for row in rows:
                     if row.get("values"):
                         notified_rule_names.add(row["values"][0])
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 siemplify.LOGGER.error(f"Failed to list data table rows: {e}")
 
         else:
@@ -212,7 +212,7 @@ def main():
                 siemplify.LOGGER.info(
                     f"Successfully set TTL of 7 days for '{table_name}'."
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 siemplify.LOGGER.error(f"Failed to create data table: {e}")
 
         rules_to_notify = []
@@ -235,7 +235,7 @@ def main():
                 siemplify.LOGGER.info(
                     f"Successfully added {len(new_rows)} rows to '{table_name}'."
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 siemplify.LOGGER.error(f"Failed to add rows to data table: {e}")
 
         else:
@@ -248,7 +248,7 @@ def main():
 
     except Exception as e:
         siemplify.LOGGER.error(f"Job execution failed: {e}")
-        siemplify.LOGGER.exception(e)
+        siemplify.LOGGER.exception("Job execution failed")
         siemplify.end(f"Job execution failed: {e}", "false")
 
 

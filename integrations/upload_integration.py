@@ -28,7 +28,6 @@ import sys
 import time
 import zipfile
 from pathlib import Path
-from typing import List, Optional
 
 try:
     from dotenv import load_dotenv
@@ -71,7 +70,7 @@ elif env_path.is_file():
                     os.environ[key] = val
 
 
-def list_available_integrations(base_dir: Path) -> List[str]:
+def list_available_integrations(base_dir: Path) -> list[str]:
     """
     Scans the integrations base directory for folders containing an 'Integration-*.def' file.
     """
@@ -80,14 +79,16 @@ def list_available_integrations(base_dir: Path) -> List[str]:
         return integrations
 
     for entry in base_dir.iterdir():
-        if entry.is_dir() and not entry.name.startswith((".", "_", "venv")):
-            # Check if directory contains an integration definition file
-            if any(
+        if (
+            entry.is_dir()
+            and not entry.name.startswith((".", "_", "venv"))
+            and any(
                 f.name.startswith("Integration-") and f.name.endswith(".def")
                 for f in entry.iterdir()
                 if f.is_file()
-            ):
-                integrations.append(entry.name)
+            )
+        ):
+            integrations.append(entry.name)
     return sorted(integrations)
 
 
@@ -115,7 +116,7 @@ def resolve_integration_dir(integration_name_or_path: str, base_dir: Path) -> Pa
 
 
 def create_integration_zip(
-    source_dir: Path, output_zip_path: Optional[str] = None
+    source_dir: Path, output_zip_path: str | None = None
 ) -> bytes:
     """
     Creates a ZIP archive in-memory (and optionally saves to disk) from the integration directory.
@@ -139,7 +140,7 @@ def create_integration_zip(
                 if d not in ("__pycache__", ".git", ".idea", ".pytest_cache", "venv")
             ]
             for file in sorted(files):
-                if file == ".DS_Store" or file.endswith(".pyc") or file.endswith("~"):
+                if file == ".DS_Store" or file.endswith((".pyc", "~")):
                     continue
                 full_path = Path(root) / file
                 rel_path = full_path.relative_to(source_dir)
@@ -158,7 +159,7 @@ def create_integration_zip(
     return zip_bytes
 
 
-def get_auth_token(service_account_path: Optional[str] = None) -> str:
+def get_auth_token(service_account_path: str | None = None) -> str:
     """
     Retrieves a valid OAuth2 Bearer token using Service Account or Application Default Credentials (ADC).
     """
@@ -178,7 +179,7 @@ def get_auth_token(service_account_path: Optional[str] = None) -> str:
             except Exception as e:
                 raise ValueError(
                     f"Invalid service account file path or JSON string: {e}"
-                )
+                ) from e
     else:
         creds, _ = google.auth.default(scopes=SCOPES)
 
@@ -187,7 +188,7 @@ def get_auth_token(service_account_path: Optional[str] = None) -> str:
     return creds.token
 
 
-def resolve_endpoint(location: str, custom_endpoint: Optional[str] = None) -> str:
+def resolve_endpoint(location: str, custom_endpoint: str | None = None) -> str:
     """
     Resolves the regional or custom API endpoint host.
     """
@@ -208,7 +209,7 @@ def import_integration(
     instance_id: str,
     token: str,
     staging: bool = False,
-    endpoint: Optional[str] = None,
+    endpoint: str | None = None,
     verify_ssl: bool = True,
 ) -> dict:
     """
@@ -268,10 +269,10 @@ def import_integration(
             try:
                 error_data = response.json()
                 print(json.dumps(error_data, indent=2), file=sys.stderr)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 if response is not None:
                     print(response.text, file=sys.stderr)
-            raise err
+            raise
 
     result = response.json() if response else {}
     return result

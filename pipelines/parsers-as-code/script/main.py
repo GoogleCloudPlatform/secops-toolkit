@@ -17,12 +17,13 @@ import logging
 import os
 import sys
 import time
+
 import click
-from secops.exceptions import APIError
-from parser_manager import ParserManager
-from models import ParserError, Operation
-from utils import generate_pr_comment_output
 from compare import ParserComparator
+from models import Operation, ParserError
+from parser_manager import ParserManager
+from secops.exceptions import APIError
+from utils import generate_pr_comment_output
 
 LOGGER = logging.getLogger("pac")
 
@@ -71,8 +72,8 @@ def verify_and_deploy(manager: ParserManager):
         LOGGER.info("\n--- Phase 3: Verifying Submission Status ---")
         plan = manager.verify_submissions(submitted, plan)
 
-    except ParserError as e:
-        LOGGER.error(f"A pipeline error occurred: {e}", exc_info=True)
+    except ParserError:
+        LOGGER.exception("A pipeline error occurred")
         has_errors = True
     finally:
         generate_pr_comment_output(plan, submitted, has_errors)
@@ -91,8 +92,8 @@ def activate_parsers(manager: ParserManager):
             LOGGER.info(f"Successfully activated {count} item(s).")
         else:
             LOGGER.info("No new items were ready for activation.")
-    except ParserError as e:
-        LOGGER.error(f"An error occurred during activation: {e}", exc_info=True)
+    except ParserError:
+        LOGGER.exception("An error occurred during activation")
         sys.exit(1)
 
 
@@ -107,8 +108,8 @@ def generate_events(manager: ParserManager, log_type: str):
         LOGGER.info("Starting event generation...")
         manager.generate_events(log_type)
         LOGGER.info("Event generation completed successfully.")
-    except ParserError as e:
-        LOGGER.error(f"Failed to generate events: {e}", exc_info=True)
+    except ParserError:
+        LOGGER.exception("Failed to generate events")
         sys.exit(1)
 
 
@@ -155,10 +156,10 @@ def pull_parser(manager: ParserManager, log_type: str):
                 f"[{log_type}] No active custom parser found in Chronicle. No action taken."
             )
         else:
-            LOGGER.error(f"Failed to pull parser: {e}", exc_info=True)
+            LOGGER.exception("Failed to pull parser")
             sys.exit(1)
-    except ParserError as e:
-        LOGGER.error(f"Failed to pull parser: {e}", exc_info=True)
+    except ParserError:
+        LOGGER.exception("Failed to pull parser")
         sys.exit(1)
 
 
@@ -170,8 +171,8 @@ def pull_parsers(manager: ParserManager):
         LOGGER.info("Starting bulk pull of all parsers...")
         manager.pull_all_parsers()
         LOGGER.info("Bulk pull completed.")
-    except ParserError as e:
-        LOGGER.error(f"Failed to pull parsers: {e}", exc_info=True)
+    except ParserError:
+        LOGGER.exception("Failed to pull parsers")
         sys.exit(1)
 
 
@@ -188,8 +189,8 @@ def compare_parsers(manager: ParserManager, log_type: str, branch: str):
     try:
         comparator = ParserComparator(log_type, client=manager.client)
         _ = comparator.run(branch=branch)  # valid report printed by run()
-    except Exception as e:
-        LOGGER.error(f"Failed to compare parsers: {e}", exc_info=True)
+    except Exception:
+        LOGGER.exception("Failed to compare parsers")
         sys.exit(1)
 
 

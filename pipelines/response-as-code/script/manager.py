@@ -14,21 +14,19 @@
 
 from __future__ import annotations
 
+import logging
 import re
 import uuid
-import logging
-from typing import Any, List
-from jinja2 import Template
-from constants import ALL_ENVIRONMENTS_IDENTIFIER, ROOT_README, STEP_TYPE
-from models import Workflow, File, WorkflowTypes
-from config import SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION, PLAYBOOKS_PATH
-from models import APIError
-from secops_client import SecOpsClient
-from models import SocRole
-from models import WorkflowMenuCard
-from utils import update_objects, _push_obj
+from typing import Any
+
 from cache import Cache
+from config import PLAYBOOKS_PATH, SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION
+from constants import ALL_ENVIRONMENTS_IDENTIFIER, ROOT_README, STEP_TYPE
+from jinja2 import Template
+from models import APIError, File, SocRole, Workflow, WorkflowMenuCard, WorkflowTypes
 from requests.exceptions import HTTPError
+from secops_client import SecOpsClient
+from utils import _push_obj, update_objects
 
 LOGGER = logging.getLogger("rac")
 
@@ -51,11 +49,11 @@ class ResponseManager:
         except Exception as e:
             raise APIError(f"Failed to initialize Custom SecOps client: {e}") from e
 
-    def get_soc_roles(self) -> List[SocRole]:
+    def get_soc_roles(self) -> list[SocRole]:
         """Retrieves a list of all available SOC roles from the SecOps API."""
         return self.client.list_soc_roles()
 
-    def get_playbooks(self) -> List[WorkflowMenuCard]:
+    def get_playbooks(self) -> list[WorkflowMenuCard]:
         """Retrieves a list of all playbooks and blocks from the Chronicle API."""
         return self.client.get_playbooks()
 
@@ -96,7 +94,7 @@ class ResponseManager:
         for p in workflows:
             invalid_environments = [x for x in p.environments if x not in environments]
             if invalid_environments:
-                raise Exception(
+                raise ValueError(
                     f"Playbook '{p.name}' is assigned to environment(s) that don't exist: "
                     f"{', '.join(invalid_environments)}. "
                     f"Available environments: {', '.join(environments)}"
@@ -154,9 +152,7 @@ class ResponseManager:
             {
                 "name": connector.name,
                 "description": strip_new_lines(connector.description),
-                "hasMappings": (
-                    True if self.content.get_mapping(connector.integration) else False
-                ),
+                "hasMappings": bool(self.content.get_mapping(connector.integration)),
             }
             for connector in self.content.get_connectors()
         ]
@@ -262,7 +258,7 @@ class ResponseManager:
                 if e.response is not None and hasattr(e.response, "status_code"):
                     status_code = e.response.status_code
                     if status_code != 404:
-                        raise e
+                        raise
                 else:
                     # TIPCommon is re-raising HTTPError without response object
                     # Try to extract status code from the error message itself
@@ -271,10 +267,10 @@ class ResponseManager:
                     if status_code_match:
                         status_code = int(status_code_match.group(1))
                         if status_code != 404:
-                            raise e
+                            raise
                     else:
                         # can't determine the status code
-                        raise e
+                        raise
 
 
 class WorkflowInstaller:
@@ -317,7 +313,7 @@ class WorkflowInstaller:
 
     def _log_merge_conflicts(self, workflow: Workflow) -> None:
         if self._has_merge_conflicts(workflow):
-            LOGGER.warn(
+            LOGGER.warning(
                 "Both the git playbook and local installed playbook were modified."
                 "  Git version will override local changes!",
             )
@@ -361,7 +357,7 @@ class WorkflowInstaller:
     def _process_steps(
         self,
         workflow: Workflow,
-        installed_workflow: dict = None,
+        installed_workflow: dict | None = None,
     ) -> None:
         """Iterate the playbook steps and assign the correct integration instances and block
         identifiers
@@ -509,7 +505,7 @@ class WorkflowInstaller:
         self,
         step: dict,
         environments: list,
-        existing_step: dict = None,
+        existing_step: dict | None = None,
     ) -> None:
         """Reconfigure an integration instance of a workflow step.
 

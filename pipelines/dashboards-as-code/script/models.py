@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from enum import Enum
-from typing import List, Any
+from typing import Any
 
 
 class DashboardOperation(Enum):
@@ -46,7 +46,7 @@ class DataSource(Enum):
 
 
 class FilterOperatorAndValues:
-    def __init__(self, operator: str, values: List[Any]):
+    def __init__(self, operator: str, values: list[Any]):
         self.operator = operator
         self.values = values
 
@@ -87,7 +87,7 @@ class ChartLayout:
 
 class ChartConfig:
     def __init__(
-        self, dashboard_chart: str, chart_layout: ChartLayout, filters_ids: List[str]
+        self, dashboard_chart: str, chart_layout: ChartLayout, filters_ids: list[str]
     ):
         self.dashboard_chart = dashboard_chart
         self.chart_layout = chart_layout
@@ -115,9 +115,9 @@ class DashboardFilter:
         id: str,
         data_source: DataSource,
         field_path: str,
-        filter_operator_and_field_values: List[FilterOperatorAndValues],
+        filter_operator_and_field_values: list[FilterOperatorAndValues],
         display_name: str,
-        chart_ids: List[str],
+        chart_ids: list[str],
         is_standard_time_range_filter: bool,
         is_mandatory: bool,
         is_standard_time_range_filter_enabled: bool,
@@ -174,9 +174,9 @@ class DashboardFilter:
 class DashboardDefinition:
     def __init__(
         self,
-        filters: List[DashboardFilter],
+        filters: list[DashboardFilter],
         fingerprint: str,
-        charts: List[ChartConfig],
+        charts: list[ChartConfig],
     ):
         self.filters = filters
         self.fingerprint = fingerprint

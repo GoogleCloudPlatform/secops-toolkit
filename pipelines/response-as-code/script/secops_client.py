@@ -14,14 +14,14 @@
 # limitations under the License.
 
 import logging
-from typing import List, Dict, Any
-import requests
-import google.auth
-import google.auth.transport.requests
 import random
 import time
+from typing import Any
 
-from models import SocRole, WorkflowMenuCard, APIError, Workflow, WorkflowCategory
+import google.auth
+import google.auth.transport.requests
+import requests
+from models import APIError, SocRole, Workflow, WorkflowCategory, WorkflowMenuCard
 
 LOGGER = logging.getLogger(__name__)
 
@@ -54,11 +54,11 @@ class SecOpsClient:
         self,
         method: str,
         path: str,
-        params: Dict[str, Any] = None,
-        json_data: Dict[str, Any] = None,
+        params: dict[str, Any] | None = None,
+        json_data: dict[str, Any] | None = None,
         max_retries: int = 5,
         initial_backoff: float = 4.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Makes an authenticated request to the Chronicle API with built-in 429 retry logic."""
         url = f"{self.base_url}{path}"
         backoff = initial_backoff
@@ -108,9 +108,9 @@ class SecOpsClient:
                     f"An unexpected error occurred during API request: {e}"
                 ) from e
 
-    def list_soc_roles(self) -> List[SocRole]:
+    def list_soc_roles(self) -> list[SocRole]:
         """Retrieves a list of all available SOC roles from the Chronicle API."""
-        soc_roles: List[SocRole] = []
+        soc_roles: list[SocRole] = []
         next_page_token = None
         try:
             while True:
@@ -141,9 +141,9 @@ class SecOpsClient:
             raise APIError(f"Failed to retrieve SOC roles: {e}") from e
         return soc_roles
 
-    def get_playbooks(self) -> List[WorkflowMenuCard]:
+    def get_playbooks(self) -> list[WorkflowMenuCard]:
         """Retrieves a list of all legacy workflow menu cards (playbooks) from the Chronicle API."""
-        workflow_menu_cards: List[WorkflowMenuCard] = []
+        workflow_menu_cards: list[WorkflowMenuCard] = []
         try:
             parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
             api_path = f"/v1alpha/{parent}/legacyPlaybooks:legacyGetWorkflowMenuCardsWithEnvFilter"
@@ -175,7 +175,7 @@ class SecOpsClient:
             raise APIError(f"Failed to retrieve legacy workflow menu cards: {e}") from e
         return workflow_menu_cards
 
-    def get_playbook(self, identifier: str) -> Dict[str, Any]:
+    def get_playbook(self, identifier: str) -> dict[str, Any]:
         """Retrieves full information for a legacy workflow by its identifier."""
         try:
             parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
@@ -202,9 +202,9 @@ class SecOpsClient:
         return response_json
         LOGGER.info(f"New workflow '{playbook.name}' was installed successfully")
 
-    def get_environment_names(self) -> List[str]:
+    def get_environment_names(self) -> list[str]:
         """Retrieves a list of environment names from the Chronicle API."""
-        environment_names: List[str] = []
+        environment_names: list[str] = []
         try:
             parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
             api_path = f"/v1alpha/{parent}/environments"
@@ -218,9 +218,9 @@ class SecOpsClient:
             raise APIError(f"Failed to retrieve environment names: {e}") from e
         return environment_names
 
-    def get_environment_group_names(self) -> List[str]:
+    def get_environment_group_names(self) -> list[str]:
         """Retrieves a list of environment group names from the Chronicle API."""
-        environment_group_names: List[str] = []
+        environment_group_names: list[str] = []
         try:
             parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
             api_path = f"/v1alpha/{parent}/environmentGroups"
@@ -236,9 +236,9 @@ class SecOpsClient:
             raise APIError(f"Failed to retrieve environment group names: {e}") from e
         return environment_group_names
 
-    def get_playbook_categories(self) -> List[WorkflowCategory]:
+    def get_playbook_categories(self) -> list[WorkflowCategory]:
         """Retrieves a list of all workflow categories from the Chronicle API."""
-        workflow_categories: List[WorkflowCategory] = []
+        workflow_categories: list[WorkflowCategory] = []
         try:
             parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
             api_path = f"/v1alpha/{parent}/legacyPlaybooks:legacyGetWorkflowCategories"
@@ -292,16 +292,15 @@ class SecOpsClient:
         except Exception as e:
             raise APIError(f"Failed to retrieve integration instance name: {e}") from e
 
-    def get_integrations_instances(self, environment: str) -> List[Dict[str, Any]]:
-        integration_instances: List[Dict[str, Any]] = []
+    def get_integrations_instances(self, environment: str) -> list[dict[str, Any]]:
+        integration_instances: list[dict[str, Any]] = []
         try:
             parent = f"projects/{self.project_id}/locations/{self.region}/instances/{self.customer_id}"
             api_path = f"/v1alpha/{parent}/integrations"
 
             response_json = self._make_request(method="GET", path=api_path)
             if "integrations" in response_json:
-                for integration_data in response_json["integrations"]:
-                    integration_instances.append(integration_data)
+                integration_instances = list(response_json["integrations"])
         except Exception as e:
             raise APIError(f"Failed to retrieve integration instances: {e}") from e
         return integration_instances

@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+
+import requests
+from GoogleBigQueryManager import GoogleBigQueryApiManager
+from SecOpsToolkitManager import SecOpsToolkitManager
 from SiemplifyJob import SiemplifyJob
 from SiemplifyUtils import output_handler
 from TIPCommon.extraction import extract_action_param
-from GoogleBigQueryManager import GoogleBigQueryApiManager
-from SecOpsToolkitManager import SecOpsToolkitManager
-
-import requests
-import json
 
 
 class JobParametersParser:
@@ -316,7 +316,7 @@ def main():
                         description="Bindplane Agents Inventory",
                         header=header,
                     )
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     siemplify.LOGGER.info(
                         f"Data Table might already exist or creation returned an error: {e}"
                     )
@@ -353,14 +353,14 @@ def main():
                 siemplify.LOGGER.info(
                     "Successfully pushed agents to Chronicle Data Table."
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 siemplify.LOGGER.error(f"Failed to populate Chronicle Data Table: {e}")
 
         siemplify.LOGGER.info("--------------- JOB FINISHED ---------------")
 
     except Exception as error:
         siemplify.LOGGER.error(f"Got exception on main handler. Error: {error}")
-        siemplify.LOGGER.exception(error)
+        siemplify.LOGGER.exception("Got exception on main handler")
         raise
 
 

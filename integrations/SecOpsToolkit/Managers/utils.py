@@ -14,23 +14,22 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import base64
 import copy
 import datetime
 import hashlib
-from io import BytesIO
 import json
 import operator
 import re
 import time
+from io import BytesIO
+from typing import Any
 from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
-
-from dateutil.relativedelta import relativedelta
 
 import consts
 import exceptions
+from dateutil.relativedelta import relativedelta
+from exceptions import GoogleChronicleValidationError, InvalidTimeException
 from SiemplifyAction import SiemplifyAction
 from SiemplifyDataModel import SecurityEventInfo
 from SiemplifyUtils import (
@@ -46,12 +45,11 @@ from TIPCommon.filters import filter_old_alerts
 from TIPCommon.smp_io import read_content, write_content
 from TIPCommon.types import ChronicleSOAR, SingleJson
 from TIPCommon.utils import get_function_arg_names, is_empty_string_or_none
-from exceptions import GoogleChronicleValidationError, InvalidTimeException
 
 # Move to TIPCommon
 UNIX_FORMAT = 1
 DATETIME_FORMAT = 2
-VALID_EMAIL_REGEXP = "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+VALID_EMAIL_REGEXP = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
 TIMESTAMP_KEY = "timestamp"
 NUM_OF_MILLI_IN_SEC = 1000
 
@@ -243,7 +241,7 @@ def get_timestamps_from_range(range_string, alert_start_time=None, alert_end_tim
     :param alert_end_time: {str} End time of the alert
     :return: {tuple} start and end time timestamps
     """
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.timezone.utc)
     timeframe = consts.TIMEFRAME_MAPPING.get(range_string)
 
     if isinstance(timeframe, dict):
@@ -294,13 +292,15 @@ def get_timestamps(
     start_time, end_time = get_timestamps_from_range(
         range_string, alert_start_time, alert_end_time
     )
-    current_time_rfc3339 = datetime_to_rfc3339(datetime.datetime.utcnow())
+    current_time_rfc3339 = datetime_to_rfc3339(
+        datetime.datetime.now(datetime.timezone.utc)
+    )
     try:
         if not start_time and start_time_string:
             start_time = datetime_to_rfc3339(
                 convert_string_to_datetime(start_time_string)
             )
-    except Exception:
+    except Exception:  # noqa: BLE001
         raise InvalidTimeException("Invalid start date/time format provided.")
     try:
         if not end_time and end_time_string:
@@ -310,7 +310,7 @@ def get_timestamps(
                 end_time = datetime_to_rfc3339(
                     convert_string_to_datetime(end_time_string)
                 )
-    except Exception:
+    except Exception:  # noqa: BLE001
         raise InvalidTimeException("Invalid end date/time format provided.")
 
     if not start_time:
@@ -326,7 +326,7 @@ def get_timestamps(
         )
 
     if start_time > end_time:
-        raise Exception('"End Time" should be later than "Start Time"')
+        raise InvalidTimeException('"End Time" should be later than "Start Time"')
 
     return start_time, end_time
 
@@ -345,7 +345,9 @@ def create_end_time(start_time_string: str, current_time_rfc3339: str) -> str:
     utc_offset = start_time_obj.utcoffset()
     if utc_offset:
         tzinfo = datetime.timezone(utc_offset)
-        return datetime_to_rfc3339(datetime.datetime.utcnow().replace(tzinfo=tzinfo))
+        return datetime_to_rfc3339(
+            datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=tzinfo)
+        )
 
     return current_time_rfc3339
 
@@ -471,7 +473,7 @@ def save_timestamp_by_timestamp_file(
         siemplify.LOGGER.error(
             f"Failed writing timestamp to {timestamp_file_name} file, ERROR: {e}"
         )
-        siemplify.LOGGER.exception(e)
+        siemplify.LOGGER.exception("Failed writing timestamp to file")
         return False
 
 
@@ -496,7 +498,7 @@ def fetch_timestamp_by_timestamp_file(
             db_key=timestamp_db_key,
             default_value_to_return=0,
         )
-    except Exception:
+    except Exception:  # noqa: BLE001
         siemplify.LOGGER.error("Unable to read timestamp file")
         last_run_time = 0
 
@@ -598,7 +600,7 @@ def get_value_from_nested_dict(raw_data, keys_list):
 
         elif isinstance(raw_data.get(key), list) and len(keys_list) > 1:
             keys_list.pop(0)
-            merged_dict = dict()
+            merged_dict = {}
 
             for list_item in raw_data.get(key):
                 if not isinstance(list_item, dict):
@@ -658,7 +660,7 @@ def get_filters_by_alert_type(
     def handle_validation_error(error_message):
         if fail_on_invalid:
             raise GoogleChronicleValidationError(error_message)
-        logger.warn(f"{error_message} Ignoring this filter.")
+        logger.warning(f"{error_message} Ignoring this filter.")
 
     filters = []
     supported_filters = consts.ALERT_TYPES_SUPPORTED_FILTERS.get(alert_type)
@@ -722,7 +724,7 @@ def get_filters_by_alert_type(
             )
             continue
 
-        if filter_key not in supported_filters.keys():
+        if filter_key not in supported_filters:
             handle_validation_error(
                 f'Filter "{dynamic_filter}" uses an unsupported key "{filter_key}" '
                 f'for alert type "{alert_type}". Supported keys for this alert '
@@ -753,7 +755,7 @@ def get_filters_by_alert_type(
 
         if (
             len(filter_values) > 1
-            and filter_operator not in consts.MULTIPLE_VALUES_SUPPORTED_OPERATORS.keys()
+            and filter_operator not in consts.MULTIPLE_VALUES_SUPPORTED_OPERATORS
         ):
             handle_validation_error(
                 f'Filter "{dynamic_filter}" uses operator "{filter_operator}" '
@@ -839,21 +841,26 @@ def pass_filters(logger, alert, filters):
                 )
             )
 
-        if (
-            filter_item.get("operator")
-            in consts.MULTIPLE_VALUES_SUPPORTED_OPERATORS.keys()
-        ):
-            if consts.MULTIPLE_VALUES_SUPPORTED_OPERATORS.get(
-                filter_item.get("operator")
-            ) == consts.FILTER_LOGIC.get("or") and not next(
-                (filter_result for filter_result in filter_results if filter_result),
-                None,
+        if filter_item.get("operator") in consts.MULTIPLE_VALUES_SUPPORTED_OPERATORS:
+            if (
+                consts.MULTIPLE_VALUES_SUPPORTED_OPERATORS.get(
+                    filter_item.get("operator")
+                )
+                == consts.FILTER_LOGIC.get("or")
+                and not next(
+                    (
+                        filter_result
+                        for filter_result in filter_results
+                        if filter_result
+                    ),
+                    None,
+                )
+                or consts.MULTIPLE_VALUES_SUPPORTED_OPERATORS.get(
+                    filter_item.get("operator")
+                )
+                == consts.FILTER_LOGIC.get("and")
+                and not all(filter_results)
             ):
-                logger.info(f"'{alert.id}' did not pass filters.")
-                return False
-            elif consts.MULTIPLE_VALUES_SUPPORTED_OPERATORS.get(
-                filter_item.get("operator")
-            ) == consts.FILTER_LOGIC.get("and") and not all(filter_results):
                 logger.info(f"'{alert.id}' did not pass filters.")
                 return False
         elif not all(filter_results):
@@ -897,7 +904,7 @@ def fix_key_value_pair(raw_event):
         value_key = key.replace("_key", "_value")
         value = raw_event.get(value_key)
         if value is not None:
-            new_key = re.sub("_+\d+", "", key.replace("_key", f"_{key_value}"))
+            new_key = re.sub(r"_+\d+", "", key.replace("_key", f"_{key_value}"))
             if not key.count("detection_"):
                 del raw_event[key]
                 del raw_event[value_key]
@@ -950,9 +957,9 @@ def get_last_success_time_for_job(
     return unix_result if time_format == UNIX_FORMAT else datetime_result
 
 
-def save_timestamp_for_job(
-    siemplify, new_timestamp=unix_now(), timestamp_key=TIMESTAMP_KEY
-):
+def save_timestamp_for_job(siemplify, new_timestamp=None, timestamp_key=TIMESTAMP_KEY):
+    if new_timestamp is None:
+        new_timestamp = unix_now()
     if isinstance(new_timestamp, datetime.datetime):
         new_timestamp = convert_datetime_to_unix_time(new_timestamp)
 
@@ -961,7 +968,7 @@ def save_timestamp_for_job(
             property_key=timestamp_key, property_value=json.dumps(new_timestamp)
         )
     except Exception as e:
-        raise Exception(f"Failed saving timestamps to db, ERROR: {e}")
+        raise RuntimeError(f"Failed saving timestamps to db, ERROR: {e}") from e
 
 
 def fetch_timestamp_for_job(
@@ -972,13 +979,13 @@ def fetch_timestamp_for_job(
             property_key=timestamp_key
         )
     except Exception as e:
-        raise Exception(f"Failed reading timestamps from db, ERROR: {e}")
+        raise RuntimeError(f"Failed reading timestamps from db, ERROR: {e}") from e
 
     if last_run_time is None:
         last_run_time = 0
     try:
         last_run_time = int(last_run_time)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         siemplify.LOGGER.error(f"Failed to convert last run time to int: {e}")
         last_run_time = convert_string_to_unix_time(last_run_time)
 
@@ -997,8 +1004,8 @@ def read_ids_for_job(siemplify, db_key, default_value_to_return=None):
         # Check if the db key exists
         if is_empty_string_or_none(str_data):
             siemplify.LOGGER.info(
-                'Key: "{}" does not exist in the database. Returning default value instead: '
-                "{}".format(db_key, default_value_to_return)
+                f'Key: "{db_key}" does not exist in the database. Returning default value instead: '
+                f"{default_value_to_return}"
             )
             return default_value_to_return
 
@@ -1011,7 +1018,7 @@ def read_ids_for_job(siemplify, db_key, default_value_to_return=None):
             "Failed to parse data as JSON. Returning default value instead: "
             f'"{default_value_to_return}". \nERROR: {err}'
         )
-        siemplify.LOGGER.exception(err)
+        siemplify.LOGGER.exception("Failed to parse data as JSON")
         return default_value_to_return
 
     # If there is a connection problem with the DB
@@ -1019,7 +1026,7 @@ def read_ids_for_job(siemplify, db_key, default_value_to_return=None):
         siemplify.LOGGER.error(
             f"Exception was raised from the database.  ERROR: {error}."
         )
-        siemplify.LOGGER.exception(error)
+        siemplify.LOGGER.exception("Exception was raised from the database")
         raise
 
 
@@ -1037,7 +1044,7 @@ def write_ids_for_job(siemplify, content_to_write, db_key, default_value_to_set=
             "Failed parsing JSON to string. Writing default value instead: "
             f'"{default_value_to_set}". \nERROR: {err}'
         )
-        siemplify.LOGGER.exception(err)
+        siemplify.LOGGER.exception("Failed parsing JSON to string")
         siemplify.set_scoped_job_context_property(
             property_key=db_key,
             property_value=json.dumps(default_value_to_set, separators=(",", ":")),
@@ -1045,7 +1052,7 @@ def write_ids_for_job(siemplify, content_to_write, db_key, default_value_to_set=
     # If there is a connection problem with the DB
     except Exception as err:
         siemplify.LOGGER.error(f"Exception was raised from the database.  ERROR: {err}")
-        siemplify.LOGGER.exception(err)
+        siemplify.LOGGER.exception("Exception was raised from the database")
         raise
 
 
@@ -1147,10 +1154,10 @@ def retry_decorator(max_retries, delay_ms, siemplify_logger=None):
             for i in range(max_retries):
                 try:
                     return func(*args, **kwargs)
-                except Exception as e:
+                except Exception:
                     if siemplify_logger:
                         siemplify_logger.info(f"{func.__name__} has failed")
-                        siemplify_logger.exception(e)
+                        siemplify_logger.exception("%s has failed", func.__name__)
 
                     if i == max_retries - 1:
                         if siemplify_logger:
@@ -1235,9 +1242,7 @@ def get_reference_list_filter(
             if (
                 filter_logic == consts.GET_REFERENCE_LIST_FILTER_LOGIC_EQUAL
                 and filter_value == consts.GET_REFERENCE_LIST_CONTENT_TYPE
-            ):
-                result_data.append(item)
-            elif (
+            ) or (
                 filter_logic == (consts.GET_REFERENCE_LIST_FILTER_LOGIC_CONTAINS)
                 and filter_value in consts.GET_REFERENCE_LIST_CONTENT_TYPE
             ):
@@ -1250,10 +1255,7 @@ def get_reference_list_filter(
                 if (
                     filter_logic == (consts.GET_REFERENCE_LIST_FILTER_LOGIC_EQUAL)
                     and filter_value == value
-                ):
-                    result_data.append(item)
-
-                elif (
+                ) or (
                     filter_logic == (consts.GET_REFERENCE_LIST_FILTER_LOGIC_CONTAINS)
                     and filter_value in value
                 ):
@@ -1319,7 +1321,11 @@ def extract_dict_from_resource_string(
     return dict(matches)
 
 
-def build_udm_query(ip: str = None, hostname: str = None, mac: str = None) -> str:
+def build_udm_query(
+    ip: str | None = None,
+    hostname: str | None = None,
+    mac: str | None = None,
+) -> str:
     """
     Build udm query based on ip/hostname/mac
 
@@ -1372,7 +1378,7 @@ def construct_url(
     root: str,
     entity_identifier: str = "",
     entity_type: str = "",
-    params: dict[str, str] = None,
+    params: dict[str, str] | None = None,
 ) -> str:
     """
     Construct a URL string
@@ -1683,7 +1689,7 @@ def extract_and_decode_raw_log(
                         extraction or parsing fails.
     """
     if not raw_log_objects:
-        logger.warn(f"No raw log data returned by the API for event ID: {event_id}")
+        logger.warning(f"No raw log data returned by the API for event ID: {event_id}")
         return None
 
     try:

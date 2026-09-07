@@ -18,13 +18,12 @@ import csv
 import json
 import logging
 import pathlib
-from typing import Any, Literal, Mapping, Sequence
 import sys
+from collections.abc import Mapping, Sequence
+from typing import Any, Literal
+
 import pydantic
 import ruamel.yaml
-from secops.chronicle import ChronicleClient
-from secops.chronicle.data_table import DataTableColumnType
-
 from config import (
     CUSTOMER_ID,
     DATA_TABLE_CONFIG_FILE,
@@ -32,6 +31,8 @@ from config import (
     PROJECT_ID,
     REGION,
 )
+from secops.chronicle import ChronicleClient
+from secops.chronicle.data_table import DataTableColumnType
 
 DATA_TABLE_COLUMN_TYPES = Literal["CIDR", "STRING", "REGEX"]
 

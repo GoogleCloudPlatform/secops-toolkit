@@ -13,10 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import json
-from google.cloud import pubsub_v1
+import os
 from concurrent import futures
+
+from google.cloud import pubsub_v1
 from secops import SecOpsClient
 
 # Default timeout to wait for subscriber to send a message.
@@ -66,12 +67,12 @@ def main(req):
         data = (message.data).decode("utf-8")
         try:
             data = json.loads(data)
-        except (ValueError, TypeError) as error:
+        except (ValueError, TypeError):
             print(
                 "ERROR: Unexpected data format received "
                 "while collecting message details from subscription"
             )
-            raise error
+            raise
 
         chronicle.ingest_log(log_type=secops_data_type, log_message=json.dumps(data))
 

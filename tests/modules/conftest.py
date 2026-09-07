@@ -31,7 +31,7 @@ def tfvars_to_yaml(request):
             with p_source.open() as f:
                 data = hcl2.load(f)
         except Exception as e:
-            raise ValueError(f"error decoding tfvars: {e.args[0]}")
+            raise ValueError(f"error decoding tfvars: {e.args[0]}") from e
         if from_var not in data:
             raise ValueError(f"variable '{from_var}' not in tfvars")
         if to_var is None:
@@ -44,7 +44,7 @@ def tfvars_to_yaml(request):
                 data_yaml = yaml.dump(data_yaml, f)
         except yaml.YAMLError as e:
             raise ValueError(f"error encoding data to yaml: {e.args[0]}")
-        except (IOError, OSError) as e:
+        except OSError as e:
             raise ValueError(f"error writing '{dest}': {e.args[0]}")
 
     return converter

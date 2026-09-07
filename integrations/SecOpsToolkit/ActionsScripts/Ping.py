@@ -12,15 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import consts
 from ScriptResult import EXECUTION_STATE_COMPLETED, EXECUTION_STATE_FAILED
+from SecOpsToolkitManager import SecOpsToolkitManager
 from SiemplifyAction import SiemplifyAction
 from SiemplifyUtils import output_handler
-
 from TIPCommon.extraction import extract_configuration_param
-
-import consts
-from SecOpsToolkitManager import SecOpsToolkitManager
-
 
 SCRIPT_NAME = "Ping"
 
@@ -81,7 +78,7 @@ def main():
         siemplify.LOGGER.error(
             f"Failed to connect to the Google Chronicle. Error is {e}"
         )
-        siemplify.LOGGER.exception(e)
+        siemplify.LOGGER.exception("Failed to connect to the Google Chronicle")
         status = EXECUTION_STATE_FAILED
         result_value = "false"
         output_message = f"Failed to connect to the Google Chronicle. Error is {e}"

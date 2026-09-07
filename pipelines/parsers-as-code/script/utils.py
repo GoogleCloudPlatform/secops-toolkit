@@ -14,18 +14,19 @@
 # limitations under the License.
 
 import difflib
-import re
-import yaml
-import os
-import logging
 import json
-from models import Operation, ParserValidationStatus, ParserExtensionState
+import logging
+import os
+import re
+
+import yaml
 from config import GITHUB_OUTPUT_FILE
+from models import Operation, ParserExtensionState, ParserValidationStatus
 
 LOGGER = logging.getLogger("pac")
 
 
-def filter_lines(lines_list: list, ignore_patterns: list = None) -> list:
+def filter_lines(lines_list: list, ignore_patterns: list | None = None) -> list:
     """
     Filters lines from a list based on a list of regex patterns.
 
@@ -46,7 +47,7 @@ def filter_lines(lines_list: list, ignore_patterns: list = None) -> list:
 
 
 def compare_yaml_files(
-    file1_path: str, file2_path: str, ignore_patterns: list = None
+    file1_path: str, file2_path: str, ignore_patterns: list | None = None
 ) -> list | None:
     """
     Compares two YAML files, ignoring specified patterns, and returns the differences.
@@ -196,7 +197,7 @@ def generate_event_files(
             results[log_filename] = (output_path, total_count, events)
             LOGGER.info(f"[{log_type}] Saved {total_count} events to {output_filename}")
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             LOGGER.error(
                 f"[{log_type}] Failed to generate events for {log_filename}: {e}"
             )
@@ -313,7 +314,7 @@ def generate_pr_comment_output(plan: dict, submitted_info: list, has_errors: boo
         try:
             with open(GITHUB_OUTPUT_FILE, "a") as f:
                 f.write(f"pr_comment_data<<EOF\n{json_output}\nEOF\n")
-        except IOError as e:
+        except OSError as e:
             LOGGER.error(f"Failed to write to GITHUB_OUTPUT file: {e}")
             LOGGER.info(
                 f"PR Comment Data (fallback):\n{json.dumps(comment_data, indent=2)}"

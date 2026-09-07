@@ -14,19 +14,20 @@
 # limitations under the License.
 
 import logging
-import sys
-import click
 import re
+import sys
+
+import click
 import ruamel.yaml
-from secops import SecOpsClient
 from config import (
-    CUSTOMER_ID,
-    REGION,
-    PROJECT_ID,
     BASE_RULES_DIR,
+    CUSTOMER_ID,
+    PROJECT_ID,
+    REGION,
     SECOPS_REFERENCE_LISTS_CONFIG_PATH,
 )
 from data_tables import DataTables
+from secops import SecOpsClient
 
 # --- Global Logger Setup ---
 _LOGGER = logging.getLogger(__name__)
@@ -59,10 +60,8 @@ def cli(ctx: AppContext):
             customer_id=CUSTOMER_ID, project_id=PROJECT_ID, region=REGION
         )
         _LOGGER.info("SecOpsClient for Chronicle initialized successfully.")
-    except Exception as e:
-        _LOGGER.error(
-            "Failed to initialize SecOpsClient for Chronicle: %s", e, exc_info=True
-        )
+    except Exception:
+        _LOGGER.exception("Failed to initialize SecOpsClient for Chronicle")
         sys.exit(1)
 
 
@@ -101,14 +100,14 @@ def update_data_tables(ctx: AppContext):
 @pass_context
 def pull_rules(ctx: AppContext):
     """Pull all rules from SecOps and populate local files."""
+    import ruamel.yaml
     from config import (
-        SECOPS_RULES_CONFIG_PATH,
         BASE_RULES_DIR,
+        CUSTOMER_ID,
         PROJECT_ID,
         REGION,
-        CUSTOMER_ID,
+        SECOPS_RULES_CONFIG_PATH,
     )
-    import ruamel.yaml
 
     _LOGGER.info("Fetching rules from SecOps...")
     try:
@@ -184,8 +183,8 @@ def pull_rules(ctx: AppContext):
             for cmd in import_commands:
                 click.echo(cmd)
 
-    except Exception as e:
-        _LOGGER.error("Failed to pull rules: %s", e, exc_info=True)
+    except Exception:
+        _LOGGER.exception("Failed to pull rules")
         sys.exit(1)
 
 
@@ -207,7 +206,7 @@ def verify_rules(ctx: AppContext):
             rule_text = path.read_text()
             _validate_rule_file(name, rule_text)
             _validate_rule_with_chronicle(ctx.chronicle_client, name, rule_text)
-        except (ValueError, IOError) as e:
+        except (OSError, ValueError) as e:
             _LOGGER.error("Error processing rule %s: %s", name, e)
             errors.append(name)
 

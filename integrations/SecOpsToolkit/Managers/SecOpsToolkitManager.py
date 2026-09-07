@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import datetime
+import json
 import time
-from typing import Optional
-import requests
-import requests.adapters
+
+import consts
+import exceptions
 import google.auth
 import google.auth.transport.requests
 import google.oauth2.service_account
-import exceptions
-import consts
-import TIPCommon.types
+import requests
+import requests.adapters
 import TIPCommon.rest.auth
+import TIPCommon.types
 
 
 class SecOpsToolkitManager:
@@ -122,11 +122,11 @@ class SecOpsToolkitManager:
         query: str,
         start_time: datetime.datetime,
         end_time: datetime.datetime,
-        instance_name: Optional[str] = None,
+        instance_name: str | None = None,
         case_insensitive: bool = False,
-        snapshot_query: Optional[str] = None,
-        max_detections: Optional[int] = None,
-        max_events: Optional[int] = None,
+        snapshot_query: str | None = None,
+        max_detections: int | None = None,
+        max_events: int | None = None,
     ) -> dict:
         url = f"{self.api_root}:search"
 
@@ -150,14 +150,17 @@ class SecOpsToolkitManager:
         return response.json()
 
     def create_data_table(
-        self, name: str, description: str, header: dict, column_options: dict = None
+        self,
+        name: str,
+        description: str,
+        header: dict,
+        column_options: dict | None = None,
     ) -> dict:
         url = f"{self.api_root}/dataTables"
         params = {"dataTableId": name}
 
         column_info = []
-        i = 0
-        for col_name, col_val in header.items():
+        for i, (col_name, col_val) in enumerate(header.items()):
             column = {"columnIndex": i, "originalColumn": col_name}
 
             if isinstance(col_val, dict):
@@ -175,7 +178,6 @@ class SecOpsToolkitManager:
                 column.update(column_options[col_name])
 
             column_info.append(column)
-            i += 1
 
         payload = {
             "description": description,
@@ -211,11 +213,10 @@ class SecOpsToolkitManager:
         response = None
         for attempt in range(max_retries + 1):
             response = self.session.post(url, json=payload)
-            if response.status_code == 429:
-                if attempt < max_retries:
-                    backoff = initial_backoff * (2**attempt)
-                    time.sleep(backoff)
-                    continue
+            if response.status_code == 429 and attempt < max_retries:
+                backoff = initial_backoff * (2**attempt)
+                time.sleep(backoff)
+                continue
             break
 
         self.validate_response(response, "Failed to bulk delete data table rows")
@@ -379,9 +380,9 @@ class SecOpsToolkitManager:
     def update_data_table(
         self,
         name: str,
-        description: str = None,
-        row_time_to_live: str = None,
-        update_mask: list = None,
+        description: str | None = None,
+        row_time_to_live: str | None = None,
+        update_mask: list | None = None,
     ) -> dict:
         url = f"{self.api_root}/dataTables/{name}"
         payload = {}
@@ -426,11 +427,10 @@ class SecOpsToolkitManager:
             response = None
             for attempt in range(max_retries + 1):
                 response = self.session.get(url, params=params)
-                if response.status_code == 429:
-                    if attempt < max_retries:
-                        backoff = initial_backoff * (2**attempt)
-                        time.sleep(backoff)
-                        continue
+                if response.status_code == 429 and attempt < max_retries:
+                    backoff = initial_backoff * (2**attempt)
+                    time.sleep(backoff)
+                    continue
                 break
 
             self.validate_response(response, "Failed to list data table rows")

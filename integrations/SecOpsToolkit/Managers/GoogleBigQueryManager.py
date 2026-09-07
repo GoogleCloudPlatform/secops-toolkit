@@ -13,15 +13,16 @@
 # limitations under the License.
 
 from __future__ import annotations
-from typing import Iterator
-from TIPCommon.types import SingleJson
+
+import json
+from collections.abc import Iterator
+
+import authentication as auth
+import exceptions
 import google.auth.credentials
 import google.cloud.bigquery
 import google.cloud.exceptions
-import exceptions
-import authentication as auth
-import json
-
+from TIPCommon.types import SingleJson
 
 LIST_RESULT_LIMIT = 50
 
@@ -130,4 +131,4 @@ class GoogleBigQueryApiManager:
             )
             job.result()
         except Exception as e:
-            raise exceptions.GoogleBigQueryManagerError(e)
+            raise exceptions.GoogleBigQueryManagerError(e) from e

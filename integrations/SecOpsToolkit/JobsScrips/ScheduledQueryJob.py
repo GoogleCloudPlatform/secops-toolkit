@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime, timedelta, timezone
+
+from consts import INTEGRATION_NAME
+from SecOpsToolkitManager import SecOpsToolkitManager
 from SiemplifyJob import SiemplifyJob
 from SiemplifyUtils import output_handler
 from TIPCommon.extraction import extract_action_param, extract_configuration_param
-from SecOpsToolkitManager import SecOpsToolkitManager
-from consts import INTEGRATION_NAME
-from datetime import datetime, timedelta, timezone
 
 
 class JobParametersParser:
@@ -177,7 +178,7 @@ def main():
 
     except Exception as error:
         siemplify.LOGGER.error(f"Got exception on main handler. Error: {error}")
-        siemplify.LOGGER.exception(error)
+        siemplify.LOGGER.exception("Got exception on main handler")
         raise
 
 

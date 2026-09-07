@@ -28,10 +28,10 @@ from urllib.parse import urlparse
 import consts
 import utils
 from EnvironmentCommon import EnvironmentHandle
+from exceptions import DetectionParsingError
 from SiemplifyConnectorsDataModel import AlertInfo
 from SiemplifyUtils import convert_string_to_unix_time
 from TIPCommon.transformation import add_prefix_to_dict, dict_to_flat
-from exceptions import DetectionParsingError
 
 if TYPE_CHECKING:
     from typing import Self
@@ -101,17 +101,17 @@ class IOC:
 
         try:
             self.first_seen_time_ms = convert_string_to_unix_time(self.first_seen_time)
-        except Exception:
+        except Exception:  # noqa: BLE001
             self.first_seen_time_ms = 1
 
         try:
             self.ioc_ingest_time_ms = convert_string_to_unix_time(self.ioc_ingest_time)
-        except Exception:
+        except Exception:  # noqa: BLE001
             self.ioc_ingest_time_ms = 1
 
         try:
             self.last_seen_time_ms = convert_string_to_unix_time(self.last_seen_time)
-        except Exception:
+        except Exception:  # noqa: BLE001
             self.last_seen_time_ms = 1
 
     @property
@@ -367,14 +367,14 @@ class IOCDetail:
                 self.first_active_time_ms = convert_string_to_unix_time(
                     self.first_active_time
                 )
-            except Exception:
+            except Exception:  # noqa: BLE001
                 self.first_active_time_ms = 1
 
             try:
                 self.last_active_time_ms = convert_string_to_unix_time(
                     self.last_active_time
                 )
-            except Exception:
+            except Exception:  # noqa: BLE001
                 self.last_active_time_ms = 1
 
         def to_json(self):
@@ -403,7 +403,7 @@ class IOCDetail:
                     if self.str_raw_confidence_score
                     else None
                 )
-            except Exception:
+            except Exception:  # noqa: BLE001
                 confidence = (
                     self.str_raw_confidence_score.title()
                     if self.str_raw_confidence_score
@@ -436,25 +436,24 @@ class IOCDetail:
         self.sources = sources
         self.uri = uri
         self.first_active_time = (
-            sorted(
+            min(
                 sources,
                 key=lambda source: (
                     source.first_active_time is None,
                     source.first_active_time,
                 ),
-            )[0].first_active_time
+            ).first_active_time
             if sources
             else None
         )
         self.last_active_time = (
-            sorted(
+            min(
                 sources,
                 key=lambda source: (
                     source.last_active_time is not None,
                     source.last_active_time,
                 ),
-                reverse=True,
-            )[0].last_active_time
+            ).last_active_time
             if sources
             else None
         )
@@ -545,7 +544,7 @@ class IOCDetail:
             try:
                 confidence_score = int(source.str_raw_confidence_score)
                 confidence_score = IOCDetail.avg_confidnce_to_ui(confidence_score)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 confidence_score = (
                     source.str_raw_confidence_score.title()
                     if source.str_raw_confidence_score
@@ -597,7 +596,7 @@ class IOCDetail:
             try:
                 if source.str_raw_confidence_score:
                     numerical_confidences.append(int(source.str_raw_confidence_score))
-            except Exception:
+            except Exception:  # noqa: BLE001
                 if source.numeric_raw_confidence_score:
                     numerical_confidences.append(source.numeric_raw_confidence_score)
 
@@ -639,14 +638,14 @@ class Asset:
             self.first_seen_artifact_time_ms = convert_string_to_unix_time(
                 self.first_seen_artifact_time
             )
-        except Exception:
+        except Exception:  # noqa: BLE001
             self.first_seen_time_ms = 1
 
         try:
             self.last_seen_artifact_time_ms = convert_string_to_unix_time(
                 self.last_seen_artifact_time
             )
-        except Exception:
+        except Exception:  # noqa: BLE001
             self.ioc_ingest_time_ms = 1
 
     def as_json(self):
@@ -819,7 +818,7 @@ class Alert:
 
             try:
                 self.timestamp_ms = convert_string_to_unix_time(self.timestamp)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 self.timestamp_ms = 1
 
         @property
@@ -1121,7 +1120,7 @@ class Alert:
                 .get("emailAddresses", [])
             )
 
-            return list(set([e for e in emails if e]))
+            return list({e for e in emails if e})
 
         @property
         def get_users_list(self):
@@ -1363,7 +1362,7 @@ class Detection:
                 if self.outcomes.is_alert_update_supported
                 else {}
             )
-        except Exception:
+        except Exception:  # noqa: BLE001
             warnings.warn(
                 "One or more detection fields could not be mapped to SOAR alert fields"
             )
@@ -1479,7 +1478,7 @@ class Detection:
                     break
             try:
                 severity_key = severity_key.lower()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 severity_key = None
 
         return consts.SIEMPLIFY_SEVERITIES.get(severity_key, None)
@@ -2585,7 +2584,7 @@ class EntitySummary:
     metadata: SingleJson | None
 
     @classmethod
-    def from_json(cls, json_data: SingleJson) -> "EntitySummary":
+    def from_json(cls, json_data: SingleJson) -> EntitySummary:
         """
         Builds an EntitySummary object from raw JSON data.
         """
@@ -2620,7 +2619,7 @@ class DetailedEntitySummary:
         cls,
         combined_api_data: SingleJson,
         initial_summary_info: SingleJson | None = None,
-    ) -> "DetailedEntitySummary":
+    ) -> DetailedEntitySummary:
         """Builds a DetailedEntitySummary object from combined API response data.
 
         Args:
@@ -2683,7 +2682,7 @@ class RelatedEntitiesResponse:
     related_entities: list[SingleJson]
 
     @classmethod
-    def from_json(cls, json_data: SingleJson) -> "RelatedEntitiesResponse":
+    def from_json(cls, json_data: SingleJson) -> RelatedEntitiesResponse:
 
         return cls(
             raw_data=json_data, related_entities=json_data.get("relatedEntities", [])

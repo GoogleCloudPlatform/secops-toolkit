@@ -13,6 +13,8 @@
 # limitations under the License.
 
 from __future__ import annotations
+
+import exceptions
 import google.auth.credentials
 import google.auth.exceptions
 import google.auth.transport.requests
@@ -21,7 +23,6 @@ import requests
 import requests.adapters
 import TIPCommon.rest.auth
 import TIPCommon.rest.gcp
-import exceptions
 
 
 def create_session(
