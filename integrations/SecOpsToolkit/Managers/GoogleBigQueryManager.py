@@ -1,14 +1,23 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from __future__ import annotations
-
 from typing import Iterator
-
+from TIPCommon.types import SingleJson
 import google.auth.credentials
 import google.cloud.bigquery
 import google.cloud.exceptions
-
-import TIPCommon.rest.gcp
-from TIPCommon.types import SingleJson
-
 import exceptions
 import authentication as auth
 import json
@@ -18,7 +27,6 @@ LIST_RESULT_LIMIT = 50
 
 
 class GoogleBigQueryApiManager:
-
     def __init__(
         self, project_id: str, api_client: google.cloud.bigquery.Client
     ) -> None:
@@ -26,14 +34,15 @@ class GoogleBigQueryApiManager:
         self.api_client: google.cloud.bigquery.Client = api_client
 
     @classmethod
-    def from_config_params(cls, wif_email: str, project_id: str) -> GoogleBigQueryApiManager:
+    def from_config_params(
+        cls, wif_email: str, project_id: str
+    ) -> GoogleBigQueryApiManager:
         """Second constructor using the integration's configuration parameters"""
-        credentials = auth.get_credentials_using_workload_identity_email(wif_email, project_id, True)
+        credentials = auth.get_credentials_using_workload_identity_email(
+            wif_email, project_id, True
+        )
         api_client = auth.create_session(
-            "https://bigquery.googleapis.com",
-            credentials,
-            project_id,
-            True
+            "https://bigquery.googleapis.com", credentials, project_id, True
         )
         return cls(project_id, api_client)
 
@@ -79,17 +88,18 @@ class GoogleBigQueryApiManager:
         results = rows.to_dataframe()
         return results.to_dict("records")
 
-    def load_to_bigquery(self, all_agents, project_id, dataset_id, table_id, is_first_batch):
+    def load_to_bigquery(
+        self, all_agents, project_id, dataset_id, table_id, is_first_batch
+    ):
         """
         Loads a list of dictionaries into BigQuery.
         First batch truncates the table, subsequent batches append.
         """
         if not all_agents:
-            logging.warning("No agents to load to BigQuery. Skipping.")
             return
-          
+
         table_ref = f"{project_id}.{dataset_id}.{table_id}"
-        
+
         # Convert complex nested structures into JSON strings to prevent BQ schema errors
         flattened_agents = []
         for agent in all_agents:
@@ -102,16 +112,22 @@ class GoogleBigQueryApiManager:
             flattened_agents.append(flat_agent)
 
         # First batch across all projects truncates the table, the rest append
-        write_disposition = google.cloud.bigquery.WriteDisposition.WRITE_TRUNCATE if is_first_batch else google.cloud.bigquery.WriteDisposition.WRITE_APPEND
+        write_disposition = (
+            google.cloud.bigquery.WriteDisposition.WRITE_TRUNCATE
+            if is_first_batch
+            else google.cloud.bigquery.WriteDisposition.WRITE_APPEND
+        )
 
         # Configure the load job
         job_config = google.cloud.bigquery.LoadJobConfig(
-            autodetect=True, # Automatically infer the schema
-            write_disposition=write_disposition, 
+            autodetect=True,  # Automatically infer the schema
+            write_disposition=write_disposition,
         )
-        
+
         try:
-            job = self.api_client.load_table_from_json(flattened_agents, table_ref, job_config=job_config)
+            job = self.api_client.load_table_from_json(
+                flattened_agents, table_ref, job_config=job_config
+            )
             job.result()
         except Exception as e:
             raise exceptions.GoogleBigQueryManagerError(e)

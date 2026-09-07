@@ -1,6 +1,20 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 import base64
 import copy
@@ -30,7 +44,6 @@ from SiemplifyUtils import (
 from TIPCommon.base.interfaces import ScriptLogger
 from TIPCommon.filters import filter_old_alerts
 from TIPCommon.smp_io import read_content, write_content
-from TIPCommon.transformation import dict_to_flat
 from TIPCommon.types import ChronicleSOAR, SingleJson
 from TIPCommon.utils import get_function_arg_names, is_empty_string_or_none
 from exceptions import GoogleChronicleValidationError, InvalidTimeException
@@ -287,7 +300,7 @@ def get_timestamps(
             start_time = datetime_to_rfc3339(
                 convert_string_to_datetime(start_time_string)
             )
-    except Exception as err:
+    except Exception:
         raise InvalidTimeException("Invalid start date/time format provided.")
     try:
         if not end_time and end_time_string:
@@ -297,7 +310,7 @@ def get_timestamps(
                 end_time = datetime_to_rfc3339(
                     convert_string_to_datetime(end_time_string)
                 )
-    except Exception as err:
+    except Exception:
         raise InvalidTimeException("Invalid end date/time format provided.")
 
     if not start_time:
@@ -713,7 +726,7 @@ def get_filters_by_alert_type(
             handle_validation_error(
                 f'Filter "{dynamic_filter}" uses an unsupported key "{filter_key}" '
                 f'for alert type "{alert_type}". Supported keys for this alert '
-                f'type are: {", ".join(supported_filters.keys())}.'
+                f"type are: {', '.join(supported_filters.keys())}."
             )
             continue
 
@@ -723,7 +736,7 @@ def get_filters_by_alert_type(
             handle_validation_error(
                 f'Filter "{dynamic_filter}" uses an unsupported operator '
                 f'"{filter_operator}" for key "{filter_key}". Supported operators '
-                f'for this key are: {", ".join(supported_filters.get(filter_key).get("operators", []))}.'
+                f"for this key are: {', '.join(supported_filters.get(filter_key).get('operators', []))}."
             )
             continue
 
@@ -734,7 +747,7 @@ def get_filters_by_alert_type(
             handle_validation_error(
                 f'Filter "{dynamic_filter}" contains invalid values for key '
                 f'"{filter_key}". Supported values are: '
-                f'{", ".join(supported_filters.get(filter_key).get("possible_values", []))}.'
+                f"{', '.join(supported_filters.get(filter_key).get('possible_values', []))}."
             )
             continue
 
@@ -745,7 +758,7 @@ def get_filters_by_alert_type(
             handle_validation_error(
                 f'Filter "{dynamic_filter}" uses operator "{filter_operator}" '
                 "with multiple values, which is not supported. For multiple values, "
-                f'use operators: {", ".join(consts.MULTIPLE_VALUES_SUPPORTED_OPERATORS.keys())}.'
+                f"use operators: {', '.join(consts.MULTIPLE_VALUES_SUPPORTED_OPERATORS.keys())}."
             )
             continue
 
@@ -965,7 +978,7 @@ def fetch_timestamp_for_job(
         last_run_time = 0
     try:
         last_run_time = int(last_run_time)
-    except:
+    except Exception:
         last_run_time = convert_string_to_unix_time(last_run_time)
 
     if datetime_format:
@@ -1457,8 +1470,7 @@ def _get_custom_time_range(
 
     start_dt: datetime.datetime = _parse_iso_timestamp(
         start_time_str,
-        "Invalid Start Time format. Please use ISO 8601 "
-        "(e.g., 2023-01-01T00:00:00Z).",
+        "Invalid Start Time format. Please use ISO 8601 (e.g., 2023-01-01T00:00:00Z).",
     )
 
     end_dt: datetime.datetime = (

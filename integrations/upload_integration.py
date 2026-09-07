@@ -1,4 +1,17 @@
-#!/usr/bin/env python3
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 Upload/Import Integration to Google Security Operations (SOAR).
 
@@ -27,6 +40,7 @@ try:
     import google.auth.transport.requests
     import google.oauth2.service_account
     import requests
+
     HAS_DEPS = True
 except ImportError:
     HAS_DEPS = False
@@ -68,7 +82,11 @@ def list_available_integrations(base_dir: Path) -> List[str]:
     for entry in base_dir.iterdir():
         if entry.is_dir() and not entry.name.startswith((".", "_", "venv")):
             # Check if directory contains an integration definition file
-            if any(f.name.startswith("Integration-") and f.name.endswith(".def") for f in entry.iterdir() if f.is_file()):
+            if any(
+                f.name.startswith("Integration-") and f.name.endswith(".def")
+                for f in entry.iterdir()
+                if f.is_file()
+            ):
                 integrations.append(entry.name)
     return sorted(integrations)
 
@@ -86,19 +104,27 @@ def resolve_integration_dir(integration_name_or_path: str, base_dir: Path) -> Pa
         return candidate_in_base.resolve()
 
     available = list_available_integrations(base_dir)
-    available_msg = f"\nAvailable integrations in {base_dir}:\n  - " + "\n  - ".join(available) if available else ""
+    available_msg = (
+        f"\nAvailable integrations in {base_dir}:\n  - " + "\n  - ".join(available)
+        if available
+        else ""
+    )
     raise FileNotFoundError(
         f"Integration directory '{integration_name_or_path}' not found.{available_msg}"
     )
 
 
-def create_integration_zip(source_dir: Path, output_zip_path: Optional[str] = None) -> bytes:
+def create_integration_zip(
+    source_dir: Path, output_zip_path: Optional[str] = None
+) -> bytes:
     """
     Creates a ZIP archive in-memory (and optionally saves to disk) from the integration directory.
     Excludes unwanted temporary and metadata files (__pycache__, .git, .DS_Store, *.pyc).
     """
     if not source_dir.is_dir():
-        raise FileNotFoundError(f"Integration source directory '{source_dir}' does not exist.")
+        raise FileNotFoundError(
+            f"Integration source directory '{source_dir}' does not exist."
+        )
 
     print(f"📦 Packaging integration files from: {source_dir}")
     zip_buffer = io.BytesIO()
@@ -107,7 +133,11 @@ def create_integration_zip(source_dir: Path, output_zip_path: Optional[str] = No
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for root, dirs, files in os.walk(source_dir):
             # Exclude unwanted directories
-            dirs[:] = [d for d in dirs if d not in ("__pycache__", ".git", ".idea", ".pytest_cache", "venv")]
+            dirs[:] = [
+                d
+                for d in dirs
+                if d not in ("__pycache__", ".git", ".idea", ".pytest_cache", "venv")
+            ]
             for file in sorted(files):
                 if file == ".DS_Store" or file.endswith(".pyc") or file.endswith("~"):
                     continue
@@ -140,8 +170,10 @@ def get_auth_token(service_account_path: Optional[str] = None) -> str:
         else:
             try:
                 info = json.loads(service_account_path)
-                creds = google.oauth2.service_account.Credentials.from_service_account_info(
-                    info, scopes=SCOPES
+                creds = (
+                    google.oauth2.service_account.Credentials.from_service_account_info(
+                        info, scopes=SCOPES
+                    )
                 )
             except Exception as e:
                 raise ValueError(
@@ -160,7 +192,9 @@ def resolve_endpoint(location: str, custom_endpoint: Optional[str] = None) -> st
     Resolves the regional or custom API endpoint host.
     """
     if custom_endpoint:
-        return custom_endpoint.replace("https://", "").replace("http://", "").rstrip("/")
+        return (
+            custom_endpoint.replace("https://", "").replace("http://", "").rstrip("/")
+        )
     if location and location.lower() not in ("global", "us"):
         loc = location.lower()
         return f"{loc}-chronicle.googleapis.com"
@@ -190,7 +224,7 @@ def import_integration(
         "Content-Type": "application/zip",
     }
 
-    print(f"🚀 Uploading integration to Google SecOps:")
+    print("🚀 Uploading integration to Google SecOps:")
     print(f"   • Endpoint: {upload_url}")
     print(f"   • Staging Mode: {staging}")
 
@@ -200,21 +234,37 @@ def import_integration(
 
     for attempt in range(1, max_retries + 1):
         try:
-            response = requests.post(upload_url, headers=headers, data=zip_bytes, verify=verify_ssl)
-            if response.status_code in (429, 500, 502, 503, 504) and attempt < max_retries:
-                print(f"⚠️ Upload attempt {attempt} returned {response.status_code}. Retrying in {retry_delay}s...")
+            response = requests.post(
+                upload_url, headers=headers, data=zip_bytes, verify=verify_ssl
+            )
+            if (
+                response.status_code in (429, 500, 502, 503, 504)
+                and attempt < max_retries
+            ):
+                print(
+                    f"⚠️ Upload attempt {attempt} returned {response.status_code}. Retrying in {retry_delay}s..."
+                )
                 time.sleep(retry_delay)
                 retry_delay *= 2
                 continue
             response.raise_for_status()
             break
         except requests.HTTPError as err:
-            if attempt < max_retries and response is not None and response.status_code in (429, 500, 502, 503, 504):
-                print(f"⚠️ Upload attempt {attempt} failed ({err}). Retrying in {retry_delay}s...")
+            if (
+                attempt < max_retries
+                and response is not None
+                and response.status_code in (429, 500, 502, 503, 504)
+            ):
+                print(
+                    f"⚠️ Upload attempt {attempt} failed ({err}). Retrying in {retry_delay}s..."
+                )
                 time.sleep(retry_delay)
                 retry_delay *= 2
                 continue
-            print(f"\n❌ Import failed with status code {response.status_code if response else 'Unknown'}:", file=sys.stderr)
+            print(
+                f"\n❌ Import failed with status code {response.status_code if response else 'Unknown'}:",
+                file=sys.stderr,
+            )
             try:
                 error_data = response.json()
                 print(json.dumps(error_data, indent=2), file=sys.stderr)
@@ -328,7 +378,9 @@ def main():
     integration_dir = resolve_integration_dir(args.integration, BASE_DIR)
 
     # 2. Package ZIP
-    zip_bytes = create_integration_zip(source_dir=integration_dir, output_zip_path=args.save_zip)
+    zip_bytes = create_integration_zip(
+        source_dir=integration_dir, output_zip_path=args.save_zip
+    )
 
     # 3. Authenticate & Upload
     if not HAS_DEPS:
@@ -358,7 +410,9 @@ def main():
     print(f"   • Integration Name:    {result.get('integration')}")
     print(f"   • Integration Version: {result.get('integrationVersion')}")
     if result.get("mediaInfo", {}).get("resourceName"):
-        print(f"   • Resource:            {result.get('mediaInfo', {}).get('resourceName')}")
+        print(
+            f"   • Resource:            {result.get('mediaInfo', {}).get('resourceName')}"
+        )
 
     failed_deps = result.get("failedDependencies", [])
     if failed_deps:

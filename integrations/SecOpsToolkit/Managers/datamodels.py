@@ -1,3 +1,17 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from __future__ import annotations
 
 import copy
@@ -65,16 +79,13 @@ class IOC:
         self.flat_raw_data = dict_to_flat(self.raw_data)
         self.domain_name = domain_name
         self.first_seen_time = raw_data.get(
-            "firstSeenTime",
-            raw_data.get("firstSeenTimestamp")
+            "firstSeenTime", raw_data.get("firstSeenTimestamp")
         )
         self.ioc_ingest_time = raw_data.get(
-            "iocIngestTime",
-            raw_data.get("iocIngestTimestamp")
+            "iocIngestTime", raw_data.get("iocIngestTimestamp")
         )
         self.last_seen_time = raw_data.get(
-            "lastSeenTime",
-            raw_data.get("lastSeenTimestamp")
+            "lastSeenTime", raw_data.get("lastSeenTimestamp")
         )
         self.sources = sources or []
         self.categories = categories or []
@@ -125,8 +136,11 @@ class IOC:
         return {
             "Domain": self.domain_name,
             "Category": (
-                self.categories[0] if self.categories else
-                self.sources[0].category if self.sources else ""
+                self.categories[0]
+                if self.categories
+                else self.sources[0].category
+                if self.sources
+                else ""
             ),
             "Source": self.sources[0].source if self.sources else "",
             "Confidence": (
@@ -332,7 +346,8 @@ class IOCDetail:
             self.category = category
             self.str_raw_confidence_score = (
                 str(str_raw_confidence_score).lower()
-                if str_raw_confidence_score else None
+                if str_raw_confidence_score
+                else None
             )
             self.numeric_raw_confidence_score = (
                 consts.CONFIDENCE_TO_INT_MAPPING.get(
@@ -388,7 +403,7 @@ class IOCDetail:
                     if self.str_raw_confidence_score
                     else None
                 )
-            except:
+            except Exception:
                 confidence = (
                     self.str_raw_confidence_score.title()
                     if self.str_raw_confidence_score
@@ -449,10 +464,7 @@ class IOCDetail:
         if "sources" in self.raw_data:
             return self.raw_data
 
-        return {
-            "sources": [sd.to_json() for sd in self.sources],
-            **self.raw_data
-        }
+        return {"sources": [sd.to_json() for sd in self.sources], **self.raw_data}
 
     def as_enrichment(self, prefix, for_domain=False):
         if not self.sources:
@@ -506,34 +518,34 @@ class IOCDetail:
             self.highest_source_severity[1]
         )
 
-        insight_content = f"<h1><strong>Severity: "
+        insight_content = "<h1><strong>Severity: "
         insight_content += (
             f'<span style="color: {severity_color_mapper.get(str_highest_severity)};">'
             if severity_color_mapper.get(str_highest_severity)
             else ""
         )
-        insight_content += f'{str_highest_severity or "N/A"}</span><br /></strong></h1>'
+        insight_content += f"{str_highest_severity or 'N/A'}</span><br /></strong></h1>"
         insight_content += (
-            f'<p><strong><strong>First Active Time: {self.first_active_time or "N/A"}<br />Last Active Time: '
-            f'{self.last_active_time or "N/A"}</strong></strong></p><br />'
+            f"<p><strong><strong>First Active Time: {self.first_active_time or 'N/A'}<br />Last Active Time: "
+            f"{self.last_active_time or 'N/A'}</strong></strong></p><br />"
         )
 
         for source in self.sources:
             insight_content += (
-                f'<h3><strong>Source: {source.source or "N/A"}<br /></strong></h3>'
+                f"<h3><strong>Source: {source.source or 'N/A'}<br /></strong></h3>"
             )
-            insight_content += f"<p><strong><span >Severity:<strong>"
+            insight_content += "<p><strong><span >Severity:<strong>"
             insight_content += (
                 f'<span style="color: {severity_color_mapper.get(source.raw_severity.title())};"> '
                 if severity_color_mapper.get(source.raw_severity.title())
                 else ""
             )
-            insight_content += f'{source.raw_severity.title() or "N/A"}</span><br />'
+            insight_content += f"{source.raw_severity.title() or 'N/A'}</span><br />"
 
             try:
                 confidence_score = int(source.str_raw_confidence_score)
                 confidence_score = IOCDetail.avg_confidnce_to_ui(confidence_score)
-            except:
+            except Exception:
                 confidence_score = (
                     source.str_raw_confidence_score.title()
                     if source.str_raw_confidence_score
@@ -548,7 +560,7 @@ class IOCDetail:
             if not for_domain:
                 insight_content += (
                     f"Related Domains: "
-                    f'{utils.convert_list_to_comma_string([address.domain for address in source.addresses]) or "N/A"}'
+                    f"{utils.convert_list_to_comma_string([address.domain for address in source.addresses]) or 'N/A'}"
                     f"</span></strong></span></strong></p><br />"
                 )
 
@@ -585,7 +597,7 @@ class IOCDetail:
             try:
                 if source.str_raw_confidence_score:
                     numerical_confidences.append(int(source.str_raw_confidence_score))
-            except:
+            except Exception:
                 if source.numeric_raw_confidence_score:
                     numerical_confidences.append(source.numeric_raw_confidence_score)
 
@@ -605,6 +617,7 @@ class IOCDetail:
             return "High"
         else:
             return "N/A"
+
 
 class Asset:
     def __init__(
@@ -1299,15 +1312,12 @@ class Detection:
         alert_info.environment = environment_common.get_environment(
             alert_info.events[0] if alert_info.events else {}
         )
-        alert_info.alert_metadata = {
-            "DetectionDepth": self.detection_depth
-        }
+        alert_info.alert_metadata = {"DetectionDepth": self.detection_depth}
         alert_info.extensions = {
             "alert_type": (
-                consts.RA_PRODUCT_NAME if self.get_risk_score_threshold()
-                else consts.ALERT_TYPE_NAMES.get(
-                    consts.ALERT_TYPES.get("rule")
-                )
+                consts.RA_PRODUCT_NAME
+                if self.get_risk_score_threshold()
+                else consts.ALERT_TYPE_NAMES.get(consts.ALERT_TYPES.get("rule"))
             ),
             "rule_id": self.rule_id,
             "product_name": self.get_product_name,
@@ -1350,9 +1360,10 @@ class Detection:
             alert_info.alert_update_supported = self.outcomes.is_alert_update_supported
             alert_info.updated_fields = (
                 self.outcomes.to_updated_fields()
-                if self.outcomes.is_alert_update_supported else {}
+                if self.outcomes.is_alert_update_supported
+                else {}
             )
-        except:
+        except Exception:
             warnings.warn(
                 "One or more detection fields could not be mapped to SOAR alert fields"
             )
@@ -1468,7 +1479,7 @@ class Detection:
                     break
             try:
                 severity_key = severity_key.lower()
-            except:
+            except Exception:
                 severity_key = None
 
         return consts.SIEMPLIFY_SEVERITIES.get(severity_key, None)
@@ -1522,13 +1533,16 @@ class Detection:
 
             additional_info = {
                 "alert_type": (
-                    consts.RA_PRODUCT_NAME if self.get_risk_score_threshold()
-                    else consts.ALERT_TYPE_NAMES.get(
-                        consts.ALERT_TYPES.get("rule")
-                    )
+                    consts.RA_PRODUCT_NAME
+                    if self.get_risk_score_threshold()
+                    else consts.ALERT_TYPE_NAMES.get(consts.ALERT_TYPES.get("rule"))
                 ),
-                "event_type": event_raw_data.get("event", {}).get("metadata", {}).get("eventType") or
-                              event_raw_data.get("entity", {}).get("metadata", {}).get("entityType"),
+                "event_type": event_raw_data.get("event", {})
+                .get("metadata", {})
+                .get("eventType")
+                or event_raw_data.get("entity", {})
+                .get("metadata", {})
+                .get("entityType"),
                 "event_category": utils.get_prefix_from_string(
                     event_raw_data.get("event", {})
                     .get("metadata", {})
@@ -1836,13 +1850,10 @@ class DetectionOutcome:
         key = raw_outcome.get("key")
         value = raw_outcome.get("value")
         key = key if isinstance(key, str) else json.dumps(key, ensure_ascii=False)
-        value = value if isinstance(value, str) else json.dumps(
-            value, ensure_ascii=False)
-        return cls(
-            raw_data=raw_outcome,
-            key=key,
-            value=value
+        value = (
+            value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
         )
+        return cls(raw_data=raw_outcome, key=key, value=value)
 
 
 @dataclasses.dataclass(slots=True)
@@ -1860,7 +1871,6 @@ class Outcomes:
                 if outcome.key == consts.OUTCOME_UPDATED_DETECTION_KEY:
                     self._is_alert_update_supported = outcome.value.lower() == "true"
                     break
-
 
         return self._is_alert_update_supported
 
@@ -1893,9 +1903,7 @@ class Outcomes:
     def build_outcomes(cls, raw_outcomes: list[dict]):
         """Create an `Outcomes` object for all raw json outcomes provided"""
         if not isinstance(raw_outcomes, list):
-            raise DetectionParsingError(
-                "Cannot parse Detection's Outcomes!"
-            )
+            raise DetectionParsingError("Cannot parse Detection's Outcomes!")
 
         return cls(
             [DetectionOutcome.build_outcome_obj(outcome) for outcome in raw_outcomes]
@@ -1903,7 +1911,8 @@ class Outcomes:
 
     def to_updated_fields(self):
         return {
-            outcome.key: outcome.value for outcome in self
+            outcome.key: outcome.value
+            for outcome in self
             if outcome.key != consts.OUTCOME_UPDATED_DETECTION_KEY
         }
 
@@ -1988,9 +1997,7 @@ class AlertMetadata:
 
 class CaseData:
     def __init__(
-            self,
-            raw_data: list[SingleJson],
-            getdata: list[RefDataObject]
+        self, raw_data: list[SingleJson], getdata: list[RefDataObject]
     ) -> None:
         self.raw_data = raw_data
         self.getdata = getdata
@@ -2004,10 +2011,10 @@ class CaseData:
 
 class RefDataObject:
     def __init__(
-            self,
-            raw_data: SingleJson,
-            name: str,
-            description: str,
+        self,
+        raw_data: SingleJson,
+        name: str,
+        description: str,
     ):
         self.raw_data = raw_data
         self.name = name
@@ -2077,7 +2084,7 @@ class Rule:
     def metadata(self) -> SingleJson:
         """Metadata Rule property."""
         meta_data = self.raw_data.get("metadata", {})
-        if  meta_data.get("author") is None:
+        if meta_data.get("author") is None:
             meta_data["author"] = self.raw_data.get("author")
         if meta_data.get("description") is None:
             meta_data["description"] = self.raw_data.get("description")
@@ -2087,23 +2094,24 @@ class Rule:
 
     @property
     def version_create_time(self) -> str:
-        return (
-            self.raw_data.get("versionCreateTime")
-            or self.raw_data.get("revisionCreateTime")
+        return self.raw_data.get("versionCreateTime") or self.raw_data.get(
+            "revisionCreateTime"
         )
 
     def to_json(self):
         """Convert to JSON object."""
         _json = copy.deepcopy(self.raw_data)
-        _json.update({
-            "ruleId": self.rule_id,
-            "versionId": self.version_id,
-            "ruleName": self.rule_name,
-            "metadata": self.metadata,
-            "ruleText": self.rule_text,
-            "ruleType": self.rule_type,
-            "versionCreateTime": self.version_create_time,
-        })
+        _json.update(
+            {
+                "ruleId": self.rule_id,
+                "versionId": self.version_id,
+                "ruleName": self.rule_name,
+                "metadata": self.metadata,
+                "ruleText": self.rule_text,
+                "ruleType": self.rule_type,
+                "versionCreateTime": self.version_create_time,
+            }
+        )
         return _json
 
 
@@ -2112,6 +2120,7 @@ class CuratedRule:
     """
     Data model for a Curated Rule.
     """
+
     raw_data: SingleJson
 
     def to_json(self) -> SingleJson:
@@ -2349,8 +2358,8 @@ class ReferenceList:
         self.raw_data = raw_data
         self.name = name
         self.description = description
-        self.create_time = (
-            raw_data.get("createTime", raw_data.get("revisionCreateTime", ""))
+        self.create_time = raw_data.get(
+            "createTime", raw_data.get("revisionCreateTime", "")
         )
         self.lines = lines
         self.content_type = raw_data.get("contentType", raw_data.get("syntaxType", ""))
@@ -2358,11 +2367,13 @@ class ReferenceList:
     def to_json(self):
         """Convert to JSON object."""
         _json = copy.deepcopy(self.raw_data)
-        _json.update({
-            "description": self.description,
-            "createTime": self.create_time,
-            "lines": self.lines
-        })
+        _json.update(
+            {
+                "description": self.description,
+                "createTime": self.create_time,
+                "lines": self.lines,
+            }
+        )
         return _json
 
 
@@ -2381,13 +2392,15 @@ class RetrohuntObject:
             metadata.get("retrohunt", "")
         )
 
-        data.update({
-            "retrohuntId": extracted_retrohunt_dict.get("retrohunts"),
-            "ruleId": extracted_retrohunt_dict.get("rules", "").split("@")[0],
-            "versionId": extracted_retrohunt_dict.get("rules"),
-            "eventStartTime": execution_interval.get("startTime"),
-            "eventEndTime": execution_interval.get("endTime"),
-        })
+        data.update(
+            {
+                "retrohuntId": extracted_retrohunt_dict.get("retrohunts"),
+                "ruleId": extracted_retrohunt_dict.get("rules", "").split("@")[0],
+                "versionId": extracted_retrohunt_dict.get("rules"),
+                "eventStartTime": execution_interval.get("startTime"),
+                "eventEndTime": execution_interval.get("endTime"),
+            }
+        )
 
         return data
 
@@ -2398,6 +2411,7 @@ class DataTableModel:
     A base dataclass for common attributes and methods,
     like storing raw JSON data and converting back to JSON.
     """
+
     raw_data: SingleJson
 
     def to_json(self) -> SingleJson:
@@ -2412,6 +2426,7 @@ class DataTableColumnInfo(DataTableModel):
     """
     Represents a single column's metadata from a Chronicle Data Table.
     """
+
     original_column_name: str | None = None
 
     @classmethod
@@ -2458,6 +2473,7 @@ class AddedDataTableRow(DataTableModel):
     """
     Represents a single row that was successfully added to a Chronicle Data Table.
     """
+
     name: str | None = None
     values: list[str] = dataclasses.field(default_factory=list)
 
@@ -2484,7 +2500,7 @@ class RemovedDataTableRow(DataTableModel):
             name=json_data.get("name"),
             values=json_data.get("values", {}),
             create_time=json_data.get("createTime", ""),
-            update_time=json_data.get("updateTime", "")
+            update_time=json_data.get("updateTime", ""),
         )
 
 
@@ -2498,7 +2514,7 @@ class DataTableDetails(DataTableModel):
 
     @classmethod
     def from_json(cls, json_data: SingleJson) -> DataTableDetails:
-        """ Create a DataTableDetails instance from a JSON object."""
+        """Create a DataTableDetails instance from a JSON object."""
         column_info = [
             DataTableColumnInfo.from_json(col_info)
             for col_info in json_data.get("columnInfo", [])
@@ -2513,7 +2529,7 @@ class DataTableDetails(DataTableModel):
             display_name=json_data.get("displayName", ""),
             description=json_data.get("description", ""),
             column_info=column_info,
-            rows = rows
+            rows=rows,
         )
 
     def to_json(self) -> SingleJson:
@@ -2562,6 +2578,7 @@ class EntitySummary:
     """
     Represents a summary of an entity from summarizeEntitiesFromQuery.
     """
+
     raw_data: SingleJson
     name: str
     namespace: str | None
@@ -2576,7 +2593,7 @@ class EntitySummary:
             raw_data=json_data,
             name=json_data.get("name", ""),
             namespace=json_data.get("entity", {}).get("namespace"),
-            metadata=json_data.get("metadata")
+            metadata=json_data.get("metadata"),
         )
 
     def to_json(self) -> SingleJson:
@@ -2588,6 +2605,7 @@ class DetailedEntitySummary:
     """
     Represents a comprehensive summary of an entity from summarizeEntity.
     """
+
     raw_data: SingleJson
     name: str | None
     metadata: SingleJson | None
@@ -2634,7 +2652,7 @@ class DetailedEntitySummary:
             metric=data.get("metric"),
             alert_counts=data.get("alertCounts"),
             timeline=data.get("timeline"),
-            prevalence_result=data.get("prevalenceResult")
+            prevalence_result=data.get("prevalenceResult"),
         )
 
     def to_json(self) -> SingleJson:
@@ -2660,6 +2678,7 @@ class RelatedEntitiesResponse:
     """
     Represents the response from findRelatedEntities.
     """
+
     raw_data: SingleJson
     related_entities: list[SingleJson]
 
@@ -2667,8 +2686,7 @@ class RelatedEntitiesResponse:
     def from_json(cls, json_data: SingleJson) -> "RelatedEntitiesResponse":
 
         return cls(
-            raw_data=json_data,
-            related_entities=json_data.get("relatedEntities", [])
+            raw_data=json_data, related_entities=json_data.get("relatedEntities", [])
         )
 
     def to_json(self) -> SingleJson:
@@ -2713,10 +2731,7 @@ class WatchlistEntity:
 
     @classmethod
     def from_json(cls, data: SingleJson) -> Self:
-        return cls(
-            name=data["name"],
-            entity=data["entity"]
-        )
+        return cls(name=data["name"], entity=data["entity"])
 
     def to_json(self) -> SingleJson:
         return self.entity
@@ -2733,7 +2748,7 @@ class RawLog:
         return cls(
             raw_data=json_data,
             event_id=json_data.get("eventId", ""),
-            log_bytes_b64=json_data.get("logBytes", "")
+            log_bytes_b64=json_data.get("logBytes", ""),
         )
 
     def to_json(self) -> SingleJson:
