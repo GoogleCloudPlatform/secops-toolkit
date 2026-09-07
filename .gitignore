@@ -21,5 +21,10 @@
 /**/.antigravitycli/**
 .vscode/
 /**/terraform.tf
-.vscode/
-/**/terraform.tf
+*.zip
+**/*.zip
+/workspace/
+/.mantis_snapshots/
+.agents
+.pytest_cache
+.ruff_cache
