@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# from vertexai.preview.language_models import HarmCategory, HarmBlockThreshold
-import os
 import json
+import os
 import sys
-import secops_resources_helper
+import time
+
 import ai_helper
+import secops_resources_helper
 
 # CONSTANTS
 
@@ -207,8 +208,6 @@ if __name__ == "__main__":
     )
     print("Logs sources identified")
 
-    import time
-
     def call_with_backoff(func, *args, max_retries=5, base_delay=2):
         """Calls a function with exponential backoff on failure to handle rate limits."""
         delay = base_delay
@@ -252,7 +251,7 @@ if __name__ == "__main__":
             combined_suggestion = {**curated_sugg, **community_sugg}
             recommendation_curated_community.append(combined_suggestion)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"Erorr on rule #{i}, content{rule}")
             print(e)
 

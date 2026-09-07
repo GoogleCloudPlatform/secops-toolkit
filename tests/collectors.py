@@ -59,10 +59,10 @@ class TestFile(pytest.File):
         try:
             raw = yaml.safe_load(self.path.open())
             module = raw.pop("module")
-        except (IOError, OSError, yaml.YAMLError) as e:
-            raise Exception(f"cannot read test spec {self.path}: {e}")
+        except (OSError, yaml.YAMLError) as e:
+            raise RuntimeError(f"cannot read test spec {self.path}: {e}") from e
         except KeyError as e:
-            raise Exception(f"`module` key not found in {self.path}: {e}")
+            raise KeyError(f"`module` key not found in {self.path}: {e}") from e
         common = raw.pop("common_tfvars", [])
         for test_name, spec in raw.get("tests", {}).items():
             spec = {} if spec is None else spec

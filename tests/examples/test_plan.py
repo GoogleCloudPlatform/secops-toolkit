@@ -112,6 +112,7 @@ def _test_terraform_example(plan_validator, example):
             cwd=tmp_path,
             stdout=subprocess.PIPE,
             encoding="utf-8",
+            check=False,
         )
         assert result.returncode == 0, (
             f"terraform code not formatted correctly\n{result.stdout}"

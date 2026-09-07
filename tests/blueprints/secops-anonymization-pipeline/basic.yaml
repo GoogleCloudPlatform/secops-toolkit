@@ -729,7 +729,7 @@ values:
       - repo_source: []
         storage_source:
         - bucket: pre-gcp-project-id-anonymization
-          object: bundle-0251559cda058a3aff36aeee5797ea33.zip
+          object: bundle-7da3c83a0d86236aa81221c090bbba18.zip
       worker_pool: null
     deletion_policy: DELETE
     description: Terraform managed.
@@ -840,10 +840,10 @@ values:
     event_based_hold: null
     force_empty_content_type: null
     metadata: null
-    name: bundle-0251559cda058a3aff36aeee5797ea33.zip
+    name: bundle-7da3c83a0d86236aa81221c090bbba18.zip
     retention: []
     source: /tmp/bundle-gcp-project-id-secops-anonymization.zip
-    source_md5hash: 0251559cda058a3aff36aeee5797ea33
+    source_md5hash: 7da3c83a0d86236aa81221c090bbba18
     temporary_hold: null
     timeouts: null
   module.project.google_project.project[0]:

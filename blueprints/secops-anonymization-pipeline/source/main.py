@@ -14,16 +14,16 @@
 
 import binascii
 import json
-import os
-import click
 import logging
+import os
+from datetime import datetime, timezone
+
+import click
 import google.cloud.logging
+from google.cloud import dlp_v2, storage
 from jinja2 import Template
-from shared import utils
-from google.cloud import dlp_v2
-from google.cloud import storage
-from datetime import date, datetime
 from secops import SecOpsClient
+from shared import utils
 
 client = google.cloud.logging.Client()
 client.setup_logging()
@@ -44,11 +44,7 @@ SECOPS_TARGET_PROJECT = os.environ.get("SECOPS_TARGET_PROJECT")
 SECOPS_SOURCE_CUSTOMER_ID = os.environ.get("SECOPS_SOURCE_CUSTOMER_ID")
 SECOPS_TARGET_CUSTOMER_ID = os.environ.get("SECOPS_TARGET_CUSTOMER_ID")
 SECOPS_TARGET_FORWARDER_ID = os.environ.get("SECOPS_TARGET_FORWARDER_ID")
-SKIP_ANONYMIZATION = (
-    False
-    if (os.environ.get("SKIP_ANONYMIZATION", "false").lower() == "false")
-    else True
-)
+SKIP_ANONYMIZATION = os.environ.get("SKIP_ANONYMIZATION", "false").lower() != "false"
 DLP_DEIDENTIFY_TEMPLATE_ID = os.environ.get("DLP_DEIDENTIFY_TEMPLATE_ID")
 DLP_INSPECT_TEMPLATE_ID = os.environ.get("DLP_INSPECT_TEMPLATE_ID")
 DLP_REGION = os.environ.get("DLP_REGION")
@@ -95,7 +91,7 @@ def import_logs(export_date):
                                 forwarder_id=SECOPS_TARGET_FORWARDER_ID,
                             )
                             LOGGER.debug(response)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     LOGGER.error(f"Error during log ingestion': {e}")
                     raise SystemExit(f"Error during log ingestion: {e}")
 
@@ -137,8 +133,12 @@ def trigger_export(
 
     if export_start_datetime and export_end_datetime:
         start_time, end_time = (
-            datetime.strptime(export_start_datetime, "%Y-%m-%dT%H:%M:%SZ"),
-            datetime.strptime(export_end_datetime, "%Y-%m-%dT%H:%M:%SZ"),
+            datetime.strptime(export_start_datetime, "%Y-%m-%dT%H:%M:%SZ").replace(
+                tzinfo=timezone.utc
+            ),
+            datetime.strptime(export_end_datetime, "%Y-%m-%dT%H:%M:%SZ").replace(
+                tzinfo=timezone.utc
+            ),
         )
     else:
         start_time, end_time = utils.format_date_time_range(date_input=export_date)
@@ -167,7 +167,7 @@ def trigger_export(
                 export_id = export_response["dataExportStatus"]["name"].split("/")[-1]
                 export_ids.append(export_id)
                 LOGGER.info(f"Triggered export with ID: {export_id}")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         LOGGER.error(f"Error during export': {e}")
         raise SystemExit(f"Error during secops export: {e}")
 
@@ -236,7 +236,7 @@ def anonymize_data(export_date):
                     )
                     response = dlp_client.create_dlp_job(request=job_request)
                     LOGGER.info(response)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     LOGGER.error(f"Error during export': {e}")
                     raise SystemExit(f"Error during secops export: {e}")
 
@@ -261,7 +261,7 @@ def main(request):
     if "EXPORT_DATE" in payload:
         export_date = payload.get("EXPORT_DATE")
     else:
-        export_date = date.today().strftime("%Y-%m-%d")
+        export_date = datetime.now(timezone.utc).date().strftime("%Y-%m-%d")
     action = payload.get("ACTION")
     export_start_datetime = payload.get("EXPORT_START_DATETIME", None)
     export_end_datetime = payload.get("EXPORT_END_DATETIME", None)

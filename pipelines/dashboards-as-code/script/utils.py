@@ -13,10 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 import os
 import sys
-import json
+
 from config import GITHUB_OUTPUT_FILE
 from dotenv import load_dotenv
 
@@ -73,7 +74,7 @@ def generate_pr_comment_output(plan: dict, has_errors: bool):
         try:
             with open(GITHUB_OUTPUT_FILE, "a") as f:
                 f.write(f"pr_comment_data<<EOF\n{json_output}\nEOF\n")
-        except IOError as e:
+        except OSError as e:
             LOGGER.error(f"Failed to write to GITHUB_OUTPUT file: {e}")
             LOGGER.info(
                 f"PR Comment Data (fallback):\n{json.dumps(comment_data, indent=2)}"

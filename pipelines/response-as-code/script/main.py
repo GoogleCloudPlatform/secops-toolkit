@@ -16,15 +16,14 @@
 import logging
 import os
 import sys
-from typing import List
 
 import click
 from config import EXCLUDE_FOLDER, INCLUDE_BLOCKS
-from models import SocRole, WorkflowMenuCard, Workflow
+from constants import PLAYBOOKS_ROOT_README
 from jinja2 import Template
 from manager import ResponseManager
+from models import SocRole, Workflow, WorkflowMenuCard
 from utils import get_local_playbooks
-from constants import PLAYBOOKS_ROOT_README
 
 LOGGER = logging.getLogger("rac")
 
@@ -44,13 +43,12 @@ def create_root_readme() -> str:
 @click.group()
 def cli():
     """Manages Response As Code."""
-    pass
 
 
 @cli.command(name="sync-playbooks")
 def sync_playbooks():
     response_manager = ResponseManager()
-    soc_roles: List[SocRole] = response_manager.get_soc_roles()
+    soc_roles: list[SocRole] = response_manager.get_soc_roles()
 
     try:
         playbooks = {}
@@ -87,9 +85,8 @@ def sync_playbooks():
 
         response_manager.install_playbooks(list(playbooks.values()))
 
-    except Exception as e:
-        LOGGER.error("General error performing Sync Playbooks")
-        LOGGER.exception(e)
+    except Exception:
+        LOGGER.exception("General error performing Sync Playbooks")
         raise
 
 
@@ -105,11 +102,11 @@ def pull_playbooks():
 
     response_manager = ResponseManager()
 
-    soc_roles: List[SocRole] = response_manager.get_soc_roles()
+    soc_roles: list[SocRole] = response_manager.get_soc_roles()
     print(soc_roles)
 
     try:
-        installed_playbooks: List[WorkflowMenuCard] = response_manager.get_playbooks()
+        installed_playbooks: list[WorkflowMenuCard] = response_manager.get_playbooks()
 
         for playbook in installed_playbooks:
             if EXCLUDE_FOLDER and EXCLUDE_FOLDER in playbook.categoryName:
@@ -163,9 +160,8 @@ def pull_playbooks():
 
         response_manager.update_readme(create_root_readme(), "Playbooks")
 
-    except Exception as e:
-        LOGGER.error("General error performing Pull Playbooks")
-        LOGGER.exception(e)
+    except Exception:
+        LOGGER.exception("General error performing Pull Playbooks")
         raise
 
 

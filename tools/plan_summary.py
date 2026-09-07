@@ -14,11 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
 import sys
-import yaml
-
 from pathlib import Path
+
+import click
+import yaml
 
 try:
     import fixtures

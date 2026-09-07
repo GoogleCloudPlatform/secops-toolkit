@@ -17,32 +17,34 @@ import base64
 import logging
 import os
 import tempfile
+
 import yaml
-from typing import List
-from secops import SecOpsClient
-from secops.auth import RetryConfig
-from config import SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION
-from models import (
-    LogTypeConfig,
-    Operation,
-    ParserState,
-    ParserExtensionState,
-    ParserValidationStatus,
-    ValidationError,
-    ParserError,
-    APIError,
-    ParserType,
-    ParserDeploymentPlan,
-)
 from config import (
-    PARSERS_ROOT_DIR,
+    EVENTS_FOLDER_NAME,
+    LOGS_FOLDER_NAME,
     PARSER_CONFIG_FILENAME,
     PARSER_EXT_CONFIG_FILENAME,
-    LOGS_FOLDER_NAME,
-    EVENTS_FOLDER_NAME,
     PARSER_YAML_FILENAME,
+    PARSERS_ROOT_DIR,
+    SECOPS_CUSTOMER_ID,
+    SECOPS_PROJECT_ID,
+    SECOPS_REGION,
 )
-from utils import compare_yaml_files, process_data_for_dump, generate_event_files
+from models import (
+    APIError,
+    LogTypeConfig,
+    Operation,
+    ParserDeploymentPlan,
+    ParserError,
+    ParserExtensionState,
+    ParserState,
+    ParserType,
+    ParserValidationStatus,
+    ValidationError,
+)
+from secops import SecOpsClient
+from secops.auth import RetryConfig
+from utils import compare_yaml_files, generate_event_files, process_data_for_dump
 
 LOGGER = logging.getLogger(__name__)
 
@@ -71,7 +73,7 @@ class ParserManager:
         except Exception as e:
             raise APIError(f"Failed to initialize SecOps client: {e}") from e
 
-    def discover_local_configs(self) -> List[LogTypeConfig]:
+    def discover_local_configs(self) -> list[LogTypeConfig]:
         """Scans the local filesystem for parser configurations."""
         log_type_configs = []
         if not os.path.isdir(PARSERS_ROOT_DIR):
@@ -162,17 +164,18 @@ class ParserManager:
                     if (
                         parser.get("state") == ParserState.ACTIVE.value
                         and "cbn" in parser
+                        and (
+                            (
+                                parser_type == ParserType.CUSTOM
+                                and parser.get("type") == ParserType.CUSTOM.value
+                            )
+                            or (
+                                parser_type == ParserType.PREBUILT
+                                and parser.get("type") != ParserType.CUSTOM.value
+                            )
+                        )
                     ):
-                        if (
-                            parser_type == ParserType.CUSTOM
-                            and parser.get("type") == ParserType.CUSTOM.value
-                        ):
-                            return base64.b64decode(parser["cbn"]).decode("utf-8")
-                        elif (
-                            parser_type == ParserType.PREBUILT
-                            and parser.get("type") != ParserType.CUSTOM.value
-                        ):
-                            return base64.b64decode(parser["cbn"]).decode("utf-8")
+                        return base64.b64decode(parser["cbn"]).decode("utf-8")
 
         except APIError as e:
             if e.response and e.response.status_code == 404:
@@ -229,7 +232,7 @@ class ParserManager:
                                     f"[{config.log_type}] Local code differs from active parser and no matching Release Candidate found. Validation only (UPDATE)."
                                 )
                                 plan_op.parser_operation = Operation.UPDATE
-                        except Exception as e:
+                        except Exception as e:  # noqa: BLE001
                             LOGGER.warning(
                                 f"[{config.log_type}] Failed to check release candidates: {e}. Defaulting to UPDATE."
                             )
@@ -287,7 +290,7 @@ class ParserManager:
                         new_ext=config.parser_ext,
                     )
                     plan_op.comparison_report = report
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     LOGGER.error(
                         f"[{config.log_type}] Failed to generate comparison report: {e}"
                     )
@@ -318,7 +321,6 @@ class ParserManager:
                     )
                     if details.parser_operation == Operation.RELEASE:
                         LOGGER.info(f"[{log_type}] Ready for release (activation).")
-                    pass
                 else:
                     LOGGER.info(f"[{log_type}] Submitting parser...")
                     meta = self.client.create_parser(
@@ -406,7 +408,7 @@ class ParserManager:
                             f"[{config.log_type}] No matching Release Candidate found for local content. Skipping activation."
                         )
 
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     LOGGER.error(
                         f"[{config.log_type}] Failed to activate release candidate: {e}"
                     )
@@ -454,7 +456,7 @@ class ParserManager:
                             break  # Assume only one valid release candidate
         return activated_count
 
-    def generate_events(self, target_log_type: str = None):
+    def generate_events(self, target_log_type: str | None = None):
         """Generates UDM event YAML files from raw log files."""
         configs = self.discover_local_configs()
         if target_log_type:
@@ -597,11 +599,11 @@ class ParserManager:
             for lt in sorted(log_types):
                 try:
                     self.pull_parser(lt)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     LOGGER.error(f"[{lt}] Failed to pull parser: {e}")
 
         except Exception as e:
-            raise ParserError(f"Failed to list all parsers: {e}")
+            raise ParserError(f"Failed to list all parsers: {e}") from e
 
     def pull_parser(self, log_type: str):
         """Pulls the active parser and extension from SecOps and updates local files."""
@@ -686,7 +688,7 @@ class ParserManager:
                                 yaml_content["parser_extension"]["cbn_snippet"] = (
                                     existing_name
                                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 LOGGER.warning(
                     f"[{log_type}] Failed to read existing {PARSER_YAML_FILENAME}, overwriting: {e}"
                 )

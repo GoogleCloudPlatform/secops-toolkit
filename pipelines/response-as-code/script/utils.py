@@ -13,12 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import logging
 import json
-from config import PLAYBOOKS_PATH
-from models import Workflow, File
+import logging
+import os
 import shutil
+
+from config import PLAYBOOKS_PATH
+from models import File, Workflow
 
 LOGGER = logging.getLogger("rac")
 WD = os.path.abspath(".")
@@ -220,13 +221,9 @@ def update_objects(
                 f.write(file_obj.content)
             LOGGER.debug(f"Successfully wrote (created/updated) file: {full_file_path}")
 
-        except IOError as e:  # More specific than just Exception for file I/O
-            LOGGER.error(f"IOError writing file {full_file_path}: {e}")
-        except (
-            OSError
-        ) as e:  # Broader OS-level errors, like permission issues during makedirs
+        except OSError as e:
             LOGGER.error(f"OSError related to path {full_file_path}: {e}")
-        except Exception as e:  # Catch-all for other unexpected errors
+        except Exception as e:  # noqa: BLE001
             LOGGER.error(f"Unexpected error writing file {full_file_path}: {e}")
 
     LOGGER.info(f"Finished all file operations for: {effective_target_dir}")
@@ -264,7 +261,7 @@ def get_file_objects_from_path(dir_path: str = "") -> list[File]:
             relative_path = os.path.relpath(search_root_abs, WD)
             files_found.append(File(path=relative_path, content=content))
             LOGGER.debug(f"Retrieved file: {relative_path}")
-        except IOError as e:
+        except OSError as e:
             LOGGER.error(f"Failed to read file {search_root_abs}: {e}")
     elif os.path.isdir(search_root_abs):
         LOGGER.debug(f"Searching for files in directory: {search_root_abs}")
@@ -280,7 +277,7 @@ def get_file_objects_from_path(dir_path: str = "") -> list[File]:
                     relative_path = os.path.relpath(file_abs_path, WD)
                     files_found.append(File(path=relative_path, contents=content))
                     LOGGER.debug(f"Retrieved file from directory walk: {relative_path}")
-                except IOError as e:
+                except OSError as e:
                     LOGGER.error(f"Failed to read file {file_abs_path}: {e}")
 
     return files_found

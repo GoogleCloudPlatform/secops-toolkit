@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +14,15 @@
 
 import binascii
 import json
-import os
-import click
 import logging
+import os
+from datetime import datetime, timedelta, timezone
+
+import click
 import google.cloud.logging
-from datetime import date, timedelta, datetime
-from secops import SecOpsClient
-from dotenv import load_dotenv
 from dateutil.relativedelta import relativedelta
+from dotenv import load_dotenv
+from secops import SecOpsClient
 
 load_dotenv()
 
@@ -41,7 +41,7 @@ GCP_PROJECT_ID = os.environ.get("GCP_PROJECT")
 GCS_BUCKET = os.environ.get("GCS_BUCKET")
 SECOPS_CUSTOMER_ID = os.environ.get("SECOPS_CUSTOMER_ID")
 SECOPS_PROJECT_ID = os.environ.get("SECOPS_PROJECT_ID")
-MONTHS_TO_LOOK_BACK = os.environ.get("MONTHS_TO_LOOK_BACK", 11)
+MONTHS_TO_LOOK_BACK = int(os.environ.get("MONTHS_TO_LOOK_BACK", "11"))
 
 HUNDRED_TERABYTES = 99000000000000
 
@@ -71,8 +71,12 @@ def trigger_export(
     export_ids = []
 
     start_time, end_time = (
-        datetime.strptime(export_start_datetime, "%Y-%m-%dT%H:%M:%SZ"),
-        datetime.strptime(export_end_datetime, "%Y-%m-%dT%H:%M:%SZ"),
+        datetime.strptime(export_start_datetime, "%Y-%m-%dT%H:%M:%SZ").replace(
+            tzinfo=timezone.utc
+        ),
+        datetime.strptime(export_end_datetime, "%Y-%m-%dT%H:%M:%SZ").replace(
+            tzinfo=timezone.utc
+        ),
     )
 
     gcs_bucket = f"projects/{GCP_PROJECT_ID}/buckets/{GCS_BUCKET}"
@@ -114,7 +118,7 @@ def trigger_export(
                     f"Export with ID: {export_id} might result in more than 100TB of data. This might result in data loss, please check this."
                 )
             LOGGER.info(f"Triggered export with ID: {export_id}")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         LOGGER.error(f"Error during export': {e}")
         raise SystemExit(f"Error during secops export: {e}")
 
@@ -128,7 +132,9 @@ def check_monthly_export(export_month: str, log_types: str):
     :return:
     """
     try:
-        export_month_date = datetime.strptime(export_month, "%Y-%m")
+        export_month_date = datetime.strptime(export_month, "%Y-%m").replace(
+            tzinfo=timezone.utc
+        )
     except ValueError:
         raise SystemExit(
             f"Invalid export month format: {export_month}. Please use YYYY-MM."
@@ -140,7 +146,9 @@ def check_monthly_export(export_month: str, log_types: str):
         project_id=SECOPS_PROJECT_ID,
         region=SECOPS_REGION,
     )
-    create_time = datetime(export_month_date.year, export_month_date.month, 1, 0, 0, 0)
+    create_time = datetime(
+        export_month_date.year, export_month_date.month, 1, 0, 0, 0, tzinfo=timezone.utc
+    )
     create_time_str = create_time.strftime("%Y-%m-%dT%H:%M:%SZ")
     data_export_response = chronicle.list_data_export(
         filters=f'(createTime >= "{create_time_str}")', page_size=1000
@@ -188,9 +196,7 @@ def check_monthly_export(export_month: str, log_types: str):
     if len(expected_log_types) == 0:
         LOGGER.info("Exports finished successfully for all log types in request.")
     else:
-        if in_progress_jobs:
-            raise SystemExit("Data Export still in progress")
-        elif failed_jobs:
+        if in_progress_jobs or failed_jobs:
             raise SystemExit("Data Export still in progress")
         else:
             raise SystemExit(
@@ -207,13 +213,15 @@ def trigger_export_action(export_month: str, log_types: str):
     """
     if export_month:
         try:
-            export_month_date = datetime.strptime(export_month, "%Y-%m")
+            export_month_date = datetime.strptime(export_month, "%Y-%m").replace(
+                tzinfo=timezone.utc
+            )
         except ValueError:
             raise SystemExit(
                 f"Invalid export month format: {export_month}. Please use YYYY-MM."
             )
     else:
-        today = date.today()
+        today = datetime.now(timezone.utc).date()
         export_month_date = today - relativedelta(months=MONTHS_TO_LOOK_BACK)
 
     start_date = export_month_date.replace(day=1)
@@ -249,7 +257,9 @@ def main(request):
             export_month = payload.get("EXPORT_MONTH", None)
             trigger_export_action(export_month=export_month, log_types=log_types)
         case "CHECK-MONTHLY-EXPORT":
-            export_month = payload.get("EXPORT_MONTH", date.today().strftime("%Y-%m"))
+            export_month = payload.get(
+                "EXPORT_MONTH", datetime.now(timezone.utc).date().strftime("%Y-%m")
+            )
             check_monthly_export(export_month=export_month, log_types=log_types)
         case _:
             return "Action must be either 'TRIGGER-EXPORT', 'CHECK-MONTHLY-EXPORT'"
@@ -287,7 +297,7 @@ def main_cli(export_month, log_type: list, action: str, debug=False):
             )
         case "CHECK-MONTHLY-EXPORT":
             if not export_month:
-                export_month = datetime.now().strftime("%Y-%m")
+                export_month = datetime.now(timezone.utc).strftime("%Y-%m")
             check_monthly_export(
                 export_month=export_month, log_types=",".join(log_type)
             )

@@ -13,26 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+import uuid
+from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum
-from jinja2 import Environment as JinjaEnvironment
+
 from constants import (
+    BASE_PARAMETER_TYPES,
+    CONDITION_MATCH_TYPES,
+    CONDITION_OPERATORS,
+    JOB_README,
     PLAYBOOK_README_TEMPLATE,
     TRIGGER_TYPES,
-    CONDITION_OPERATORS,
-    CONDITION_MATCH_TYPES,
-    BASE_PARAMETER_TYPES,
-    JOB_README,
 )
-import json
-from typing import Iterator
-import uuid
+from jinja2 import Environment as JinjaEnvironment
 
 
 class APIError(Exception):
     """Raised for issues communicating with the SecOps API."""
-
-    pass
 
 
 @dataclass
@@ -139,7 +138,7 @@ class Workflow(Content):
         """Used to remove duplicates in workflow lists"""
         return self.name == getattr(other, "name", None)
 
-    def generate_readme(self, additional_info: str = None):
+    def generate_readme(self, additional_info: str | None = None):
         env = JinjaEnvironment()
         env.globals["WorkflowTypes"] = WorkflowTypes
         env.filters.update(
@@ -198,7 +197,7 @@ class Job(Content):
         self.parameters = self.raw_data.get("parameters")
         self.runIntervalInSeconds = self.raw_data.get("runIntervalInSeconds")
 
-    def generate_readme(self, additional_info: str = None) -> None:
+    def generate_readme(self, additional_info: str | None = None) -> None:
         env = JinjaEnvironment()
         env.filters.update({"base_param_type": lambda x: BASE_PARAMETER_TYPES.get(x)})
         template = JOB_README

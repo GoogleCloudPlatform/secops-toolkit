@@ -17,11 +17,11 @@ Generates summary in CSV format for curated rules from the Google SecOps .
 
 """
 
-import json
-import csv
-import re
-import os
 import argparse
+import csv
+import json
+import os
+import re
 
 
 def extract_udm_fields(events_text):

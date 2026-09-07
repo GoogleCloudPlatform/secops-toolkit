@@ -20,11 +20,11 @@ import os
 import shutil
 import tempfile
 import time
+from pathlib import Path
+
 import pytest
 import tftest
 import yaml
-from pathlib import Path
-
 
 _REPO_ROOT = Path(__file__).parents[1]
 PlanSummary = collections.namedtuple("PlanSummary", "values counts outputs")
@@ -210,8 +210,8 @@ def plan_validator(
         relative_path = path.relative_to(_REPO_ROOT)
         try:
             inventory = yaml.safe_load(path.read_text())
-        except (IOError, OSError, yaml.YAMLError) as e:
-            raise Exception(f"cannot read test inventory {path}: {e}")
+        except (OSError, yaml.YAMLError) as e:
+            raise RuntimeError(f"cannot read test inventory {path}: {e}") from e
 
         # don't fail if the inventory is empty
         inventory = inventory or {}
@@ -357,7 +357,7 @@ def get_tfvars_for_e2e():
         "region",
         "region_secondary",
     ]
-    missing_vars = set([f"TFTEST_E2E_{k}" for k in _variables]) - set(os.environ.keys())
+    missing_vars = {f"TFTEST_E2E_{k}" for k in _variables} - set(os.environ.keys())
     if missing_vars:
         raise RuntimeError(
             f"Missing environment variables: {missing_vars} required to run E2E tests. "
@@ -444,7 +444,7 @@ def e2e_validator_fixture(request):
         module_path: str,
         extra_files: list,
         tf_var_files: list,
-        basedir: os.PathLike = None,
+        basedir: os.PathLike | None = None,
     ):
         if basedir is None:
             basedir = Path(request.fspath).parent

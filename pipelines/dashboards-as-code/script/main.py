@@ -13,13 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import json
-import click
 import logging
+import sys
 from pathlib import Path
-from dotenv import load_dotenv
+
+import click
 from dashboard_manager import DashboardManager
+from dotenv import load_dotenv
 from utils import generate_pr_comment_output, setup_logging
 
 load_dotenv()
@@ -48,8 +49,8 @@ def plan(manager: DashboardManager):
     try:
         LOGGER.info("--- Planning Dashboards deployment ---")
         plan = manager.plan()
-    except Exception as e:
-        LOGGER.error(f"A pipeline error occurred: {e}", exc_info=True)
+    except Exception:
+        LOGGER.exception("A pipeline error occurred")
         has_errors = True
     finally:
         generate_pr_comment_output(plan, has_errors)
@@ -68,8 +69,8 @@ def apply(manager: DashboardManager):
     try:
         LOGGER.info("Deploy Dashboards")
         result = manager.apply()
-    except Exception as e:
-        LOGGER.error(f"A pipeline error occurred: {e}", exc_info=True)
+    except Exception:
+        LOGGER.exception("A pipeline error occurred")
         has_errors = True
     finally:
         generate_pr_comment_output(result, has_errors)

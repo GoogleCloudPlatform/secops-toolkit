@@ -15,7 +15,15 @@
 import collections
 import copy
 import json
-from collections.abc import Iterable, Iterator, MutableMapping, MutableSequence, Set
+from collections.abc import (
+    Iterable,
+    Iterator,
+    MutableMapping,
+    MutableSequence,
+)
+from collections.abc import (
+    Set as AbstractSet,
+)
 from typing import Generic, Protocol, TypeAlias, TypeVar
 
 _KT = TypeVar("_KT")
@@ -121,7 +129,7 @@ class Cache(MutableMapping[_KT, _VT], Generic[_KT, _VT]):
         i: _Index = self._key_to_row_index[key]
         del self._cache[i][key]
 
-    def filter_items(self, keys: Set[_KT]) -> None:
+    def filter_items(self, keys: AbstractSet[_KT]) -> None:
         """Filter keys that don't exist in the platform from the cache."""
         c: _Cache = copy.deepcopy(self._cache)
         for i, record in enumerate(c):
@@ -174,7 +182,7 @@ class Cache(MutableMapping[_KT, _VT], Generic[_KT, _VT]):
                 self._set_scoped_job_context_property(index, new_cache)
                 break
 
-            except Exception:
+            except Exception:  # noqa: BLE001
                 _move_item(from_=new_cache, to=removed_keys)
 
         self._new_cache = removed_keys

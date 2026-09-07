@@ -13,14 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import base64
 import logging
 import os
 import subprocess
 import sys
-from config import PARSERS_ROOT_DIR, LOGS_FOLDER_NAME, EVENTS_FOLDER_NAME
+
+from config import EVENTS_FOLDER_NAME, LOGS_FOLDER_NAME, PARSERS_ROOT_DIR
+from models import ParserExtensionState, ParserState
 from utils import compare_yaml_files, generate_event_files
-from models import ParserState, ParserExtensionState
-import base64
 
 LOGGER = logging.getLogger("pac")
 
@@ -66,7 +67,7 @@ class ParserComparator:
                 f"Could not fetch {filename} from {branch}: {e.stderr.strip()}"
             )
             return None
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             LOGGER.error(f"Error fetching from git: {e}")
             return None
 
@@ -285,12 +286,12 @@ class ParserComparator:
                         and "cbn" in parser
                     ):
                         return base64.b64decode(parser["cbn"]).decode("utf-8")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             LOGGER.error(f"Failed to fetch active content: {e}")
             return None
         return None
 
-    def run(self, branch: str = None):
+    def run(self, branch: str | None = None):
         target = "SecOps Active"
         LOGGER.info(
             f"Starting comparison for log type: {self.log_type} against {target}"

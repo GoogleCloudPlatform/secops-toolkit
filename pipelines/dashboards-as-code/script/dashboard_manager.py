@@ -16,12 +16,12 @@
 import json
 import logging
 from pathlib import Path
-from typing import List, Dict
-from secops import SecOpsClient
-from secops.exceptions import APIError
+
 from config import SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION
-from models import NativeDashboard, DashboardType, DashboardOperation
+from models import DashboardOperation, DashboardType, NativeDashboard
+from secops import SecOpsClient
 from secops.auth import RetryConfig
+from secops.exceptions import APIError
 from utils import setup_logging
 
 setup_logging()
@@ -53,10 +53,10 @@ class DashboardManager:
         except Exception as e:
             raise APIError(f"Failed to initialize SecOps client: {e}") from e
 
-    def export_dashboard(self, dashboard_names: List[str]):
+    def export_dashboard(self, dashboard_names: list[str]):
         return self.client.export_dashboard(dashboard_names=dashboard_names)
 
-    def list_remote_dashboards(self, include_charts: bool = True) -> Dict:
+    def list_remote_dashboards(self, include_charts: bool = True) -> dict:
         """
         Fetches all dashboards and their charts from the Google SecOps API.
 
@@ -106,7 +106,7 @@ class DashboardManager:
                                     LOGGER.debug(
                                         f"Successfully fetched chart {chart_id} for dashboard {dashboard.display_name}"
                                     )
-                                except Exception as e:
+                                except Exception as e:  # noqa: BLE001
                                     LOGGER.error(
                                         f"Failed to fetch chart {chart_id} for dashboard {dashboard.display_name}: {e}"
                                     )
@@ -119,14 +119,14 @@ class DashboardManager:
                     dashboards[dashboard.display_name] = full_dashboard
             return dashboards
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             LOGGER.error(
                 "Error: Could not connect to Google SecOps API or list dashboards."
             )
             LOGGER.error(f"Details: {e}")
             return {}
 
-    def get_local_dashboards_with_charts(self, path: str = "./dashboards") -> Dict:
+    def get_local_dashboards_with_charts(self, path: str = "./dashboards") -> dict:
         dashboard_dir = Path(path)
         if not dashboard_dir.is_dir():
             LOGGER.error(f"Error: Directory '{path}' not found.")
@@ -164,14 +164,14 @@ class DashboardManager:
                     }
             except (json.JSONDecodeError, KeyError) as e:
                 LOGGER.error(f"Error parsing {json_file.name}: {e}")
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 LOGGER.error(
                     f"An unexpected error occurred with file {json_file.name}: {e}"
                 )
 
         return local_dashboards
 
-    def are_charts_different(self, local_chart: Dict, remote_chart: Dict) -> bool:
+    def are_charts_different(self, local_chart: dict, remote_chart: dict) -> bool:
         local_copy = local_chart.copy()
         remote_copy = remote_chart.copy()
 
@@ -216,7 +216,7 @@ class DashboardManager:
             if name not in remote_dashboards:
                 dashboards_ops[name] = {
                     "operation": DashboardOperation.CREATE,
-                    "dashboard": local_dashboards[name],
+                    "dashboard": local_data,
                 }
             else:
                 # Dashboard exists, compare charts
@@ -253,7 +253,7 @@ class DashboardManager:
                     dashboards_ops[name] = {
                         "operation": DashboardOperation.UPDATE,
                         "dashboard_id": remote_data["dashboard"].name.split("/")[-1],
-                        "dashboard": local_dashboards[name],
+                        "dashboard": local_data,
                     }
 
         return dashboards_ops
@@ -304,7 +304,7 @@ class DashboardManager:
 
                     self.client.import_dashboard(dashboard=config["dashboard"])
                 else:
-                    raise Exception(
+                    raise ValueError(
                         "Dashboard operations it not CREATE or UPDATE, this is inconsistent."
                     )
 

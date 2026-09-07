@@ -130,7 +130,7 @@ Variable = collections.namedtuple(
 
 def _escape(s):
     "Basic, minimal HTML escaping"
-    return "".join(c if c in UNESCAPED else ("&#%s;" % ord(c)) for c in s)
+    return "".join(c if c in UNESCAPED else f"&#{ord(c)};" for c in s)
 
 
 def _extract_tags(body):
@@ -172,8 +172,10 @@ def _parse(body, enum=VAR_ENUM, re=VAR_RE, template=VAR_TEMPLATE):
                 item[context].append(data)
 
 
-def create_toc(readme, skip=["contents"]):
+def create_toc(readme, skip=None):
     "Create a Markdown table of contents a for README."
+    if skip is None:
+        skip = ["contents"]
     doc = marko.parse(readme)
     lines = []
     headings = [x for x in doc.children if x.get_type() == "Heading"]
@@ -216,7 +218,7 @@ def create_tfref(
         mod_variables = list(parse_variables(module_path, exclude_files))
         mod_outputs = list(parse_outputs(module_path, exclude_files))
         mod_fixtures = list(parse_fixtures(module_path, readme))
-    except (IOError, OSError) as e:
+    except OSError as e:
         raise SystemExit(e)
     doc = format_tfref(
         mod_outputs, mod_variables, mod_files, mod_fixtures, mod_recipes, show_extra
@@ -259,9 +261,9 @@ def format_tfref_files(items):
     for i in items:
         modules = resources = ""
         if i.modules:
-            modules = "<code>%s</code>" % "</code> · <code>".join(sorted(i.modules))
+            modules = f"<code>{'</code> · <code>'.join(sorted(i.modules))}</code>"
         if i.resources:
-            resources = "<code>%s</code>" % "</code> · <code>".join(sorted(i.resources))
+            resources = f"<code>{'</code> · <code>'.join(sorted(i.resources))}</code>"
         yield "| [{}](./{}) | {} |{}{}".format(
             i.name,
             i.name,
@@ -287,7 +289,7 @@ def format_tfref_outputs(items, show_extra=True):
     for i in items:
         consumers = i.consumers or ""
         if consumers:
-            consumers = "<code>%s</code>" % "</code> · <code>".join(consumers.split())
+            consumers = f"<code>{'</code> · <code>'.join(consumers.split())}</code>"
         sensitive = "✓" if i.sensitive else ""
         format = (
             f"| [{i.name}]({i.file}#L{i.line}) | {i.description or ''} | {sensitive} |"
@@ -343,13 +345,13 @@ def get_readme(readme_path):
     "Open and return README.md in module."
     try:
         return open(readme_path, "r", encoding="utf-8").read()
-    except (IOError, OSError) as e:
+    except OSError as e:
         raise SystemExit(f"Error opening README {readme_path}: {e}")
 
 
 def get_tfref_parts(readme):
     "Check if README file is marked, and return current doc."
-    m = re.search("(?sm)%s(.*)%s" % (MARK_BEGIN, MARK_END), readme)
+    m = re.search(f"(?sm){MARK_BEGIN}(.*){MARK_END}", readme)
     if not m:
         return
     return {"doc": m.group(1).strip(), "start": m.start(), "end": m.end()}
@@ -372,7 +374,7 @@ def get_tfref_opts(readme):
 
 def get_toc_parts(readme):
     "Check if README file is marked, and return current toc."
-    t = re.search("(?sm)%s(.*)%s" % (TOC_BEGIN, TOC_END), readme)
+    t = re.search(f"(?sm){TOC_BEGIN}(.*){TOC_END}", readme)
     if not t:
         return
     return {"toc": t.group(1).strip(), "start": t.start(), "end": t.end()}
@@ -390,14 +392,14 @@ def parse_files(basepath, exclude_files=None):
         try:
             with open(name, encoding="utf-8") as file:
                 body = file.read()
-        except (IOError, OSError) as e:
+        except OSError as e:
             raise SystemExit(f"Cannot read file {name}: {e}")
         tags = _extract_tags(body)
         description = tags.get("file:description", FILE_DESC_DEFAULTS.get(shortname))
-        modules = set(
+        modules = {
             os.path.basename(urllib.parse.urlparse(m).path)
             for m in FILE_RE_MODULES.findall(body)
-        )
+        }
         resources = set(FILE_RE_RESOURCES.findall(body))
         yield File(shortname, description, modules, resources)
 
@@ -407,17 +409,18 @@ def parse_fixtures(basepath, readme):
     doc = marko.parse(readme)
     used_fixtures = set()
     for child in doc.children:
-        if isinstance(child, marko.block.FencedCode):
-            if child.lang == "hcl":
-                code = child.children[0].children
-                if directive := get_tftest_directive(code):
-                    if fixtures := directive.kwargs.get("fixtures"):
-                        for fixture in fixtures.split(","):
-                            fixture_full = os.path.join(REPO_ROOT, "tests", fixture)
-                            if not os.path.exists(fixture_full):
-                                raise SystemExit(f"Unknown fixture: {fixture}")
-                            fixture_relative = os.path.relpath(fixture_full, basepath)
-                            used_fixtures.add(fixture_relative)
+        if (
+            isinstance(child, marko.block.FencedCode)
+            and child.lang == "hcl"
+            and (directive := get_tftest_directive(child.children[0].children))
+            and (fixtures := directive.kwargs.get("fixtures"))
+        ):
+            for fixture in fixtures.split(","):
+                fixture_full = os.path.join(REPO_ROOT, "tests", fixture)
+                if not os.path.exists(fixture_full):
+                    raise SystemExit(f"Unknown fixture: {fixture}")
+                fixture_relative = os.path.relpath(fixture_full, basepath)
+                used_fixtures.add(fixture_relative)
     yield from sorted(used_fixtures)
 
 
@@ -433,7 +436,7 @@ def parse_outputs(basepath, exclude_files=None):
         try:
             with open(name, encoding="utf-8") as file:
                 body = file.read()
-        except (IOError, OSError):
+        except OSError:
             raise SystemExit(f"Cannot open outputs file {shortname}.")
         for item in _parse(body, enum=OUT_ENUM, re=OUT_RE, template=OUT_TEMPLATE):
             description = "".join(item["description"])
@@ -461,7 +464,7 @@ def parse_recipes(module_path, module_url):
                         yield Recipe(f"{module_url}/{name}", match.group(1))
                     else:
                         raise SystemExit(f"No title for recipe {dirpath}")
-            except (IOError, OSError):
+            except OSError:
                 raise SystemExit(f"Error opening recipe {dirpath}")
 
 
@@ -477,7 +480,7 @@ def parse_variables(basepath, exclude_files=None):
         try:
             with open(name, encoding="utf-8") as file:
                 body = file.read()
-        except (IOError, OSError):
+        except OSError:
             raise SystemExit(f"Cannot open variables file {shortname}.")
         for item in _parse(body):
             description = ("".join(item["description"])).replace("|", "\\|")
@@ -553,9 +556,11 @@ def main(
     replace=True,
     show_extra=True,
     toc_only=False,
-    toc_skip=["contents"],
+    toc_skip=None,
 ):
     "Program entry point."
+    if toc_skip is None:
+        toc_skip = ["contents"]
     if toc_only and module_path.endswith(".md"):
         readme_path = module_path
     else:
@@ -570,7 +575,7 @@ def main(
         try:
             with open(readme_path, "w", encoding="utf-8") as f:
                 f.write(readme)
-        except (IOError, OSError) as e:
+        except OSError as e:
             raise SystemExit(f"Error replacing README {readme_path}: {e}")
     else:
         print(readme)

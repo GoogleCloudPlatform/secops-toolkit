@@ -14,13 +14,14 @@
 # limitations under the License.
 
 import json
-import time
 import logging
-import google.auth
 import os
-from datetime import datetime, timedelta
-from google.cloud import pubsub_v1
+import time
+from datetime import datetime, timedelta, timezone
+
+import google.auth
 from google.auth.transport.requests import AuthorizedSession
+from google.cloud import pubsub_v1
 
 HTTP = AuthorizedSession(google.auth.default()[0])
 LOGGER = logging.getLogger("cai-chronicle")
@@ -38,7 +39,7 @@ def generate_timestamp(offset_days=0):
         str: Timestamp string in ISO 8601 format.
     """
     # Get current UTC time
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     # Apply offset
     timestamp = now + timedelta(days=offset_days)
     # Format timestamp in ISO 8601 format
@@ -74,14 +75,14 @@ def assets_list(
     if next_page:
         params["pageToken"] = next_page
 
-    url = "https://cloudasset.googleapis.com/v1/{parent}/assets".format(parent=parent)
+    url = f"https://cloudasset.googleapis.com/v1/{parent}/assets"
     headers = {"Content-Type": "application/json"}
 
     try:
         response = HTTP.get(url, headers=headers, params=params)
         return response
     except Exception as e:
-        raise Exception(f"Error fetching assets: {e}")
+        raise RuntimeError(f"Error fetching assets: {e}") from e
 
 
 def send_to_pubsub(pubsub_topic_id, asset):
@@ -144,7 +145,7 @@ def main(request):
         raise SystemExit("No configuration sent from Cloud Scheduler")
 
     # iterate through all the asset types
-    for chronicle_ingestion_label in chronicle_assets_config.keys():
+    for chronicle_ingestion_label in chronicle_assets_config:
         asset_types = chronicle_assets_config[chronicle_ingestion_label]["asset_types"]
         # iterate through all the GCP nodes for tenant
         for node in nodes:
@@ -160,8 +161,7 @@ def main(request):
                     if response.status_code == 200:
                         fetched_assets = json.loads(response.text)
                         if "assets" in fetched_assets:
-                            for each_asset in fetched_assets["assets"]:  # refactor
-                                assets.append(each_asset)
+                            assets.extend(fetched_assets["assets"])
                         if "nextPageToken" in fetched_assets:
                             LOGGER.info("More pages available.")
                             LOGGER.info(
@@ -198,8 +198,8 @@ def main(request):
                         more_results = False
                         break
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 LOGGER.error(f"Unexpected error: {e}")
-                return f'{"status":"500", "data": "{e}"}'
+                return f'{{"status":"500", "data": "{e}"}}'
 
     return '{"status":"200", "data": "OK"}'

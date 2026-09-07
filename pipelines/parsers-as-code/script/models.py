@@ -85,22 +85,14 @@ class ParserValidationStatus(Enum):
 class ParserError(Exception):
     """Base exception for all application-specific errors."""
 
-    pass
-
 
 class InitializationError(ParserError):
     """Raised when the application cannot be initialized (e.g., missing env vars)."""
-
-    pass
 
 
 class ValidationError(ParserError):
     """Raised when local validation (e.g., event comparison) fails."""
 
-    pass
-
 
 class APIError(ParserError):
     """Raised for issues communicating with the SecOps API."""
-
-    pass

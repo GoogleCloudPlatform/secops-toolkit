@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from secops import SecOpsClient
-from google.auth.exceptions import DefaultCredentialsError
-import json
 import csv
+import json
+
+from google.auth.exceptions import DefaultCredentialsError
+from secops import SecOpsClient
 
 
 def get_chronicle_client(project_id, location, instance_id):
@@ -35,7 +36,7 @@ def get_chronicle_client(project_id, location, instance_id):
         print("Please run the following command in your terminal to authenticate:")
         print("gcloud auth application-default login")
         return None
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"Error: {e}")
         return None
 
@@ -46,7 +47,7 @@ def get_curated_rule_sets(chronicle_client):
         result = chronicle_client.list_curated_rule_sets(as_list=True)
         print("Fetched rule sets")
         return {"curatedRuleSets": result}
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print("\n--- An Unexpected Error Occurred ---")
         print(f"Error: {e}")
         return {"curatedRuleSets": []}
@@ -63,7 +64,7 @@ def get_featured_content_rules(chronicle_client):
         all_rules = chronicle_client.list_featured_content_rules(as_list=True)
         print(f"Fetched {len(all_rules)} featured content rules.")
         return all_rules
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print("\n--- An Unexpected Error Occurred ---")
         print(f"Error: {e}")
         return []
@@ -118,7 +119,7 @@ def get_unique_log_sources(parsed_data) -> list[str]:
                 unique_sources.add(s.strip())
 
     # Convert the set to a list and return it
-    return sorted(list(unique_sources))
+    return sorted(unique_sources)
 
 
 def filter_curated_rules_log_source(log_sources, allrules):

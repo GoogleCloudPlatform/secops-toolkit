@@ -27,7 +27,7 @@ def get_tftest_directive(s):
     """Scan a code block and return a Directive object if there are any
     tftest directives"""
     regexp = r"^ *# *(tftest\S*)(.*)$"
-    if match := re.search(regexp, s, re.M):
+    if match := re.search(regexp, s, re.MULTILINE):
         name, body = match.groups()
         args = []
         kwargs = {}
