@@ -31,7 +31,7 @@ import sys
 
 import click
 
-_EXCLUDE_DIRS = (".git", ".terraform")
+_EXCLUDE_DIRS = (".git", ".terraform", "venv", ".venv", "workspace", ".agents")
 _EXCLUDE_RE = re.compile(r"# skip boilerplate check")
 _MATCH_FILES = ("Dockerfile", ".py", ".sh", ".tf", ".yaml", ".yml")
 _MATCH_STRING = (
@@ -39,21 +39,23 @@ _MATCH_STRING = (
     r"[#\*]\sLicensed under the Apache License, Version 2.0 "
     r'\(the "License"\);\s+'
 )
-_MATCH_RE = re.compile(_MATCH_STRING, re.M)
+_MATCH_RE = re.compile(_MATCH_STRING, re.MULTILINE)
 
 
 def check_files(root, files, errors, warnings):
     for fname in files:
         if fname in _MATCH_FILES or os.path.splitext(fname)[1] in _MATCH_FILES:
             fpath = os.path.abspath(os.path.join(root, fname))
-            content = open(fpath).read()
+            try:
+                with open(fpath, encoding="utf-8") as f:
+                    content = f.read()
+            except OSError:
+                warnings.append(fpath)
+                continue
             if _EXCLUDE_RE.search(content):
                 continue
-            try:
-                if not _MATCH_RE.search(content):
-                    errors.append(fpath)
-            except (IOError, OSError):
-                warnings.append(fpath)
+            if not _MATCH_RE.search(content):
+                errors.append(fpath)
 
 
 @click.command()
@@ -72,10 +74,10 @@ def main(paths, scan_files=False):
 
     if warnings:
         print("The following files cannot be accessed:")
-        print("\n".join(" - {}".format(s) for s in warnings))
+        print("\n".join(f" - {s}" for s in warnings))
     if errors:
         print("The following files are missing the license boilerplate:")
-        print("\n".join(" - {}".format(s) for s in errors))
+        print("\n".join(f" - {s}" for s in errors))
         sys.exit(1)
 
 

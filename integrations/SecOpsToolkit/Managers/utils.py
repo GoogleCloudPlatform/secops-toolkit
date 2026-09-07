@@ -978,7 +978,8 @@ def fetch_timestamp_for_job(
         last_run_time = 0
     try:
         last_run_time = int(last_run_time)
-    except Exception:
+    except Exception as e:
+        siemplify.LOGGER.error(f"Failed to convert last run time to int: {e}")
         last_run_time = convert_string_to_unix_time(last_run_time)
 
     if datetime_format:

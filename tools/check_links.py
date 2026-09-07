@@ -21,12 +21,11 @@ destinations. Its main use is in CI pipelines triggered by pull requests.
 
 import collections
 import pathlib
-import requests
 import urllib.parse
 
 import click
 import marko
-
+import requests
 
 BASEDIR = pathlib.Path(__file__).resolve().parents[1]
 DOC = collections.namedtuple("DOC", "path relpath links")

@@ -51,8 +51,7 @@ def generate_answer(
     """Generate a response to the given input using the LLM."""
     contents = [input]
     if files:
-        for f in files:
-            contents.append(f)
+        contents.extend(files)
 
     config = types.GenerateContentConfig(
         temperature=0.1,
