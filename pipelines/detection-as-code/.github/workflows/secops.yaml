@@ -117,12 +117,6 @@ jobs:
         run: |
           terraform plan -input=false -out ../plan.out -no-color ${{env.plan_opts}}
 
-      - id: update-data-tables
-        if: github.event.pull_request.merged == true && success()
-        name: update-data-tables
-        run: cd scripts && python main.py update-data-tables
-        shell: bash
-
       - id: tf-apply
         if: github.event.pull_request.merged == true && success()
         name: Terraform apply
