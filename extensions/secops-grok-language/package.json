@@ -1,0 +1,37 @@
+{
+  "name": "secops-grok-language",
+  "publisher": "GoogleCloudPlatform",
+  "displayName": "SecOps Grok Language",
+  "description": "Language support for the Google SecOps flavor of the Logstash Grok parser syntax.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.137.0"
+  },
+  "main": "./extension.js",
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "secopsgrok",
+        "aliases": [
+          "SecOps Grok",
+          "secopsgrok"
+        ],
+        "extensions": [
+          ".grok"
+        ],
+        "firstLine": "^\\s*filter\\s*\\{",
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "secopsgrok",
+        "scopeName": "source.secopsgrok",
+        "path": "./syntaxes/secopsgrok.tmLanguage.json"
+      }
+    ]
+  }
+}

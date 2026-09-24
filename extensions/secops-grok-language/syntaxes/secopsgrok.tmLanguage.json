@@ -1,0 +1,467 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "SecOps Grok",
+	"scopeName": "source.secopsgrok",
+	"patterns": [
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#embedded-javascript"
+		},
+		{
+			"include": "#filter-plugins"
+		},
+		{
+			"include": "#mutate-functions"
+		},
+		{
+			"include": "#plugin-options"
+		},
+		{
+			"include": "#control-flow"
+		},
+		{
+			"include": "#operators"
+		},
+		{
+			"include": "#field-references"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#special-variables"
+		},
+		{
+			"include": "#udm-paths"
+		},
+		{
+			"include": "#data-types"
+		},
+		{
+			"include": "#date-formats"
+		},
+		{
+			"include": "#tag-constants"
+		},
+		{
+			"include": "#numbers"
+		},
+		{
+			"include": "#booleans"
+		},
+		{
+			"include": "#punctuation"
+		}
+	],
+	"repository": {
+		"comments": {
+			"name": "comment.line.number-sign.secopsgrok",
+			"match": "#.*$"
+		},
+		"embedded-javascript": {
+			"name": "meta.embedded.block.javascript.secopsgrok",
+			"begin": "\\b(javascript)\\s*(=>)\\s*(`)",
+			"beginCaptures": {
+				"1": {
+					"name": "support.constant.config.secopsgrok"
+				},
+				"2": {
+					"name": "keyword.operator.assignment.hash-rocket.secopsgrok"
+				},
+				"3": {
+					"name": "punctuation.definition.string.begin.secopsgrok string.template.js"
+				}
+			},
+			"end": "(`)",
+			"endCaptures": {
+				"1": {
+					"name": "punctuation.definition.string.end.secopsgrok string.template.js"
+				}
+			},
+			"patterns": [
+				{
+					"include": "source.js"
+				}
+			]
+		},
+		"filter-plugins": {
+			"match": "\\b(filter|mutate|grok|json|xml|kv|csv|date|base64|drop|statedump|code)\\b(?=\\s*\\{)",
+			"name": "support.function.plugin.secopsgrok"
+		},
+		"mutate-functions": {
+			"match": "\\b(replace|merge|convert|gsub|lowercase|uppercase|rename|remove_field|copy|split)\\b(?=\\s*=>)",
+			"name": "support.function.action.secopsgrok"
+		},
+		"plugin-options": {
+			"match": "\\b(source|target|on_error|match|overwrite|match_all|xpath|separator|field_split|value_split|whitespace|trim_value|trim_key|include_keys|exclude_keys|array_function|encoding|timezone|rebase|tag|label|javascript)\\b(?=\\s*(?:=>|=))",
+			"name": "support.constant.config.secopsgrok"
+		},
+		"control-flow": {
+			"patterns": [
+				{
+					"match": "\\b(if|else\\s+if|else|for|in|map)\\b",
+					"name": "keyword.control.secopsgrok"
+				}
+			]
+		},
+		"operators": {
+			"patterns": [
+				{
+					"match": "=>",
+					"name": "keyword.operator.assignment.hash-rocket.secopsgrok"
+				},
+				{
+					"match": "=(?!=)",
+					"name": "keyword.operator.assignment.secopsgrok"
+				},
+				{
+					"match": "==|!=|=~|!~|<=|>=|<|>",
+					"name": "keyword.operator.comparison.secopsgrok"
+				},
+				{
+					"match": "\\b(and|or|not)\\b",
+					"name": "keyword.operator.logical.word.secopsgrok"
+				},
+				{
+					"match": "&&|\\|\\||!",
+					"name": "keyword.operator.logical.symbolic.secopsgrok"
+				}
+			]
+		},
+		"field-references": {
+			"patterns": [
+				{
+					"match": "(\\[)(_[a-zA-Z0-9_.-]+)(\\])",
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.bracket.begin.secopsgrok"
+						},
+						"2": {
+							"name": "variable.other.error-flag.secopsgrok"
+						},
+						"3": {
+							"name": "punctuation.definition.bracket.end.secopsgrok"
+						}
+					}
+				},
+				{
+					"match": "(\\[)((?:event|entity)(?:\\.[a-zA-Z0-9_]+)+)(\\])",
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.bracket.begin.secopsgrok"
+						},
+						"2": {
+							"name": "support.variable.udm.secopsgrok"
+						},
+						"3": {
+							"name": "punctuation.definition.bracket.end.secopsgrok"
+						}
+					}
+				},
+				{
+					"match": "(\\[)(@?[a-zA-Z][a-zA-Z0-9_.-]*)(\\])",
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.bracket.begin.secopsgrok"
+						},
+						"2": {
+							"name": "variable.other.field.secopsgrok"
+						},
+						"3": {
+							"name": "punctuation.definition.bracket.end.secopsgrok"
+						}
+					}
+				},
+				{
+					"match": "(\\[)([0-9]+)(\\])",
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.bracket.begin.secopsgrok"
+						},
+						"2": {
+							"name": "constant.numeric.index.secopsgrok"
+						},
+						"3": {
+							"name": "punctuation.definition.bracket.end.secopsgrok"
+						}
+					}
+				}
+			]
+		},
+		"strings": {
+			"patterns": [
+				{
+					"include": "#string-double-quoted"
+				},
+				{
+					"include": "#string-single-quoted"
+				},
+				{
+					"include": "#string-backtick"
+				}
+			]
+		},
+		"string-double-quoted": {
+			"name": "string.quoted.double.secopsgrok",
+			"begin": "\"",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.begin.secopsgrok"
+				}
+			},
+			"end": "\"",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.end.secopsgrok"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#udm-fields"
+				},
+				{
+					"include": "#special-variables"
+				},
+				{
+					"include": "#grok-captures"
+				},
+				{
+					"include": "#string-interpolation"
+				},
+				{
+					"include": "#regex-named-captures"
+				},
+				{
+					"include": "#data-types"
+				},
+				{
+					"include": "#date-formats"
+				},
+				{
+					"include": "#tag-constants"
+				},
+				{
+					"include": "#escaped-characters"
+				}
+			]
+		},
+		"string-single-quoted": {
+			"name": "string.quoted.single.secopsgrok",
+			"begin": "'",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.begin.secopsgrok"
+				}
+			},
+			"end": "'",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.end.secopsgrok"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#escaped-characters"
+				}
+			]
+		},
+		"string-backtick": {
+			"name": "string.quoted.other.backtick.secopsgrok",
+			"begin": "`",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.begin.secopsgrok"
+				}
+			},
+			"end": "`",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.end.secopsgrok"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#escaped-characters"
+				}
+			]
+		},
+		"udm-fields": {
+			"patterns": [
+				{
+					"match": "\\b(?:event|entity)(?:\\.[a-zA-Z0-9_]+)+\\b",
+					"name": "support.variable.udm.secopsgrok"
+				},
+				{
+					"match": "\\b(?:intermediary|security_result|additional|metadata|principal|target|network|observer|about)\\.[a-zA-Z0-9_.]+\\b",
+					"name": "support.variable.udm.subobject.secopsgrok"
+				},
+				{
+					"match": "^(?:event|entity)$",
+					"name": "support.variable.udm.target.secopsgrok"
+				}
+			]
+		},
+		"special-variables": {
+			"match": "@(?:output|timestamp|createTimestamp|collectionTimestamp)\\b",
+			"name": "variable.language.special.secopsgrok"
+		},
+		"udm-paths": {
+			"patterns": [
+				{
+					"match": "\\b(?:event|entity)(?:\\.[a-zA-Z0-9_]+)+\\b",
+					"name": "support.variable.udm.secopsgrok"
+				},
+				{
+					"match": "\\b(?:event|entity)\\b(?=\\s*(?:=>|\\}|\\n))",
+					"name": "support.variable.udm.target.secopsgrok"
+				}
+			]
+		},
+		"grok-captures": {
+			"patterns": [
+				{
+					"match": "(%\\{)([A-Za-z0-9_]+)(:)([A-Za-z0-9_\\.]+)(:)([A-Za-z0-9_]+)(\\})",
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.grok.begin.secopsgrok"
+						},
+						"2": {
+							"name": "entity.name.type.grok.secopsgrok"
+						},
+						"3": {
+							"name": "punctuation.separator.colon.secopsgrok"
+						},
+						"4": {
+							"name": "variable.other.member.grok.secopsgrok"
+						},
+						"5": {
+							"name": "punctuation.separator.colon.secopsgrok"
+						},
+						"6": {
+							"name": "storage.type.grok.secopsgrok"
+						},
+						"7": {
+							"name": "punctuation.definition.grok.end.secopsgrok"
+						}
+					}
+				},
+				{
+					"match": "(%\\{)([A-Za-z0-9_]+)(:)([A-Za-z0-9_\\.]+)(\\})",
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.grok.begin.secopsgrok"
+						},
+						"2": {
+							"name": "entity.name.type.grok.secopsgrok"
+						},
+						"3": {
+							"name": "punctuation.separator.colon.secopsgrok"
+						},
+						"4": {
+							"name": "variable.other.member.grok.secopsgrok"
+						},
+						"5": {
+							"name": "punctuation.definition.grok.end.secopsgrok"
+						}
+					}
+				},
+				{
+					"match": "(%\\{)([A-Z][A-Z0-9_]*)(\\})",
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.grok.begin.secopsgrok"
+						},
+						"2": {
+							"name": "entity.name.type.grok.secopsgrok"
+						},
+						"3": {
+							"name": "punctuation.definition.grok.end.secopsgrok"
+						}
+					}
+				}
+			]
+		},
+		"string-interpolation": {
+			"match": "(%\\{)([a-zA-Z0-9_\\.]+)(\\})",
+			"captures": {
+				"1": {
+					"name": "punctuation.definition.variable.begin.secopsgrok"
+				},
+				"2": {
+					"name": "variable.other.interpolated.secopsgrok"
+				},
+				"3": {
+					"name": "punctuation.definition.variable.end.secopsgrok"
+				}
+			}
+		},
+		"regex-named-captures": {
+			"match": "(\\(\\?P?<)([a-zA-Z0-9_]+)(>)",
+			"captures": {
+				"1": {
+					"name": "punctuation.definition.group.capture.begin.secopsgrok"
+				},
+				"2": {
+					"name": "variable.other.member.regex.secopsgrok"
+				},
+				"3": {
+					"name": "punctuation.definition.group.capture.end.secopsgrok"
+				}
+			}
+		},
+		"data-types": {
+			"match": "\\b(boolean|bool|float|hash|integer|int|ipaddress|ip|macaddress|string|uinteger|uint|hextodec|hextoascii)\\b",
+			"name": "storage.type.secopsgrok"
+		},
+		"date-formats": {
+			"match": "\\b(ISO8601|RFC3339|UNIX|UNIX_MS)\\b",
+			"name": "constant.language.date-format.secopsgrok"
+		},
+		"tag-constants": {
+			"match": "\\b(TAG_[A-Z0-9_]+)\\b",
+			"name": "constant.other.tag.secopsgrok"
+		},
+		"escaped-characters": {
+			"patterns": [
+				{
+					"name": "constant.character.escape.regex.double-backslash.secopsgrok",
+					"match": "\\\\\\\\[sSwWdD|.?*+^$\\[\\](){}]"
+				},
+				{
+					"name": "constant.character.escape.secopsgrok",
+					"match": "\\\\."
+				}
+			]
+		},
+		"numbers": {
+			"match": "\\b[0-9]+(?:\\.[0-9]+)?\\b",
+			"name": "constant.numeric.secopsgrok"
+		},
+		"booleans": {
+			"match": "\\b(true|false)\\b",
+			"name": "constant.language.boolean.secopsgrok"
+		},
+		"punctuation": {
+			"patterns": [
+				{
+					"match": "[,;]",
+					"name": "punctuation.separator.delimiter.secopsgrok"
+				},
+				{
+					"match": "[{}]",
+					"name": "punctuation.section.block.secopsgrok"
+				},
+				{
+					"match": "[\\[\\]]",
+					"name": "punctuation.section.brackets.secopsgrok"
+				},
+				{
+					"match": "[()]",
+					"name": "punctuation.section.parens.secopsgrok"
+				}
+			]
+		}
+	}
+}

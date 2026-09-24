@@ -120,6 +120,14 @@ This folder provides a collection of sample repositories for automating Google C
 
 <br clear="left">
 
+# Extensions
+
+This folder contains editor extensions and developer tooling designed to enhance the authoring experience for Google Cloud SecOps configurations.
+
+## SecOps Grok Language
+
+[SecOps Grok Language](./extensions/secops-grok-language/): Visual Studio Code extension providing syntax highlighting and automated document formatting for the Google Security Operations flavor of the Logstash Grok parser configuration files.
+
 # Validation and Linting
 
 To ensure code quality, syntax correctness, and formatting consistency, this repository utilizes automated checks via GitHub Actions. You can run these validations locally before pushing your changes to the remote repository.
