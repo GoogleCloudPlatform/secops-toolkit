@@ -1,6 +1,6 @@
 # SecOps blueprints
 
-This repository provides a collection of Terraform blueprints designed to automate the implementation of custom integrations, agents and configurations for Google Cloud SecOps (aka Chronicle).
+This folder provides a collection of Terraform blueprints designed to automate the implementation of custom integrations, agents and configurations for Google Cloud SecOps (aka Chronicle).
 
 ## BindPlane OP Management container running on cos-based GCE instance
 
