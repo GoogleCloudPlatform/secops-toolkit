@@ -1,6 +1,6 @@
 # SecOps Pipelines
 
-This repository provides a collection of sample repositories for automating Google Cloud SecOps configuration through CICD pipelines.
+This folder provides a collection of sample repositories for automating Google Cloud SecOps configuration through CICD pipelines.
 
 ## Dashboards As Code
 
