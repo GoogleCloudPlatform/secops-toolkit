@@ -127,29 +127,3 @@ This folder contains editor extensions and developer tooling designed to enhance
 ## SecOps Grok Language
 
 [SecOps Grok Language](./extensions/secops-grok-language/): Visual Studio Code extension providing syntax highlighting and automated document formatting for the Google Security Operations flavor of the Logstash Grok parser configuration files.
-
-# Validation and Linting
-
-To ensure code quality, syntax correctness, and formatting consistency, this repository utilizes automated checks via GitHub Actions. You can run these validations locally before pushing your changes to the remote repository.
-
-### Python Validation Locally
-
-We use [Ruff](https://docs.astral.sh/ruff/) as our standard Python linter to check for syntax errors, undefined names, unused imports, and code style issues.
-
-1. **Install tool dependencies** (including Ruff and YAPF):
-   ```shell
-   pip install -r tools/requirements.txt
-   ```
-
-2. **Run Ruff validation** across all Python scripts in the repository:
-   ```shell
-   ruff check .
-   ```
-
-### Python Code Formatting Locally
-
-We use [YAPF](https://github.com/google/yapf) to enforce standard Python code formatting. To format your code in-place locally:
-
-```shell
-yapf . -i --recursive --exclude "**/.terraform/" --exclude "tools/" --exclude "tests/" --exclude "**/*.yaml" --exclude "**/requirements.txt"
-```
