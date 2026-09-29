@@ -1,5 +1,7 @@
 # Google SecOps Detection-as-Code (multitenant)
 
+![Process of Detection as Code (multitenant) for Google SecOps](./images/diagram.png)
+
 An enterprise-ready **Detection-as-Code (DaC)** framework and CI/CD pipeline for **Google Security Operations (SecOps)**, designed for **multitenant environments** (MSSPs, central SOCs, federated business units, and holding companies).
 
 This repository enables security engineering teams to author, test, review, deploy, and audit detection content at scale across dozens or hundreds of SecOps tenants while maintaining a balance between **shared baseline policies** and **tenant-specific customizations**.
