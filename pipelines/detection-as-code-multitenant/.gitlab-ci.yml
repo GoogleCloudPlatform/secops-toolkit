@@ -1,0 +1,92 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+image: local/chronicle:latest
+
+stages:
+  - test
+  - deploy
+
+# Common definitions
+
+.standard_tests:
+  stage: test
+  script:
+    - run-parts --verbose --exit-on-error --regex '.*' pipelines/code-quality
+
+.setup_deploy:
+  before_script:
+    - download-secure-files
+    - mkdir -p artifacts
+
+# Jobs that run in the context of a merge request to the dev branch
+
+dev_mr_tests:
+  extends: .standard_tests
+  rules:
+    - if:
+        $CI_PIPELINE_SOURCE == "merge_request_event" &&
+        $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"
+
+# Jobs that run when code is committed to the dev branch
+
+dev_tests:
+  extends: .standard_tests
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev"
+
+dev_deploy:
+  stage: deploy
+  extends: .setup_deploy
+  script:
+    - pipelines/deployment/deploy_rules.py --env=prod --stage=build
+      --deltas-file=artifacts/deltas-rules-prod.json
+    - pipelines/deployment/deploy_curated.py --env=prod --stage=build
+      --deltas-file=artifacts/deltas-curated-prod.json
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev"
+  artifacts:
+    paths:
+      - artifacts/deltas-rules-dev.json
+      - artifacts/deltas-rules-prod.json
+      - artifacts/deltas-curated-prod.json
+
+# Jobs that run when code is committed to the prod branch
+
+prod_tests:
+  extends: .standard_tests
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == "prod"
+
+prod_deploy:
+  stage: deploy
+  extends: .setup_deploy
+  script:
+    - pipelines/deployment/deploy_rules.py --env=prod --stage=live --skip-extras
+      --deltas-file=artifacts/deltas-rules-live.json
+    - pipelines/deployment/compare_rules.py --env=prod --stage=all
+      --deltas-file=artifacts/deltas-rules-post.json
+    - pipelines/deployment/deploy_curated.py  --env=prod --stage=live
+      --deltas-file=artifacts/deltas-curated-live.json
+    - pipelines/deployment/compare_curated.py --env=prod --stage=all
+      --deltas-file=artifacts/deltas-curated-post.json
+  rules:
+    - if: $CI_COMMIT_BRANCH == "prod"
+  artifacts:
+    paths:
+      - artifacts/deltas-rules-live.json
+      - artifacts/deltas-rules-post.json
+      - artifacts/deltas-curated-live.json
+      - artifacts/deltas-curated-post.json

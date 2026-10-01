@@ -108,6 +108,12 @@ This folder provides a collection of sample repositories for automating Google C
 
 <br clear="left">
 
+## Detection As Code (Multitenant)
+
+<a href="./pipelines/detection-as-code-multitenant/" title="Detection As Code (Multitenant) pipeline"><img src="./pipelines/detection-as-code-multitenant/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [sample repository](./pipelines/detection-as-code-multitenant/) contains a framework for automated deployment of Detection Rules and Data Tables in a multitenant Google SecOps via CICD (we currently have a sample pipeline for GitLab), using Python scripts.</p>
+
+<br clear="left">
+
 ## Parsers As Code
 
 <a href="./pipelines/parsers-as-code/" title="Parsers As Code pipeline"><img src="./pipelines/parsers-as-code/images/diagram.png" align="left" width="300px"></a> <p style="margin-left: 340px">This [sample repository](./pipelines/parsers-as-code/) provides a framework for managing SecOps parsers as code.</p>
