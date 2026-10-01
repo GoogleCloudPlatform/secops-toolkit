@@ -27,7 +27,9 @@ This project follows
 
 ## Contribution process
 
-### Useful Commands
+To ensure code quality, syntax correctness, and formatting consistency, this repository utilizes automated checks via GitHub Actions. You can run these validations locally before pushing your changes to the remote repository.
+
+### Set up your environment
 
 Create virtual environment for testing and generate docs
 
@@ -36,16 +38,31 @@ python3 -m venv ~/.venv-secops-toolkit
 source ~/.venv-secops-toolkit/bin/activate
 ```
 
+### Validate Python locally
+
+We use [Ruff](https://docs.astral.sh/ruff/) as our standard Python linter to check for syntax errors, undefined names, unused imports, and code style issues.
+
+1. **Install tool dependencies** (including Ruff):
+   ```shell
+   pip install -r tools/requirements.txt
+   ```
+
+2. **Run Ruff validation** across all Python scripts in the repository:
+   ```shell
+   ruff check .
+   ```
+
+3. **Run Ruff formatting** across all Python scripts in the repository:
+   ```shell
+   ruff format .
+   ```
+
+### Generate Terraform documentation
+
 Generate tfdoc (example for `secops-tenant`)
 
 ```shell
 ./tools/tfdoc.py blueprints/secops-tenant
-```
-
-#### Python Code formatting
-
-```shell
-yapf .  -i  --recursive     --exclude "**/.terraform/"     --exclude "tools/"     --exclude "tests/" --exclude "**/__pycache__" --exclude "**/venv/*" --exclude "**/data/" --exclude "**/**/requirements.txt"
 ```
 
 ### Code reviews
