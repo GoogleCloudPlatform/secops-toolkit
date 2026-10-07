@@ -158,6 +158,10 @@ def compare_curated(chronicle_client: ChronicleClient, curated_path: Path, tenan
     }
 
     curated_dir_tenant = curated_path / "tenants" / tenant
+    if not curated_dir_tenant.exists() or not curated_dir_tenant.is_dir():
+        raise OSError(
+            f"Directory not found for tenant '{tenant}': {curated_dir_tenant}"
+        )
     repo_curated = parse_curated_from_repo(curated_dir_tenant)
     secops_curated = fetch_curated_from_tenant(chronicle_client)
 

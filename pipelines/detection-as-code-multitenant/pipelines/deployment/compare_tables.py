@@ -78,6 +78,8 @@ def get_required_tables(
     required_tables: dict[str, Table] = {}
 
     rules_dir_tenant = rules_path / "tenants" / tenant
+    if not rules_dir_tenant.exists() or not rules_dir_tenant.is_dir():
+        raise OSError(f"Directory not found for tenant '{tenant}': {rules_dir_tenant}")
     for rule_file in rules_dir_tenant.glob("*.yaral"):
         text = rule_file.read_text()
         matches = DATATABLE_PATTERN.findall(text)
