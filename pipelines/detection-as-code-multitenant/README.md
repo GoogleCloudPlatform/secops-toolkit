@@ -27,11 +27,15 @@ gcloud auth application-default login
 ```
 
 ### 3. Configure Tenant Inventory
-Create `tenants.json` (or specify path via `DAC_TENANTS_FILE`) with your tenant credentials:
+Create `tenants.json` with your tenants information:
 ```json
 {
   "prod": {
-    "my_tenant": {
+    "alfa": {
+      "customerId": "<CHRONICLE_CUSTOMER_ID>",
+      "gcpProject": "<GCP_PROJECT_ID>"
+    },
+    "bravo": {
       "customerId": "<CHRONICLE_CUSTOMER_ID>",
       "gcpProject": "<GCP_PROJECT_ID>"
     }
@@ -39,14 +43,16 @@ Create `tenants.json` (or specify path via `DAC_TENANTS_FILE`) with your tenant 
 }
 ```
 
+You can specify multiple environments, in addition to the default `prod` one.
+
 ### 4. Compare & Simulate Deployment (YARA-L rules only)
 Inspect detection drift against SecOps and simulate deployment safely:
 ```bash
 # Compare local YARA-L rules against SecOps (--debug shows full rule text diffs between your repo and your SecOps instance)
-./pipelines/deployment/compare_rules.py --tenant=my_tenant --debug
+./pipelines/deployment/compare_rules.py --tenant=alfa --debug
 
 # Simulate deployment without applying changes
-./pipelines/deployment/deploy_rules.py --tenant=my_tenant --dry-run
+./pipelines/deployment/deploy_rules.py --tenant=alfa --dry-run
 ```
 
 ---

@@ -106,6 +106,9 @@ def compare_rules(chronicle_client: ChronicleClient, rules_path: Path, tenant: s
     }
 
     rules_dir_tenant = rules_path / "tenants" / tenant
+    if not rules_dir_tenant.exists() or not rules_dir_tenant.is_dir():
+        raise OSError(f"Directory not found for tenant '{tenant}': {rules_dir_tenant}")
+
     repo_rules: dict[str, Rule] = {
         p.stem: {"text": p.read_text()} for p in rules_dir_tenant.glob("*.yaral")
     }

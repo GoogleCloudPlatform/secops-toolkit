@@ -34,6 +34,7 @@ import re
 import subprocess
 import sys
 import time
+from collections.abc import Iterable
 from pathlib import Path
 
 from secops import SecOpsClient
@@ -88,7 +89,7 @@ def get_live_tenant_ids():
     return tenant_ids
 
 
-def get_build_tenant_ids(all_tenants: list[str]):
+def get_build_tenant_ids(all_tenants: Iterable[str]):
     return all_tenants - get_live_tenant_ids()
 
 
@@ -215,7 +216,7 @@ def process_standard_arguments(
                     selected_tenants_names = list(all_tenants_names)
                 case "build":
                     selected_tenants_names = get_build_tenant_ids(all_tenants_names)
-                case "frozen":
+                case "live":
                     selected_tenants_names = get_live_tenant_ids()
             if "primary" in selected_tenants_names:
                 selected_tenants_names.remove("primary")
