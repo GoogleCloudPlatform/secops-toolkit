@@ -35,8 +35,23 @@ locals {
   secops_rules = {
     for file_name in fileset("${path.module}/rules", "*.yaral") : replace(file_name, ".yaral", "") => file("${path.module}/rules/${file_name}")
   }
-  secops_rule_deployment = yamldecode(file(var.secops_content_config.rules))
-  secops_parent          = "projects/${var.secops_project_id}/locations/${var.secops_region}/instances/${var.secops_customer_id}"
+  secops_parent         = "projects/${var.secops_project_id}/locations/${var.secops_region}/instances/${var.secops_customer_id}"
+  _raw_rule_deployments = yamldecode(file(var.secops_content_config.rules))
+  secops_rule_deployment = {
+    for k, v in coalesce(local._raw_rule_deployments, {}) : k => {
+      enabled       = try(v.enabled, true)
+      alerting      = try(v.alerting, false)
+      archived      = try(v.archived, false)
+      run_frequency = try(v.run_frequency, null)
+      scope = try(v.scope, null) != null ? (
+        startswith(v.scope, "projects/") ? v.scope : "${local.secops_parent}/dataAccessScopes/${v.scope}"
+      ) : null
+      schedule_customizations = try(v.schedule_customizations, null) != null ? {
+        ensure_enrichment_completeness = try(v.schedule_customizations.ensure_enrichment_completeness, null)
+        late_arriving_data_adjustment  = try(v.schedule_customizations.late_arriving_data_adjustment, null)
+      } : null
+    }
+  }
 }
 
 resource "google_chronicle_rule" "rule" {
@@ -45,11 +60,18 @@ resource "google_chronicle_rule" "rule" {
   location        = var.secops_region
   instance        = var.secops_customer_id
   deletion_policy = "FORCE"
-  text            = local.secops_rules[each.key]
-  scope           = try("${local.secops_parent}/dataAccessScopes/${each.value.scope}", null)
+  text            = try(local.secops_rules[each.key], null)
+  scope           = each.value.scope
   depends_on = [
     google_chronicle_data_table.data_table
   ]
+
+  lifecycle {
+    precondition {
+      condition     = contains(keys(local.secops_rules), each.key)
+      error_message = "Rule '${each.key}' is defined in '${var.secops_content_config.rules}', but 'rules/${each.key}.yaral' does not exist."
+    }
+  }
 }
 
 resource "google_chronicle_rule_deployment" "rule_deployment" {
@@ -62,6 +84,45 @@ resource "google_chronicle_rule_deployment" "rule_deployment" {
   alerting      = each.value.alerting
   archived      = each.value.archived
   run_frequency = each.value.run_frequency
+
+  dynamic "schedule_customizations" {
+    for_each = each.value.schedule_customizations != null ? [each.value.schedule_customizations] : []
+    content {
+      ensure_enrichment_completeness = schedule_customizations.value.ensure_enrichment_completeness
+      late_arriving_data_adjustment  = schedule_customizations.value.late_arriving_data_adjustment
+    }
+  }
+
+  lifecycle {
+    precondition {
+      condition = each.value.run_frequency == null || contains([
+        "LIVE",
+        "HOURLY",
+        "DAILY",
+        "LIVE_CUSTOMIZABLE",
+        "HOURLY_CUSTOMIZABLE",
+      ], each.value.run_frequency)
+      error_message = "Rule '${each.key}': 'run_frequency' must be null or one of LIVE, HOURLY, DAILY, LIVE_CUSTOMIZABLE, HOURLY_CUSTOMIZABLE."
+    }
+    precondition {
+      condition = each.value.schedule_customizations == null || contains([
+        "LIVE_CUSTOMIZABLE",
+        "HOURLY_CUSTOMIZABLE",
+      ], coalesce(each.value.run_frequency, "NONE"))
+      error_message = "Rule '${each.key}': 'schedule_customizations' is only valid when 'run_frequency' is LIVE_CUSTOMIZABLE or HOURLY_CUSTOMIZABLE."
+    }
+    precondition {
+      condition = (
+        try(each.value.schedule_customizations.late_arriving_data_adjustment, null) == null ||
+        can(regex("^\\d+(\\.\\d{1,9})?s$", each.value.schedule_customizations.late_arriving_data_adjustment))
+      )
+      error_message = "Rule '${each.key}': 'late_arriving_data_adjustment' must be a valid duration in seconds ending with 's' (e.g., '300s' or '3.5s')."
+    }
+    precondition {
+      condition     = !each.value.archived || !each.value.enabled
+      error_message = "Rule '${each.key}': rules with 'archived = true' must also set 'enabled = false'."
+    }
+  }
 }
 
 resource "google_chronicle_data_table" "data_table" {

@@ -72,6 +72,9 @@ values:
     instance: xxxxxxxxxxxxx
     location: europe
     project: project-id
-    run_frequency: LIVE
+    run_frequency: LIVE_CUSTOMIZABLE
+    schedule_customizations:
+      - ensure_enrichment_completeness: null
+        late_arriving_data_adjustment: 300s
     timeouts: null
 

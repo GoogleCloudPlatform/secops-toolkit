@@ -27,11 +27,43 @@ The repository is organized as follows:
 - `reference_lists/`: Contains text files (`.txt`) with entries for each reference list.
 - `data_tables/`: Contains CSV files providing the content for Google SecOps data tables.
 - `scripts/`: Python scripts for rule verification (`verify-rules`), data table updates (`update-data-tables`), and rule synchronization (`pull-rules`).
-- `secops_rules.yaml`: Configuration file for rule deployment settings (enabled, alerting, run frequency, etc.).
+- `secops_rules.yaml`: Configuration file for rule deployment and scheduler settings (`enabled`, `alerting`, `archived`, `run_frequency`, `schedule_customizations`, and optional Data RBAC `scope`).
 - `secops_reference_lists.yaml`: Configuration file defining reference lists and their syntax types (STRING, REGEX, CIDR).
 - `secops_data_tables.yaml`: Configuration file defining data table schemas and descriptions.
-- `main.tf`, `variables.tf`: Terraform configuration files for infrastructure deployment.
+- `main.tf`, `variables.tf`, `versions.tf`: Terraform configuration files for infrastructure deployment (requires `hashicorp/google` provider `>= 7.45.0`).
 - `.github/`, `.gitlab-ci.yml`: CI/CD pipeline definitions for GitHub and GitLab.
+
+### Rule Deployment & Scheduler Configuration (`secops_rules.yaml`)
+
+Each entry in `secops_rules.yaml` maps a YARA-L rule name to its Chronicle `v1` `RuleDeployment` settings:
+
+```yaml
+network_traffic_to_specific_country:
+  enabled: true
+  alerting: true
+  archived: false
+  run_frequency: "LIVE_CUSTOMIZABLE"
+  schedule_customizations:
+    late_arriving_data_adjustment: "300s"
+    # ensure_enrichment_completeness: false
+
+remote_desktop_from_internet_via_audit:
+  enabled: true
+  alerting: true
+  archived: false
+  run_frequency: "LIVE"
+```
+
+Supported `run_frequency` values:
+- `LIVE`: Near-real-time execution for single-event rules (no `match:` window).
+- `LIVE_CUSTOMIZABLE`: Customizable high-frequency schedule (runs every ~10 minutes) for multi-event rules with a `match:` window `< 1h`.
+- `HOURLY_CUSTOMIZABLE`: Customizable hourly schedule for multi-event rules with a `match:` window `<= 2d`.
+- `DAILY`: Daily schedule for multi-event rules with a `match:` window `> 2d`.
+- *(Legacy `HOURLY` is deprecated by Google SecOps in favor of `HOURLY_CUSTOMIZABLE`; `verify-rules` emits a migration warning unless `--strict` is set).*
+
+Optional `schedule_customizations` (supported only when `run_frequency` is `LIVE_CUSTOMIZABLE` or `HOURLY_CUSTOMIZABLE`):
+- `late_arriving_data_adjustment`: Duration string in seconds (e.g., `"300s"`) shifting the rule's evaluation window back to accommodate late-arriving telemetry.
+- `ensure_enrichment_completeness`: Boolean (`true` or `false`) delaying evaluation until asynchronous entity/context enrichment completes.
 
 ### Detection As Code Pipeline design
 
@@ -213,14 +245,23 @@ SECOPS_REGION="your-chronicle-region"
 
 ## Rule Verification
 
-The `verify-rules` script is a powerful tool to validate your YARA-L rules before deployment. It performs several checks:
-- **Local Validation**: Ensures the rule name in the `.yaral` file matches the filename and follows basic structure rules.
-- **Remote Validation**: Calls the Google SecOps API to verify the rule syntax against the platform's compiler.
+The `verify-rules` script validates your YARA-L rules and `secops_rules.yaml` deployment configurations before deployment:
+- **Local Validation (`--offline`)**: Ensures the rule name in each `.yaral` file matches its filename, checks basic YARA-L structure, and validates `secops_rules.yaml` (`run_frequency`, `schedule_customizations` duration syntax and schedule compatibility, and `archived`/`enabled` constraints) without requiring cloud credentials.
+- **Remote Compiler & Schedule Validation**: Calls Chronicle `v1alpha` `instances:verifyRuleText` to verify YARA-L compilation and cross-check each rule's configured `run_frequency` against `allowedRunFrequencies` returned by the compiler:
+  - Hard-invalid schedules (for example, `LIVE_CUSTOMIZABLE` on a single-event rule) fail immediately.
+  - Legacy schedules that Google SecOps coerces server-side (such as `LIVE`, `HOURLY`, or `DAILY` when `allowedRunFrequencies` returns `LIVE_CUSTOMIZABLE` / `HOURLY_CUSTOMIZABLE`) emit a migration warning by default, or fail when `--strict` is passed.
 - **Dependency Check**: Verifies that any Reference Lists or Data Tables referenced in the rule exist either locally in your repository or in the SecOps environment.
 
-To run the verification:
+To run verification:
 ```bash
+# Standard local + remote verification (warns on legacy coerced frequencies)
 python scripts/main.py verify-rules
+
+# Strict CI mode (fails on legacy/coerced frequencies)
+python scripts/main.py verify-rules --strict
+
+# Offline local validation only (no Google Cloud credentials required)
+python scripts/main.py verify-rules --offline
 ```
 
 ## Rule Synchronization
@@ -228,9 +269,9 @@ python scripts/main.py verify-rules
 If you have existing rules in Google SecOps that are not yet in your local repository, or if you want to ensure your local `secops_rules.yaml` configuration is up to date, you can use the `pull-rules` command.
 
 This script will:
-1. Fetch all rules and their deployment status from Google SecOps.
+1. Fetch all rules and their `v1` `RuleDeployment` status from Google SecOps.
 2. Create or update `.yaral` files in the `rules/` directory.
-3. Update `secops_rules.yaml` with the current `enabled`, `alerting`, and `run_frequency` settings.
+3. Update `secops_rules.yaml` with the current `enabled`, `alerting`, `archived`, `run_frequency`, `schedule_customizations` (`ensure_enrichment_completeness`, `late_arriving_data_adjustment`), and optional `scope` settings (and log warnings if any rule has `executionState` set to `LIMITED` or `PAUSED`).
 4. Output `terraform import` commands to help you bring these rules into your Terraform state.
 
 To synchronize rules:
@@ -317,7 +358,9 @@ network_traffic_to_specific_country:
   enabled: true
   alerting: true
   archived: false
-  run_frequency: "DAILY"
+  run_frequency: "LIVE_CUSTOMIZABLE"
+  schedule_customizations:
+    late_arriving_data_adjustment: "300s"
 ```
 
 ```

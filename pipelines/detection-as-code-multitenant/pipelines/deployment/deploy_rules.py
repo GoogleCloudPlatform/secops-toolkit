@@ -16,14 +16,18 @@
 
 # PYTHON_ARGCOMPLETE_OK
 """
-YARA-L Rule Deployment Pipeline for Google SecOps.
+YARA-L Rule & Deployment Configuration Pipeline for Google SecOps.
 
-This script deploys local YARA-L rules to Google SecOps (Chronicle) tenants:
-- Compares local rules against remote SecOps rules using `compare_rules`.
-- Creates missing rules in SecOps and automatically enables them in production (--env=prod).
-- Updates rule contents for rules that have changed.
+This script deploys local YARA-L rules (*.yaral) and optional companion YAML
+deployment configurations (*.yaml) to Google SecOps (Chronicle) tenants:
+- Compares local rules and YAML configs against remote SecOps state via `compare_rules`.
+- Creates missing rules in SecOps and configures their deployment (`enabled`,
+  `alerting`, `run_frequency`, `schedule_customizations`) from `<RuleName>.yaml`
+  (falling back to enabling rules automatically in `--env=prod` when no YAML exists).
+- Updates rule contents (`text`, `scope`) and/or `RuleDeployment` scheduler settings
+  (`LIVE_CUSTOMIZABLE`, `HOURLY_CUSTOMIZABLE`, `scheduleCustomizations`, archiving)
+  for rules that have drifted.
 - Archives extra rules in SecOps (disabling alerts and execution), unless --skip-extras is set.
-- Automatically enables API request rate throttling when delta volumes exceed thresholds.
 - Supports dry-run simulation (--dry-run) and delta export to JSON (--deltas-file).
 """
 
@@ -32,6 +36,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 import argcomplete
 import deployment_common
@@ -44,11 +49,17 @@ SKIP_EXTRAS = False
 
 def get_repo_rule_text(rules_path: Path, tenant: str, rule_name: str) -> str:
     repo_rule_path = rules_path / "tenants" / tenant / f"{rule_name}.yaral"
-    return repo_rule_path.read_text()
+    return repo_rule_path.read_text(encoding="utf-8")
 
 
-def create_rule(chronicle_client: ChronicleClient, rule_text: str) -> str:
-    new_rule = chronicle_client.create_rule(rule_text)
+def create_rule(
+    chronicle_client: ChronicleClient,
+    rule_text: str,
+    scope_resource: str | None = None,
+) -> str:
+    new_rule = deployment_common.create_rule_v1(
+        chronicle_client, rule_text, scope=scope_resource
+    )
     return deployment_common.get_rule_id_from_location(new_rule["name"])
 
 
@@ -56,12 +67,111 @@ def enable_rule(chronicle_client: ChronicleClient, rule_id: str):
     chronicle_client.enable_rule(rule_id, True)
 
 
+def apply_rule_deployment_config(
+    chronicle_client: ChronicleClient,
+    rule_id: str,
+    repo_cfg: dict[str, Any],
+    *,
+    env: str,
+    current_rule: Rule | None = None,
+):
+    """Apply `<RuleName>.yaml` deployment & schedule settings to a rule deployment."""
+    if not repo_cfg:
+        if current_rule is None and env == "prod":
+            enable_rule(chronicle_client, rule_id)
+        return
+
+    # Handle archiving as a safe two-step operation per Chronicle v1 API requirements
+    if repo_cfg.get("archived", False):
+        if current_rule is None or current_rule.get("live", False):
+            deployment_common.update_rule_deployment_v1(
+                chronicle_client,
+                rule_id,
+                enabled=False,
+                alerting=False,
+            )
+        deployment_common.update_rule_deployment_v1(
+            chronicle_client,
+            rule_id,
+            archived=True,
+        )
+        return
+
+    default_enabled = env == "prod" if current_rule is None else None
+    enabled = repo_cfg.get("enabled", default_enabled)
+    alerting = repo_cfg.get("alerting")
+    run_frequency = repo_cfg.get("run_frequency")
+    has_sc_Or_freq = (
+        "schedule_customizations" in repo_cfg or "run_frequency" in repo_cfg
+    )
+    schedule_customizations = repo_cfg.get("schedule_customizations")
+
+    if (
+        enabled is None
+        and alerting is None
+        and run_frequency is None
+        and not has_sc_Or_freq
+    ):
+        return
+
+    # Ensure run_frequency is passed if updating schedule_customizations alone
+    effective_freq = run_frequency
+    if effective_freq is None and has_sc_Or_freq and current_rule is not None:
+        effective_freq = current_rule.get("frequency")
+
+    deployment_common.update_rule_deployment_v1(
+        chronicle_client,
+        rule_id,
+        enabled=enabled,
+        alerting=alerting,
+        run_frequency=effective_freq,
+        schedule_customizations=schedule_customizations,
+        update_schedule_customizations=has_sc_Or_freq,
+    )
+
+
 def update_rule(
     chronicle_client: ChronicleClient,
     rule_details: Rule,
     new_rule_text: str,
+    repo_cfg: dict[str, Any],
+    tenant_details: dict[str, str],
+    env: str,
 ):
-    chronicle_client.update_rule(rule_details["id"], new_rule_text)
+    text_changed = rule_details.get("text_changed", True)
+    deployment_changed = rule_details.get("deployment_changed", False)
+
+    update_scope = False
+    scope_resource: str | None = None
+    if "scope" in repo_cfg:
+        desired_scope_id = deployment_common.extract_scope_id(repo_cfg.get("scope"))
+        if desired_scope_id != rule_details.get("scope"):
+            update_scope = True
+            region = tenant_details.get("region", deployment_common.REGION)
+            scope_resource = deployment_common.format_scope_resource(
+                tenant_details["gcpProject"],
+                region,
+                tenant_details["customerId"],
+                repo_cfg.get("scope"),
+            )
+
+    if text_changed or update_scope:
+        deployment_common.update_rule_v1(
+            chronicle_client,
+            rule_details["id"],
+            rule_text=new_rule_text if text_changed else None,
+            scope=scope_resource,
+            update_scope=update_scope,
+        )
+
+    if deployment_changed:
+        apply_rule_deployment_config(
+            chronicle_client,
+            rule_details["id"],
+            repo_cfg,
+            env=env,
+            current_rule=rule_details,
+        )
 
 
 def delete_rule(chronicle_client: ChronicleClient, rule_details: Rule):
@@ -74,7 +184,9 @@ def delete_rule(chronicle_client: ChronicleClient, rule_details: Rule):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Deploy local YARA-L rules to SecOps")
+    parser = argparse.ArgumentParser(
+        description="Deploy local YARA-L rules and YAML deployment configs to SecOps"
+    )
     deployment_common.add_standard_arguments(parser)
     parser.add_argument(
         "--deltas-file",
@@ -103,8 +215,8 @@ if __name__ == "__main__":
     for tenant_name in sorted(selected_tenants_names):
         if (
             not all_tenants
-            or not env in all_tenants
-            or not tenant_name in all_tenants[env]
+            or env not in all_tenants
+            or tenant_name not in all_tenants[env]
         ):
             print(
                 f"Error: Tenant info not found for tenant {tenant_name} in environment {env}"
@@ -115,6 +227,7 @@ if __name__ == "__main__":
         chronicle_client = deployment_common.create_chronicle_client(
             tenant_details, args.impersonate_sa
         )
+        region = tenant_details.get("region", deployment_common.REGION)
 
         if deployment_common.verbose:
             print(f"Processing {tenant_name}")
@@ -137,19 +250,32 @@ if __name__ == "__main__":
                 print(f"Creating missing rule {rule_name}")
             if not deployment_common.dry_run:
                 deployment_common.start_iteration()
+                repo_cfg = repo_rules[rule_name].get("config") or {}
+                scope_resource = deployment_common.format_scope_resource(
+                    tenant_details["gcpProject"],
+                    region,
+                    tenant_details["customerId"],
+                    repo_cfg.get("scope"),
+                )
                 try:
                     new_rule_id = create_rule(
                         chronicle_client,
                         repo_rules[rule_name]["text"],
+                        scope_resource=scope_resource,
                     )
-                    if env == "prod":
-                        try:
-                            enable_rule(chronicle_client, new_rule_id)
-                        except APIError as e:
-                            errors = True
-                            print(
-                                f"Error enabling rule {tenant_name}/{rule_name}: {e!r}"
-                            )
+                    try:
+                        apply_rule_deployment_config(
+                            chronicle_client,
+                            new_rule_id,
+                            repo_cfg,
+                            env=env,
+                            current_rule=None,
+                        )
+                    except APIError as e:
+                        errors = True
+                        print(
+                            f"Error configuring deployment for rule {tenant_name}/{rule_name}: {e!r}"
+                        )
                 except APIError as e:
                     errors = True
                     print(f"Error creating rule {tenant_name}/{rule_name}: {e!r}")
@@ -160,11 +286,15 @@ if __name__ == "__main__":
                 print(f"Updating changed rule {rule_name}")
             if not deployment_common.dry_run:
                 deployment_common.start_iteration()
+                repo_cfg = repo_rules[rule_name].get("config") or {}
                 try:
                     update_rule(
                         chronicle_client,
                         secops_rule_details,
                         repo_rules[rule_name]["text"],
+                        repo_cfg,
+                        tenant_details,
+                        env,
                     )
                 except APIError as e:
                     errors = True
@@ -202,7 +332,7 @@ if __name__ == "__main__":
             )
 
     if args.deltas_file:
-        with open(args.deltas_file, "w") as deltas_file:
+        with open(args.deltas_file, "w", encoding="utf-8") as deltas_file:
             json.dump(deltas, deltas_file, indent=4)
 
     if errors:
