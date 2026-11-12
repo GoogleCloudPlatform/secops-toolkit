@@ -14,6 +14,7 @@
 """Shared test helpers and optional dependency shims for pipeline unit tests."""
 
 import enum
+import importlib.machinery
 import importlib.util
 import sys
 import types
@@ -31,23 +32,34 @@ MULTITENANT_DEPLOYMENT_DIR = MULTITENANT_DIR / "pipelines" / "deployment"
 MULTITENANT_QUALITY_DIR = MULTITENANT_DIR / "pipelines" / "code-quality"
 
 
+def _new_shim_module(name: str, *, is_package: bool = False) -> types.ModuleType:
+    """Create a synthetic ModuleType with a valid ModuleSpec so find_spec never fails."""
+    mod = types.ModuleType(name)
+    mod.__spec__ = importlib.machinery.ModuleSpec(
+        name, loader=None, is_package=is_package
+    )
+    if is_package:
+        mod.__path__ = []  # type: ignore[attr-defined]
+    return mod
+
+
 def _ensure_optional_pipeline_dependencies() -> None:
     """Install lightweight shims only when optional pipeline packages are absent."""
-    if importlib.util.find_spec("dotenv") is None and "dotenv" not in sys.modules:
-        dotenv_mod = types.ModuleType("dotenv")
+    if "dotenv" not in sys.modules and importlib.util.find_spec("dotenv") is None:
+        dotenv_mod = _new_shim_module("dotenv")
         dotenv_mod.load_dotenv = lambda *_args, **_kwargs: False  # type: ignore[attr-defined]
         sys.modules["dotenv"] = dotenv_mod
 
     if (
-        importlib.util.find_spec("argcomplete") is None
-        and "argcomplete" not in sys.modules
+        "argcomplete" not in sys.modules
+        and importlib.util.find_spec("argcomplete") is None
     ):
-        argcomplete_mod = types.ModuleType("argcomplete")
+        argcomplete_mod = _new_shim_module("argcomplete")
         argcomplete_mod.autocomplete = lambda *_args, **_kwargs: None  # type: ignore[attr-defined]
         sys.modules["argcomplete"] = argcomplete_mod
 
-    if importlib.util.find_spec("click") is None and "click" not in sys.modules:
-        click_mod = types.ModuleType("click")
+    if "click" not in sys.modules and importlib.util.find_spec("click") is None:
+        click_mod = _new_shim_module("click")
 
         def _identity_decorator(*_dargs, **_dkwargs):
             def _wrap(fn):
@@ -65,9 +77,9 @@ def _ensure_optional_pipeline_dependencies() -> None:
         click_mod.echo = print  # type: ignore[attr-defined]
         sys.modules["click"] = click_mod
 
-    if importlib.util.find_spec("ruamel") is None and "ruamel.yaml" not in sys.modules:
-        ruamel_pkg = types.ModuleType("ruamel")
-        ruamel_yaml_mod = types.ModuleType("ruamel.yaml")
+    if "ruamel.yaml" not in sys.modules and importlib.util.find_spec("ruamel") is None:
+        ruamel_pkg = _new_shim_module("ruamel", is_package=True)
+        ruamel_yaml_mod = _new_shim_module("ruamel.yaml")
 
         class _YAMLShim:
             def __init__(self, **_kwargs):
@@ -84,8 +96,8 @@ def _ensure_optional_pipeline_dependencies() -> None:
         sys.modules["ruamel"] = ruamel_pkg
         sys.modules["ruamel.yaml"] = ruamel_yaml_mod
 
-    if importlib.util.find_spec("pydantic") is None and "pydantic" not in sys.modules:
-        pydantic_mod = types.ModuleType("pydantic")
+    if "pydantic" not in sys.modules and importlib.util.find_spec("pydantic") is None:
+        pydantic_mod = _new_shim_module("pydantic")
 
         class _BaseModel:
             def __init__(self, **kwargs):
@@ -97,7 +109,7 @@ def _ensure_optional_pipeline_dependencies() -> None:
         pydantic_mod.ConfigDict = dict  # type: ignore[attr-defined]
         sys.modules["pydantic"] = pydantic_mod
 
-    if importlib.util.find_spec("secops") is None and "secops" not in sys.modules:
+    if "secops" not in sys.modules and importlib.util.find_spec("secops") is None:
 
         class _APIVersion(enum.StrEnum):
             V1 = "v1"
@@ -110,30 +122,30 @@ def _ensure_optional_pipeline_dependencies() -> None:
         class _APIError(_SecOpsError):
             pass
 
-        secops_pkg = types.ModuleType("secops")
+        secops_pkg = _new_shim_module("secops", is_package=True)
         secops_pkg.SecOpsClient = MagicMock  # type: ignore[attr-defined]
 
-        auth_mod = types.ModuleType("secops.auth")
+        auth_mod = _new_shim_module("secops.auth")
         auth_mod.RetryConfig = MagicMock  # type: ignore[attr-defined]
 
-        exceptions_mod = types.ModuleType("secops.exceptions")
+        exceptions_mod = _new_shim_module("secops.exceptions")
         exceptions_mod.SecOpsError = _SecOpsError  # type: ignore[attr-defined]
         exceptions_mod.APIError = _APIError  # type: ignore[attr-defined]
 
-        chronicle_pkg = types.ModuleType("secops.chronicle")
+        chronicle_pkg = _new_shim_module("secops.chronicle", is_package=True)
         chronicle_pkg.ChronicleClient = MagicMock  # type: ignore[attr-defined]
 
-        client_mod = types.ModuleType("secops.chronicle.client")
+        client_mod = _new_shim_module("secops.chronicle.client")
         client_mod.ChronicleClient = MagicMock  # type: ignore[attr-defined]
 
-        models_mod = types.ModuleType("secops.chronicle.models")
+        models_mod = _new_shim_module("secops.chronicle.models")
         models_mod.APIVersion = _APIVersion  # type: ignore[attr-defined]
 
-        dt_mod = types.ModuleType("secops.chronicle.data_table")
+        dt_mod = _new_shim_module("secops.chronicle.data_table")
         dt_mod.DataTableColumnType = MagicMock()  # type: ignore[attr-defined]
 
-        utils_pkg = types.ModuleType("secops.chronicle.utils")
-        req_mod = types.ModuleType("secops.chronicle.utils.request_utils")
+        utils_pkg = _new_shim_module("secops.chronicle.utils", is_package=True)
+        req_mod = _new_shim_module("secops.chronicle.utils.request_utils")
         req_mod.chronicle_request = MagicMock()  # type: ignore[attr-defined]
 
         sys.modules["secops"] = secops_pkg
