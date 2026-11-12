@@ -49,6 +49,7 @@ variable "rules_config" {
     archived      = optional(bool, false)
     run_frequency = optional(string)
     scope         = optional(string)
+    tags          = optional(list(string))
     schedule_customizations = optional(object({
       ensure_enrichment_completeness = optional(bool)
       late_arriving_data_adjustment  = optional(string)
@@ -90,6 +91,15 @@ variable "rules_config" {
       for config in var.rules_config : !config.archived || !config.enabled
     ])
     error_message = "Rules with 'archived = true' must also set 'enabled = false'."
+  }
+  validation {
+    condition = alltrue(flatten([
+      for config in var.rules_config : [
+        for tag in coalesce(config.tags, []) :
+        can(regex("^(projects/[^/]+/locations/[^/]+/instances/[^/]+/tags/)?([a-zA-Z][a-zA-Z0-9_]{0,98}|google\\.[a-zA-Z0-9][a-zA-Z0-9._-]*)$", tag))
+      ]
+    ]))
+    error_message = "Each entry in 'tags' must be a valid custom tag ID (starts with a letter, letters/numbers/underscores only, < 100 chars), a Google-managed 'google.*' tag ID, or a full 'projects/.../locations/.../instances/.../tags/...' resource name."
   }
 }
 

@@ -379,3 +379,212 @@ def test_verify_rules_and_code_quality_checks(
     assert verify.verify_tenant_rules(
         MagicMock(), rules_dir, tables_dir, "bravo", strict=True
     ) == (0, 1)
+
+
+def test_multitenant_rule_tags_compare_deploy_and_pull(
+    dac_multitenant_modules, tmp_path, monkeypatch
+):
+    """Verify v1alpha rule tag validation, drift detection, batch deploy, and pull sync."""
+    common = dac_multitenant_modules["common"]
+    compare = dac_multitenant_modules["compare"]
+    deploy = dac_multitenant_modules["deploy"]
+    pull = dac_multitenant_modules["pull"]
+    check_configs = dac_multitenant_modules["check_configs"]
+
+    rules_dir = _setup_multitenant_repo(tmp_path)
+
+    # 1. Invalid tag in companion YAML is caught by check_rule_configs
+    (rules_dir / "tenants" / "bravo" / "MultiEventRule.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "enabled": True,
+                "alerting": False,
+                "archived": False,
+                "run_frequency": "LIVE_CUSTOMIZABLE",
+                "tags": ["invalid-hyphen-custom-tag"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert check_configs.check_rule_configs(rules_dir, strict=False) == 1
+
+    # Configure valid tags on shared (inherited by alfa) and tenant bravo (plus a missing rule)
+    (rules_dir / "shared" / "MultiEventRule.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "enabled": True,
+                "alerting": True,
+                "archived": False,
+                "run_frequency": "LIVE_CUSTOMIZABLE",
+                "tags": ["soc_tier1", "google.mitre.tactic.TA0011"],
+                "schedule_customizations": {
+                    "late_arriving_data_adjustment": "300s",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (rules_dir / "tenants" / "bravo" / "MultiEventRule.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "enabled": True,
+                "alerting": True,
+                "archived": False,
+                "run_frequency": "LIVE_CUSTOMIZABLE",
+                "tags": ["soc_tier2", "google.mitre.technique.T1078"],
+                "schedule_customizations": {
+                    "late_arriving_data_adjustment": "300s",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (rules_dir / "tenants" / "bravo" / "NewRule.yaral").write_text(
+        SAMPLE_MULTI_RULE.replace("MultiEventRule", "NewRule"), encoding="utf-8"
+    )
+    (rules_dir / "tenants" / "bravo" / "NewRule.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "enabled": True,
+                "alerting": True,
+                "archived": False,
+                "run_frequency": "LIVE_CUSTOMIZABLE",
+                "tags": ["soc_tier2"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert check_configs.check_rule_configs(rules_dir, strict=True) == 0
+
+    rule_id = "ru_11111111-2222-3333-4444-555555555555"
+    new_rule_id = "ru_22222222-3333-4444-5555-666666666666"
+    instance_prefix = "projects/p/locations/eu/instances/i"
+
+    mock_client = MagicMock()
+    mock_client.list_rules.return_value = [
+        {
+            "name": f"{instance_prefix}/rules/{rule_id}",
+            "displayName": "MultiEventRule",
+            "text": SAMPLE_MULTI_RULE,
+            "tags": [
+                f"{instance_prefix}/tags/soc_tier1",
+                f"{instance_prefix}/tags/google.mitre.tactic.ta0011",
+                f"{instance_prefix}/tags/google.mitre.tactic.ta0001",
+            ],
+            "ruleTextTags": [
+                f"{instance_prefix}/tags/google.mitre.tactic.TA0001",
+            ],
+        }
+    ]
+    mock_client.list_rule_deployments.return_value = [
+        {
+            "name": f"{instance_prefix}/rules/{rule_id}/deployment",
+            "enabled": True,
+            "alerting": True,
+            "archived": False,
+            "runFrequency": "LIVE_CUSTOMIZABLE",
+            "scheduleCustomizations": {
+                "lateArrivingDataAdjustment": "300s",
+            },
+        }
+    ]
+
+    # 2. Tenant alfa has 0 drift (ruleTextTags excluded & google.mitre.* case-insensitive)
+    alfa_deltas, _, _ = compare.compare_rules(mock_client, rules_dir, "alfa")
+    assert alfa_deltas["changed"] == {}
+
+    # 3. Tenant bravo has tag-only drift on MultiEventRule + missing NewRule
+    bravo_deltas, _, _ = compare.compare_rules(mock_client, rules_dir, "bravo")
+    assert "NewRule" in bravo_deltas["missing"]
+    assert "MultiEventRule" in bravo_deltas["changed"]
+    assert bravo_deltas["changed"]["MultiEventRule"]["text_changed"] is False
+    assert bravo_deltas["changed"]["MultiEventRule"]["deployment_changed"] is False
+    assert bravo_deltas["changed"]["MultiEventRule"]["tags_changed"] is True
+
+    # 4. deploy_tenant_rules creates NewRule, auto-creates custom tag `soc_tier2`,
+    #    and batches both NewRule and MultiEventRule in a single `rules:modifyRules` call
+    monkeypatch.setattr(
+        common,
+        "chronicle_paginated_request",
+        MagicMock(return_value=[{"name": f"{instance_prefix}/tags/soc_tier1"}]),
+    )
+    captured_requests: list[dict] = []
+
+    def _fake_request(_client, **kwargs):
+        captured_requests.append(kwargs)
+        if kwargs["endpoint_path"] == "rules" and kwargs["method"] == "POST":
+            return {"name": f"{instance_prefix}/rules/{new_rule_id}"}
+        if kwargs["endpoint_path"] == "rules:modifyRules":
+            return {"ruleUpdates": [{"tagsUpdated": True}, {"tagsUpdated": True}]}
+        return {}
+
+    monkeypatch.setattr(common, "chronicle_request", _fake_request)
+    tenant_details = {"gcpProject": "p", "customerId": "i", "region": "eu"}
+    _, had_errors = deploy.deploy_tenant_rules(
+        mock_client, rules_dir, "bravo", tenant_details, env="prod"
+    )
+    assert had_errors is False
+
+    tag_creates = [c for c in captured_requests if c["endpoint_path"] == "tags"]
+    assert len(tag_creates) == 1
+    assert tag_creates[0]["params"] == {"tagId": "soc_tier2"}
+
+    modify_calls = [
+        c for c in captured_requests if c["endpoint_path"] == "rules:modifyRules"
+    ]
+    assert len(modify_calls) == 1
+    assert modify_calls[0]["api_version"] == common.APIVersion.V1ALPHA
+    assert modify_calls[0]["json"] == {
+        "requests": [
+            {
+                "rule": {
+                    "name": f"{instance_prefix}/rules/{new_rule_id}",
+                    "tags": [f"{instance_prefix}/tags/soc_tier2"],
+                },
+                "updateMask": "tags",
+            },
+            {
+                "rule": {
+                    "name": f"{instance_prefix}/rules/{rule_id}",
+                    "tags": [
+                        f"{instance_prefix}/tags/soc_tier2",
+                        f"{instance_prefix}/tags/google.mitre.technique.T1078",
+                    ],
+                },
+                "updateMask": "tags",
+            },
+        ]
+    }
+
+    # 5. Partial failure in `failedRequests` surfaces tenant_errors=True
+    monkeypatch.setattr(
+        common,
+        "chronicle_request",
+        MagicMock(
+            return_value={
+                "name": f"{instance_prefix}/rules/{new_rule_id}",
+                "failedRequests": {"0": {"code": 7, "message": "denied"}},
+            }
+        ),
+    )
+    _, had_errors_fail = deploy.deploy_tenant_rules(
+        mock_client, rules_dir, "bravo", tenant_details, env="prod"
+    )
+    assert had_errors_fail is True
+
+    # 6. pull_rules write_rule_config_file persists API-applied tags (excluding ruleTextTags)
+    pull.write_rule_config_file(
+        rules_dir,
+        "bravo",
+        "MultiEventRule",
+        bravo_deltas["changed"]["MultiEventRule"],
+    )
+    pulled_yaml = yaml.safe_load(
+        (rules_dir / "tenants" / "bravo" / "MultiEventRule.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert pulled_yaml["tags"] == [
+        "soc_tier1",
+        "google.mitre.tactic.ta0011",
+    ]

@@ -147,6 +147,7 @@ def _ensure_optional_pipeline_dependencies() -> None:
         utils_pkg = _new_shim_module("secops.chronicle.utils", is_package=True)
         req_mod = _new_shim_module("secops.chronicle.utils.request_utils")
         req_mod.chronicle_request = MagicMock()  # type: ignore[attr-defined]
+        req_mod.chronicle_paginated_request = MagicMock()  # type: ignore[attr-defined]
 
         sys.modules["secops"] = secops_pkg
         sys.modules["secops.auth"] = auth_mod
@@ -192,6 +193,8 @@ def dac_single_tenant_modules():
         load_module_from_path(
             "data_tables", SINGLE_TENANT_SCRIPTS_DIR / "data_tables.py"
         )
+        load_module_from_path("rule_tags", SINGLE_TENANT_SCRIPTS_DIR / "rule_tags.py")
+        load_module_from_path("rule_tags", SINGLE_TENANT_SCRIPTS_DIR / "rule_tags.py")
         main_mod = load_module_from_path(
             "dac_single_main", SINGLE_TENANT_SCRIPTS_DIR / "main.py"
         )

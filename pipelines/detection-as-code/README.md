@@ -26,16 +26,16 @@ The repository is organized as follows:
 - `rules/`: Directory containing YARA-L rule files (`.yaral`). Each rule is managed as a Terraform resource.
 - `reference_lists/`: Contains text files (`.txt`) with entries for each reference list.
 - `data_tables/`: Contains CSV files providing the content for Google SecOps data tables.
-- `scripts/`: Python scripts for rule verification (`verify-rules`), data table updates (`update-data-tables`), and rule synchronization (`pull-rules`).
-- `secops_rules.yaml`: Configuration file for rule deployment and scheduler settings (`enabled`, `alerting`, `archived`, `run_frequency`, `schedule_customizations`, and optional Data RBAC `scope`).
+- `scripts/`: Python scripts for rule verification (`verify-rules`), rule tag management (`update-rule-tags`), data table updates (`update-data-tables`), and rule synchronization (`pull-rules`).
+- `secops_rules.yaml`: Configuration file for rule deployment, scheduler, and tag settings (`enabled`, `alerting`, `archived`, `run_frequency`, `schedule_customizations`, `tags`, and optional Data RBAC `scope`).
 - `secops_reference_lists.yaml`: Configuration file defining reference lists and their syntax types (STRING, REGEX, CIDR).
 - `secops_data_tables.yaml`: Configuration file defining data table schemas and descriptions.
 - `main.tf`, `variables.tf`, `versions.tf`: Terraform configuration files for infrastructure deployment (requires `hashicorp/google` provider `>= 7.45.0`).
 - `.github/`, `.gitlab-ci.yml`: CI/CD pipeline definitions for GitHub and GitLab.
 
-### Rule Deployment & Scheduler Configuration (`secops_rules.yaml`)
+### Rule Deployment, Scheduler & Tag Configuration (`secops_rules.yaml`)
 
-Each entry in `secops_rules.yaml` maps a YARA-L rule name to its Chronicle `v1` `RuleDeployment` settings:
+Each entry in `secops_rules.yaml` maps a YARA-L rule name to its Chronicle `v1` `RuleDeployment` settings and optional Chronicle `v1alpha` rule `tags` (separate from the YARA-L `meta` section):
 
 ```yaml
 network_traffic_to_specific_country:
@@ -43,6 +43,9 @@ network_traffic_to_specific_country:
   alerting: true
   archived: false
   run_frequency: "LIVE_CUSTOMIZABLE"
+  tags:
+    - "soc_tier1"
+    - "google.mitre.tactic.TA0011"
   schedule_customizations:
     late_arriving_data_adjustment: "300s"
     # ensure_enrichment_completeness: false
@@ -52,6 +55,8 @@ remote_desktop_from_internet_via_audit:
   alerting: true
   archived: false
   run_frequency: "LIVE"
+  tags:
+    - "google.mitre.technique.T1021.001"
 ```
 
 Supported `run_frequency` values:
@@ -64,6 +69,11 @@ Supported `run_frequency` values:
 Optional `schedule_customizations` (supported only when `run_frequency` is `LIVE_CUSTOMIZABLE` or `HOURLY_CUSTOMIZABLE`):
 - `late_arriving_data_adjustment`: Duration string in seconds (e.g., `"300s"`) shifting the rule's evaluation window back to accommodate late-arriving telemetry.
 - `ensure_enrichment_completeness`: Boolean (`true` or `false`) delaying evaluation until asynchronous entity/context enrichment completes.
+
+Optional `tags` (reconciled via Chronicle `v1alpha` `rules:modifyRules` separately from YARA-L `meta` tags):
+- Accepts short custom tag IDs (e.g., `"soc_tier1"` — must start with a letter and contain only letters, digits, and underscores, `< 100` characters), Google-managed tag IDs (e.g., `"google.mitre.tactic.TA0011"`, `"google.mitre.technique.T1021.001"`), or full `projects/{project}/locations/{region}/instances/{instance}/tags/{tag}` resource names.
+- Missing custom `Tag` resources are automatically created via `POST /v1alpha/{parent}/tags` during `python scripts/main.py update-rule-tags` (Google-managed `google.*` tags are never passed to `tags.create`).
+- Tags inferred from the YARA-L `meta` block (`ruleTextTags`) remain read-only in the API and are excluded when `pull-rules` writes `secops_rules.yaml` so `meta` tags are not duplicated.
 
 ### Detection As Code Pipeline design
 
@@ -119,8 +129,12 @@ information/configurations in place (for more precise configuration see the Vari
 > * `chronicle.rules.get`
 > * `chronicle.rules.list`
 > * `chronicle.rules.listRevisions`
+> * `chronicle.rules.modifyRules`
 > * `chronicle.rules.update`
 > * `chronicle.rules.verifyRuleText`
+> * `chronicle.tags.create`
+> * `chronicle.tags.get`
+> * `chronicle.tags.list`
 > * `chronicle.referenceLists.get`
 > * `chronicle.referenceLists.list`
 > * `chronicle.referenceLists.create`
@@ -269,14 +283,26 @@ python scripts/main.py verify-rules --offline
 If you have existing rules in Google SecOps that are not yet in your local repository, or if you want to ensure your local `secops_rules.yaml` configuration is up to date, you can use the `pull-rules` command.
 
 This script will:
-1. Fetch all rules and their `v1` `RuleDeployment` status from Google SecOps.
+1. Fetch all rules (via `v1alpha` `FULL` view, including rule `tags` and `ruleTextTags`) and their `v1` `RuleDeployment` status from Google SecOps.
 2. Create or update `.yaral` files in the `rules/` directory.
-3. Update `secops_rules.yaml` with the current `enabled`, `alerting`, `archived`, `run_frequency`, `schedule_customizations` (`ensure_enrichment_completeness`, `late_arriving_data_adjustment`), and optional `scope` settings (and log warnings if any rule has `executionState` set to `LIMITED` or `PAUSED`).
+3. Update `secops_rules.yaml` with the current `enabled`, `alerting`, `archived`, `run_frequency`, `schedule_customizations` (`ensure_enrichment_completeness`, `late_arriving_data_adjustment`), API-applied `tags` (`tags` minus `ruleTextTags`), and optional `scope` settings (and log warnings if any rule has `executionState` set to `LIMITED` or `PAUSED`).
 4. Output `terraform import` commands to help you bring these rules into your Terraform state.
 
 To synchronize rules:
 ```bash
 python scripts/main.py pull-rules
+```
+
+## Rule Tag Synchronization (`v1alpha`)
+
+Because rule tags are currently exposed exclusively under the Chronicle `v1alpha` Rules API (and not yet supported by `hashicorp/google`'s `google_chronicle_rule` resource), `main.py` provides `update-rule-tags` to reconcile `tags` declared in `secops_rules.yaml` (automatically invoked after `terraform apply` in the included GitHub Actions and GitLab CI pipelines):
+
+```bash
+# Preview custom tag creations and rule tag diffs without modifying SecOps
+python scripts/main.py update-rule-tags --dry-run
+
+# Apply custom tag creations and batch-update rule tags via v1alpha rules:modifyRules
+python scripts/main.py update-rule-tags
 ```
 
 <!-- BEGIN TFDOC -->
@@ -359,6 +385,9 @@ network_traffic_to_specific_country:
   alerting: true
   archived: false
   run_frequency: "LIVE_CUSTOMIZABLE"
+  tags:
+    - "soc_tier1"
+    - "google.mitre.tactic.TA0011"
   schedule_customizations:
     late_arriving_data_adjustment: "300s"
 ```

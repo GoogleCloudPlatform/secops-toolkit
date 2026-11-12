@@ -275,6 +275,22 @@ def test_verify_rules_hard_invalid_frequency_fails_without_strict(
             "archived": True,
             "run_frequency": "LIVE_CUSTOMIZABLE",
         },
+        # Invalid custom tag ID (contains hyphen, which v1alpha tags.create rejects)
+        {
+            "enabled": True,
+            "alerting": True,
+            "archived": False,
+            "run_frequency": "LIVE_CUSTOMIZABLE",
+            "tags": ["invalid-hyphen-tag"],
+        },
+        # Invalid tags type (scalar string instead of YAML list)
+        {
+            "enabled": True,
+            "alerting": True,
+            "archived": False,
+            "run_frequency": "LIVE_CUSTOMIZABLE",
+            "tags": "soc_tier1",
+        },
     ],
 )
 def test_verify_rules_offline_rejects_invalid_yaml_configs(
@@ -296,4 +312,231 @@ def test_verify_rules_offline_rejects_invalid_yaml_configs(
     verify_fn = inspect.unwrap(main_mod.verify_rules.callback)
     with pytest.raises(SystemExit) as exc_info:
         verify_fn(ctx, strict=False, offline=True)
+    assert exc_info.value.code == 1
+
+
+def test_pull_rules_extracts_api_tags_excluding_rule_text_tags(
+    dac_single_tenant_modules, tmp_path, monkeypatch
+):
+    """pull-rules persists API-applied tags while filtering out YARA-L meta ruleTextTags."""
+    config_mod, main_mod = dac_single_tenant_modules
+    _rules_dir, rules_yaml = _configure_temp_paths(config_mod, tmp_path)
+
+    monkeypatch.setenv("SECOPS_PROJECT_ID", "123456789012")
+    monkeypatch.setenv("SECOPS_REGION", "eu")
+    monkeypatch.setenv("SECOPS_CUSTOMER_ID", "00000000-0000-0000-0000-000000000001")
+
+    rule_id = "ru_00000000-1111-2222-3333-444444444444"
+    instance_prefix = (
+        "projects/123456789012/locations/eu/"
+        "instances/00000000-0000-0000-0000-000000000001"
+    )
+
+    mock_client = MagicMock()
+
+    # Simulate live v1alpha split: FULL populates text + ruleTextTags (omitting tags),
+    # while CONFIG_ONLY populates tags (omitting ruleTextTags).
+    def _mock_list_rules(*, view="FULL", api_version=None, as_list=False):
+        assert api_version == main_mod.APIVersion.V1ALPHA
+        assert as_list is True
+        if view == "FULL":
+            return [
+                {
+                    "name": f"{instance_prefix}/rules/{rule_id}",
+                    "text": MULTI_EVENT_RULE_TEXT,
+                    "ruleTextTags": [
+                        f"{instance_prefix}/tags/google.mitre.tactic.TA0001",
+                    ],
+                }
+            ]
+        if view == "CONFIG_ONLY":
+            return [
+                {
+                    "name": f"{instance_prefix}/rules/{rule_id}",
+                    "tags": [
+                        f"{instance_prefix}/tags/google.mitre.tactic.ta0001",
+                        f"{instance_prefix}/tags/soc_tier1",
+                        f"{instance_prefix}/tags/google.mitre.tactic.ta0011",
+                    ],
+                }
+            ]
+        raise AssertionError(f"Unexpected view: {view}")
+
+    mock_client.list_rules.side_effect = _mock_list_rules
+    mock_client.list_rule_deployments.return_value = {
+        "ruleDeployments": [
+            {
+                "name": f"{instance_prefix}/rules/{rule_id}/deployment",
+                "enabled": True,
+                "alerting": False,
+                "runFrequency": "LIVE_CUSTOMIZABLE",
+            }
+        ]
+    }
+
+    ctx = main_mod.AppContext()
+    ctx.chronicle_client = mock_client
+    inspect.unwrap(main_mod.pull_rules.callback)(ctx)
+
+    assert mock_client.list_rules.call_count == 2
+    loaded_cfg = yaml.safe_load(rules_yaml.read_text(encoding="utf-8"))
+    assert loaded_cfg["network_traffic_to_specific_country"]["tags"] == [
+        "soc_tier1",
+        "google.mitre.tactic.ta0011",
+    ]
+
+
+def test_update_rule_tags_auto_creates_custom_tags_and_batches_modify_rules(
+    dac_single_tenant_modules, tmp_path, monkeypatch
+):
+    """update-rule-tags handles dry-run, auto-creates custom tags, batches modifyRules, and checks failedRequests."""
+    import sys as _sys
+
+    config_mod, main_mod = dac_single_tenant_modules
+    rule_tags_mod = _sys.modules["rule_tags"]
+    _rules_dir, rules_yaml = _configure_temp_paths(config_mod, tmp_path)
+
+    monkeypatch.setenv("SECOPS_PROJECT_ID", "123456789012")
+    monkeypatch.setenv("SECOPS_REGION", "eu")
+    monkeypatch.setenv("SECOPS_CUSTOMER_ID", "00000000-0000-0000-0000-000000000001")
+
+    instance_prefix = (
+        "projects/123456789012/locations/eu/"
+        "instances/00000000-0000-0000-0000-000000000001"
+    )
+    rule_1_id = "ru_00000000-1111-2222-3333-444444444444"
+    rule_2_id = "ru_00000000-1111-2222-3333-555555555555"
+
+    mock_client = MagicMock()
+    mock_client.instance_id = instance_prefix
+    mock_client.list_rules.return_value = [
+        {
+            "name": f"{instance_prefix}/rules/{rule_1_id}",
+            "displayName": "network_traffic_to_specific_country",
+            "tags": [f"{instance_prefix}/tags/existing_tag"],
+            "ruleTextTags": [],
+        },
+        {
+            "name": f"{instance_prefix}/rules/{rule_2_id}",
+            "displayName": "single_event_ssh_login",
+            "tags": [f"{instance_prefix}/tags/stale_tag"],
+            "ruleTextTags": [],
+        },
+    ]
+
+    monkeypatch.setattr(
+        rule_tags_mod,
+        "chronicle_paginated_request",
+        MagicMock(return_value=[{"name": f"{instance_prefix}/tags/existing_tag"}]),
+    )
+
+    api_calls: list[dict] = []
+
+    def _fake_request(_client, **kwargs):
+        api_calls.append(kwargs)
+        if kwargs["endpoint_path"] == "rules:modifyRules":
+            return {"ruleUpdates": [{"tagsUpdated": True}, {"tagsUpdated": True}]}
+        return {"name": f"{instance_prefix}/tags/{kwargs['params']['tagId']}"}
+
+    monkeypatch.setattr(rule_tags_mod, "chronicle_request", _fake_request)
+
+    # 1. Dry-run succeeds even if a brand-new PR rule does not exist in SecOps yet, with zero POST calls
+    rules_yaml.write_text(
+        yaml.safe_dump(
+            {
+                "network_traffic_to_specific_country": {
+                    "enabled": True,
+                    "tags": [
+                        "existing_tag",
+                        "new_custom_tag",
+                        "google.mitre.tactic.TA0011",
+                    ],
+                },
+                "brand_new_pr_rule": {
+                    "enabled": True,
+                    "tags": ["new_custom_tag"],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    ctx = main_mod.AppContext()
+    ctx.chronicle_client = mock_client
+    update_fn = inspect.unwrap(main_mod.update_rule_tags.callback)
+
+    update_fn(ctx, dry_run=True)
+    assert api_calls == []
+
+    # 2. Apply mode auto-creates only `new_custom_tag` (skipping `existing_tag` and `google.*`)
+    #    and clears `stale_tag` on `single_event_ssh_login` (which omits `tags` in YAML)
+    rules_yaml.write_text(
+        yaml.safe_dump(
+            {
+                "network_traffic_to_specific_country": {
+                    "enabled": True,
+                    "tags": [
+                        "existing_tag",
+                        "new_custom_tag",
+                        "google.mitre.tactic.TA0011",
+                    ],
+                },
+                "single_event_ssh_login": {
+                    "enabled": True,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    update_fn(ctx, dry_run=False)
+    assert len(api_calls) == 2
+
+    tag_create_call = api_calls[0]
+    assert tag_create_call["method"] == "POST"
+    assert tag_create_call["endpoint_path"] == "tags"
+    assert tag_create_call["api_version"] == main_mod.APIVersion.V1ALPHA
+    assert tag_create_call["params"] == {"tagId": "new_custom_tag"}
+    assert tag_create_call["json"] == {"displayName": "new_custom_tag"}
+
+    modify_call = api_calls[1]
+    assert modify_call["method"] == "POST"
+    assert modify_call["endpoint_path"] == "rules:modifyRules"
+    assert modify_call["api_version"] == main_mod.APIVersion.V1ALPHA
+    assert modify_call["json"] == {
+        "requests": [
+            {
+                "rule": {
+                    "name": f"{instance_prefix}/rules/{rule_1_id}",
+                    "tags": [
+                        f"{instance_prefix}/tags/existing_tag",
+                        f"{instance_prefix}/tags/new_custom_tag",
+                        f"{instance_prefix}/tags/google.mitre.tactic.TA0011",
+                    ],
+                },
+                "updateMask": "tags",
+            },
+            {
+                "rule": {
+                    "name": f"{instance_prefix}/rules/{rule_2_id}",
+                    "tags": [],
+                },
+                "updateMask": "tags",
+            },
+        ]
+    }
+
+    # 3. Partial batch failure in `failedRequests` exits 1 instead of silently succeeding
+    monkeypatch.setattr(
+        rule_tags_mod,
+        "chronicle_request",
+        MagicMock(
+            return_value={
+                "failedRequests": {
+                    "0": {"code": 7, "message": "permission denied"},
+                }
+            }
+        ),
+    )
+    with pytest.raises(SystemExit) as exc_info:
+        update_fn(ctx, dry_run=False)
     assert exc_info.value.code == 1

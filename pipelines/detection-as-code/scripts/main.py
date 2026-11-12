@@ -23,6 +23,13 @@ import click
 import config
 import ruamel.yaml
 from data_tables import DataTables
+from rule_tags import (
+    RuleTagsError,
+    extract_api_rule_tags,
+    list_customer_rules_with_tags,
+    sync_rule_tags,
+    validate_rule_tags,
+)
 from secops import SecOpsClient
 from secops.chronicle.models import APIVersion
 from secops.chronicle.utils.request_utils import chronicle_request
@@ -157,6 +164,49 @@ def update_data_tables(ctx: AppContext):
 
 
 @cli.command()
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="Preview custom tag creations and rule tag updates without modifying SecOps.",
+)
+@pass_context
+def update_rule_tags(ctx: AppContext, dry_run: bool):
+    """Synchronize SecOps rule tags from secops_rules.yaml via Chronicle v1alpha."""
+    chronicle_client = ctx.get_chronicle_client()
+    customer_id = os.getenv("SECOPS_CUSTOMER_ID") or config.CUSTOMER_ID
+    project_id = os.getenv("SECOPS_PROJECT_ID") or config.PROJECT_ID
+    region = os.getenv("SECOPS_REGION") or config.REGION
+
+    client_instance_id = getattr(chronicle_client, "instance_id", "")
+    instance_id = (
+        client_instance_id
+        if isinstance(client_instance_id, str)
+        and client_instance_id.startswith("projects/")
+        else f"projects/{project_id}/locations/{region}/instances/{customer_id}"
+    )
+
+    rules_config: dict[str, Any] = {}
+    if config.SECOPS_RULES_CONFIG_PATH.is_file():
+        with open(config.SECOPS_RULES_CONFIG_PATH, "r", encoding="utf-8") as f:
+            rules_config = ruamel_yaml.load(f) or {}
+
+    try:
+        sync_rule_tags(
+            chronicle_client,
+            rules_config,
+            instance_id=instance_id,
+            dry_run=dry_run,
+        )
+    except (RuleTagsError, ValueError, TypeError) as exc:
+        _LOGGER.error("Failed to synchronize rule tags: %s", exc)
+        sys.exit(1)
+    except Exception:
+        _LOGGER.exception("Unexpected error synchronizing rule tags")
+        sys.exit(1)
+
+
+@cli.command()
 @pass_context
 def pull_rules(ctx: AppContext):
     """Pull all rules from SecOps and populate local files."""
@@ -167,7 +217,7 @@ def pull_rules(ctx: AppContext):
 
     _LOGGER.info("Fetching rules from SecOps...")
     try:
-        rules_data = chronicle_client.list_rules().get("rules", [])
+        rules_data = list_customer_rules_with_tags(chronicle_client)
         _LOGGER.info("Retrieved %d rules.", len(rules_data))
 
         deployments_data = chronicle_client.list_rule_deployments().get(
@@ -195,7 +245,11 @@ def pull_rules(ctx: AppContext):
         import_commands = []
 
         for rule in rules_data:
+            if rule.get("ruleOwner") == "GOOGLE":
+                continue
             rule_id = _extract_rule_id_from_resource_name(rule.get("name", ""))
+            if rule_id.startswith("ur_"):
+                continue
             rule_text = rule.get("text", "")
 
             # Extract rule name from text
@@ -243,6 +297,12 @@ def pull_rules(ctx: AppContext):
                 entry["scope"] = scope_resource.split("/")[-1]
             else:
                 entry.pop("scope", None)
+
+            api_tags = extract_api_rule_tags(rule)
+            if api_tags:
+                entry["tags"] = api_tags
+            else:
+                entry.pop("tags", None)
 
             exec_state = dep.get("executionState")
             if exec_state in {"LIMITED", "PAUSED"}:
@@ -434,6 +494,9 @@ def _validate_rule_deployment_config(
                 "'late_arriving_data_adjustment' must be a duration string in seconds "
                 f"ending with 's' (e.g., '300s'), got {late_adj!r}."
             )
+
+    if "tags" in rule_cfg:
+        validate_rule_tags(rule_name, rule_cfg.get("tags"), strict=strict)
 
 
 def _validate_rule_file(file_rule_name: str, rule_text: str):

@@ -44,6 +44,7 @@ stages:
 - gcp-auth
 - verify-rules
 - tf-plan-apply
+- update-rule-tags
 
 cache:
   - key: gcp-auth
@@ -85,6 +86,7 @@ verify-rules:
   script:
     - pip install --no-cache-dir -r scripts/requirements.txt
     - GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_CREDENTIALS python scripts/main.py verify-rules
+    - GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_CREDENTIALS python scripts/main.py update-rule-tags --dry-run
 
 tf-plan-apply:
   stage: tf-plan-apply
@@ -106,3 +108,16 @@ tf-plan-apply:
     GITLAB_TOKEN:
       aud:
         - # TODO replace with audience
+
+update-rule-tags:
+  image:
+    name: python:3.12-slim
+  stage: update-rule-tags
+  dependencies:
+    - gcp-auth
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+  before_script: []
+  script:
+    - pip install --no-cache-dir -r scripts/requirements.txt
+    - GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_CREDENTIALS python scripts/main.py update-rule-tags

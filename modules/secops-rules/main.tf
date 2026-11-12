@@ -42,6 +42,10 @@ locals {
         ? tostring(local._raw_rule_deployments[k].scope)
         : "${local.secops_parent}/dataAccessScopes/${local._raw_rule_deployments[k].scope}"
       ) : tostring(null)
+      tags = try(local._raw_rule_deployments[k].tags, null) != null ? try(
+        [for t in local._raw_rule_deployments[k].tags : tostring(t)],
+        ["__INVALID_TAGS_TYPE__"]
+      ) : null
       schedule_customizations = try(local._raw_rule_deployments[k].schedule_customizations, null) != null ? {
         ensure_enrichment_completeness = try(
           tobool(local._raw_rule_deployments[k].schedule_customizations.ensure_enrichment_completeness),
@@ -88,6 +92,13 @@ resource "google_chronicle_rule" "default" {
     precondition {
       condition     = contains(keys(local.secops_rules), each.key)
       error_message = "Rule '${each.key}' is defined in rules configuration, but '${each.key}.yaral' does not exist in '${local._secops_rules_path}'."
+    }
+    precondition {
+      condition = each.value.tags == null || alltrue([
+        for tag in coalesce(each.value.tags, []) :
+        can(regex("^(projects/[^/]+/locations/[^/]+/instances/[^/]+/tags/)?([a-zA-Z][a-zA-Z0-9_]{0,98}|google\\.[a-zA-Z0-9][a-zA-Z0-9._-]*)$", tag))
+      ])
+      error_message = "Rule '${each.key}': 'tags' must be a list of valid custom tag IDs, Google-managed 'google.*' tag IDs, or full 'projects/.../tags/...' resource names."
     }
   }
 }

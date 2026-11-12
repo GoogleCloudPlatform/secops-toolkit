@@ -134,7 +134,7 @@ secops-detection-as-code-multitenant/
   rule ExternalLoginAttempt_Linux {
   ```
 - **Rule Text Format (`.yaral`)**: The YARA-L 2.0 text of the rule.
-- **Companion Deployment Configuration (`.yaml`, optional)**: Each rule may define a companion `<RuleName>.yaml` file controlling Chronicle `v1` `RuleDeployment` state, run schedule, and scheduler customizations:
+- **Companion Deployment Configuration (`.yaml`, optional)**: Each rule may define a companion `<RuleName>.yaml` file controlling Chronicle `v1` `RuleDeployment` state, run schedule, scheduler customizations, and Chronicle `v1alpha` rule `tags` (separate from the YARA-L `meta` section):
   ```yaml
   enabled: true
   alerting: true
@@ -142,6 +142,10 @@ secops-detection-as-code-multitenant/
   run_frequency: "LIVE_CUSTOMIZABLE"  # LIVE | LIVE_CUSTOMIZABLE | HOURLY_CUSTOMIZABLE | DAILY
   # Optional Data RBAC scope:
   # scope: "projects/<project>/locations/<region>/instances/<id>/dataAccessScopes/<scope>"
+  # Optional rule tags (reconciled via v1alpha rules:modifyRules separately from YARA-L meta tags):
+  tags:
+    - "soc_tier1"
+    - "google.mitre.tactic.TA0001"
   # Optional scheduler customizations (valid only for LIVE_CUSTOMIZABLE or HOURLY_CUSTOMIZABLE):
   schedule_customizations:
     ensure_enrichment_completeness: false
@@ -153,6 +157,10 @@ secops-detection-as-code-multitenant/
     - `HOURLY_CUSTOMIZABLE`: Customizable hourly schedule for multi-event rules with a `match:` window `<= 2d`.
     - `DAILY`: Daily schedule for multi-event rules with a `match:` window `> 2d`.
     - *(Legacy `HOURLY` is deprecated by Google SecOps in favor of `HOURLY_CUSTOMIZABLE`; tools emit a migration warning unless `--strict` is specified).*
+  - **Rule `tags` (`v1alpha` Rules API)**:
+    - Accepts short custom tag IDs (e.g., `"soc_tier1"` — starts with a letter, letters/numbers/underscores only, `< 100` characters), Google-managed tag IDs (e.g., `"google.mitre.tactic.TA0001"`, `"google.mitre.technique.T1078"`), or full `projects/{project}/locations/{region}/instances/{instance}/tags/{tag}` resource names.
+    - Missing custom `Tag` resources are automatically created per tenant via `POST /v1alpha/{parent}/tags` during `deploy_rules.py` before batch-applying rule tag updates via `POST /v1alpha/{parent}/rules:modifyRules` (requires IAM permissions `chronicle.rules.modifyRules`, `chronicle.tags.create`, `chronicle.tags.get`, and `chronicle.tags.list`).
+    - Tags defined in the YARA-L `meta` block (`ruleTextTags`) remain read-only in the API and are automatically excluded when `compare_rules.py` and `pull_rules.py` evaluate API-applied `tags`. Omitting `tags` from `<RuleName>.yaml` leaves existing remote tags untouched, while `tags: []` clears API-applied tags.
   - **Resolution Precedence**: When evaluating a rule for `<tenant_id>`, the pipeline resolves `rules/tenants/<tenant_id>/<RuleName>.yaml` first, falls back to `rules/shared/<RuleName>.yaml`, and if neither file exists, manages only the YARA-L rule text (preserving full backward compatibility).
 - **Customization Pattern**: Onboarding tenants (e.g., `alfa`) symlink to the shared `.yaral` and `.yaml` files. A tenant can decouple its `.yaml` independently of `.yaral` (e.g., to disable alerting or adjust `late_arriving_data_adjustment` while keeping shared rule logic), or decouple both when custom YARA-L exclusions are required (e.g., `bravo`).
 
