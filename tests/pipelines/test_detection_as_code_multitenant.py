@@ -28,7 +28,7 @@ SAMPLE_MULTI_RULE = """rule MultiEventRule {
   match:
     $ip over 30m
   condition:
-    $e
+    #e > 1
 }
 """
 
@@ -149,6 +149,33 @@ def test_compare_rules_detects_schedule_customization_drift(
     changed_rule = bravo_deltas["changed"]["MultiEventRule"]
     assert changed_rule["text_changed"] is False
     assert changed_rule["deployment_changed"] is True
+
+    # Protobuf3 default omission: local `ensure_enrichment_completeness: false` matches
+    # Chronicle v1 response omitting `ensureEnrichmentCompleteness` -> 0 changed
+    (rules_dir / "shared" / "MultiEventRule.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "enabled": True,
+                "alerting": True,
+                "archived": False,
+                "run_frequency": "LIVE_CUSTOMIZABLE",
+                "schedule_customizations": {
+                    "ensure_enrichment_completeness": False,
+                    "late_arriving_data_adjustment": "300.0s",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    alfa_deltas_false, _, _ = compare.compare_rules(mock_client, rules_dir, "alfa")
+    assert alfa_deltas_false["changed"] == {}
+
+    # Conversely, if remote has ensureEnrichmentCompleteness=True while local has False -> drift detected
+    mock_client.list_rule_deployments.return_value[0]["scheduleCustomizations"][
+        "ensureEnrichmentCompleteness"
+    ] = True
+    alfa_deltas_drift, _, _ = compare.compare_rules(mock_client, rules_dir, "alfa")
+    assert "MultiEventRule" in alfa_deltas_drift["changed"]
 
 
 def test_deploy_rules_sends_run_frequency_mask_and_sequences_archive(

@@ -171,7 +171,7 @@ secops-detection-as-code-multitenant/
 
 ### 3. Data Tables
 - **Location**: `tables/shared/` and `tables/tenants/<tenant_id>/`
-- **Automatic Rule Discovery**: When YARA-L rules use the `%table_name` syntax, the pipeline automatically detects the dependency and verifies the table in SecOps.
+- **Automatic Rule Discovery**: When YARA-L rules reference Data Table columns using the `%table_name.<column>` syntax (for example, `not $e.principal.ip in cidr %ip_private_addresses.main`), the pipeline automatically detects the dependency and verifies the table in SecOps.
 - **Schema Definition (`tables/shared/<table_name>.yaml`)**:
   ```yaml
   description: >

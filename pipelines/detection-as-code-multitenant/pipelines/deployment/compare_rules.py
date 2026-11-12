@@ -111,8 +111,12 @@ def has_deployment_drift(repo_cfg: dict[str, Any], secops_rule: Rule) -> bool:
     ):
         return True
     if "schedule_customizations" in repo_cfg or "run_frequency" in repo_cfg:
-        repo_sc = repo_cfg.get("schedule_customizations") or None
-        remote_sc = secops_rule.get("schedule_customizations") or None
+        repo_sc = deployment_common.normalize_schedule_customizations(
+            repo_cfg.get("schedule_customizations")
+        )
+        remote_sc = deployment_common.normalize_schedule_customizations(
+            secops_rule.get("schedule_customizations")
+        )
         if repo_sc != remote_sc:
             return True
 

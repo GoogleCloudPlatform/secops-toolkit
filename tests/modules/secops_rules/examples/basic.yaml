@@ -63,7 +63,7 @@ values:
       \ = array_distinct($network.target.process.parent_process.product_specific_process_id)\n\
       \  $principal_user_userid = array_distinct($network.principal.user.userid)\n\
       \  $target_user_userid = array_distinct($network.target.user.userid)\n\ncondition:\n\
-      \  $network\n}\n# tftest-file id=rule path=data/rules/network_traffic_to_specific_country.yaral\n"
+      \  #network > 1\n}\n# tftest-file id=rule path=data/rules/network_traffic_to_specific_country.yaral\n"
     timeouts: null
   module.secops.google_chronicle_rule_deployment.default["network_traffic_to_specific_country"]:
     alerting: true

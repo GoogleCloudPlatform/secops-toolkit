@@ -98,7 +98,7 @@ outcome:
   $target_user_userid = array_distinct($network.target.user.userid)
 
 condition:
-  $network
+  #network > 1
 }
 # tftest-file id=rule path=data/rules/network_traffic_to_specific_country.yaral
 ```
@@ -198,7 +198,7 @@ outcome:
   $target_user_userid = array_distinct($network.target.user.userid)
 
 condition:
-  $network
+  #network > 1
 }
 # tftest-file id=rule path=data/rules/network_traffic_to_specific_country.yaral
 ```

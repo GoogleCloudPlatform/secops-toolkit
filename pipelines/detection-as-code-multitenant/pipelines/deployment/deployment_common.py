@@ -180,6 +180,48 @@ def schedule_customizations_api_to_yaml(
     return result or None
 
 
+def _normalize_duration_seconds(value: str) -> str | None:
+    """Normalize a duration string in seconds to canonical Protobuf JSON format, or None if 0s."""
+    raw = value.strip()
+    if not DURATION_PATTERN.match(raw):
+        return raw
+    num_str = raw[:-1]
+    if "." in num_str:
+        int_part, frac_part = num_str.split(".", 1)
+        frac_part = frac_part.rstrip("0")
+        int_val = int(int_part)
+        if int_val == 0 and not frac_part:
+            return None
+        return f"{int_val}.{frac_part}s" if frac_part else f"{int_val}s"
+    int_val = int(num_str)
+    return None if int_val == 0 else f"{int_val}s"
+
+
+def normalize_schedule_customizations(
+    customizations: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """
+    Canonicalize schedule_customizations for drift comparison against Chronicle v1.
+
+    Chronicle v1 uses Protobuf3 JSON serialization, omitting default values such as
+    `ensureEnrichmentCompleteness: false` and zero-duration adjustments (`0s`).
+    """
+    if not isinstance(customizations, dict) or not customizations:
+        return None
+
+    result: dict[str, Any] = {}
+    if customizations.get("ensure_enrichment_completeness") is True:
+        result["ensure_enrichment_completeness"] = True
+
+    late_adj = customizations.get("late_arriving_data_adjustment")
+    if isinstance(late_adj, str) and late_adj.strip():
+        normalized_dur = _normalize_duration_seconds(late_adj)
+        if normalized_dur is not None:
+            result["late_arriving_data_adjustment"] = normalized_dur
+
+    return result or None
+
+
 def schedule_customizations_yaml_to_api(
     yaml_customizations: dict[str, Any] | None,
 ) -> dict[str, Any] | None:

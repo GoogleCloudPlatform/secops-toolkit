@@ -348,7 +348,7 @@ rule network_traffic_to_specific_country {
     $target_user_userid = array_distinct($network.target.user.userid)
 
   condition:
-    $network
+    #network > 1
 }
 ```
 

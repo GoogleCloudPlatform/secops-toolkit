@@ -38,17 +38,25 @@ locals {
   secops_parent         = "projects/${var.secops_project_id}/locations/${var.secops_region}/instances/${var.secops_customer_id}"
   _raw_rule_deployments = yamldecode(file(var.secops_content_config.rules))
   secops_rule_deployment = {
-    for k, v in coalesce(local._raw_rule_deployments, {}) : k => {
-      enabled       = try(v.enabled, true)
-      alerting      = try(v.alerting, false)
-      archived      = try(v.archived, false)
-      run_frequency = try(v.run_frequency, null)
-      scope = try(v.scope, null) != null ? (
-        startswith(v.scope, "projects/") ? v.scope : "${local.secops_parent}/dataAccessScopes/${v.scope}"
-      ) : null
-      schedule_customizations = try(v.schedule_customizations, null) != null ? {
-        ensure_enrichment_completeness = try(v.schedule_customizations.ensure_enrichment_completeness, null)
-        late_arriving_data_adjustment  = try(v.schedule_customizations.late_arriving_data_adjustment, null)
+    for k in try(keys(local._raw_rule_deployments), []) : k => {
+      enabled       = tobool(try(local._raw_rule_deployments[k].enabled, true))
+      alerting      = tobool(try(local._raw_rule_deployments[k].alerting, false))
+      archived      = tobool(try(local._raw_rule_deployments[k].archived, false))
+      run_frequency = try(tostring(local._raw_rule_deployments[k].run_frequency), tostring(null))
+      scope = try(local._raw_rule_deployments[k].scope, null) != null ? (
+        startswith(local._raw_rule_deployments[k].scope, "projects/")
+        ? tostring(local._raw_rule_deployments[k].scope)
+        : "${local.secops_parent}/dataAccessScopes/${local._raw_rule_deployments[k].scope}"
+      ) : tostring(null)
+      schedule_customizations = try(local._raw_rule_deployments[k].schedule_customizations, null) != null ? {
+        ensure_enrichment_completeness = try(
+          tobool(local._raw_rule_deployments[k].schedule_customizations.ensure_enrichment_completeness),
+          tobool(null)
+        )
+        late_arriving_data_adjustment = try(
+          tostring(local._raw_rule_deployments[k].schedule_customizations.late_arriving_data_adjustment),
+          tostring(null)
+        )
       } : null
     }
   }

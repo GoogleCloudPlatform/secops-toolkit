@@ -30,7 +30,7 @@ MULTI_EVENT_RULE_TEXT = """rule network_traffic_to_specific_country {
   match:
     $ip over 30m
   condition:
-    $e
+    #e > 1
 }
 """
 
