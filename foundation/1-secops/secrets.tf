@@ -23,7 +23,10 @@ module "secops-tenant-secrets" {
         locations = [var.regions.primary]
         versions = {
           latest = {
-            enabled = true, data = google_apikeys_key.feed_api_key[0].key_string
+            enabled = true
+            data = {
+              value = google_apikeys_key.feed_api_key[0].key_string
+            }
           }
         }
       }
@@ -32,7 +35,10 @@ module "secops-tenant-secrets" {
         locations = [var.regions.primary]
         versions = {
           latest = {
-            enabled = true, data = google_service_account_key.workspace_integration_key[0].private_key
+            enabled = true
+            data = {
+              value = google_service_account_key.workspace_integration_key[0].private_key
+            }
           }
         }
       }

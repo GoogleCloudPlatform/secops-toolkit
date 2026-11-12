@@ -59,7 +59,7 @@ values:
     values:
     - null
     verify: false
-    version: 1.36.0
+    version: 1.36.1
     wait: true
     wait_for_jobs: false
   module.addresses.google_compute_address.internal["ingress"]:
@@ -368,7 +368,7 @@ values:
         psc_config:
         - allowed_consumer_projects:
           - tmp-test
-          network_attachment_uri: ''
+          network_attachment_uri: null
           psc_auto_connections: []
           psc_enabled: true
         server_ca_pool: null

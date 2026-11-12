@@ -167,9 +167,8 @@ def _parse(body, enum=VAR_ENUM, re=VAR_RE, template=VAR_TEMPLATE):
             if item and data.startswith("tfdoc:"):
                 k, v = data.split(" ", 1)
                 item["tags"][k[6:]] = v
-        elif token == enum.TXT:
-            if context and context != enum.SKIP:
-                item[context].append(data)
+        elif token == enum.TXT and context and context != enum.SKIP:
+            item[context].append(data)
 
 
 def create_toc(readme, skip=None):
