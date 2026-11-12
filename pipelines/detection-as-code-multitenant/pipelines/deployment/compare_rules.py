@@ -16,16 +16,18 @@
 
 # PYTHON_ARGCOMPLETE_OK
 """
-YARA-L Rules Comparison and Drift Detection for Google SecOps.
+YARA-L Rules & Deployment Configuration Comparison for Google SecOps.
 
-This script compares local YARA-L rule files (*.yaral) in `rules/tenants/<tenant>/`
-against active, non-archived rules deployed in Google SecOps (Chronicle) tenants.
+This script compares local YARA-L rule files (*.yaral) and optional companion
+deployment configurations (*.yaml) in `rules/tenants/<tenant>/` (with inheritance
+from `rules/shared/`) against active, non-archived rules in Google SecOps tenants.
 
 Deltas identified:
-- missing: Rules defined locally in the repository but absent from SecOps.
-- changed: Rules present in both environments whose text differs (evaluated via
-  whitespace-insensitive token comparison; diffs can be viewed using --debug).
-- extra: Rules deployed in SecOps that do not exist in the local repository.
+- missing: Non-archived rules defined locally in the repository but absent from SecOps.
+- changed: Rules present in both environments whose YARA-L text or configured YAML
+  deployment settings (`enabled`, `alerting`, `archived`, `run_frequency`,
+  `schedule_customizations`, `scope`) differ.
+- extra: Active rules deployed in SecOps that do not exist in the local repository.
 
 Output:
 - Summarizes missing, changed, and extra rule counts per tenant to stdout.
@@ -38,10 +40,11 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import argcomplete
 import deployment_common
+import yaml
 from secops.chronicle.client import ChronicleClient
 from secops.exceptions import APIError
 
@@ -52,13 +55,72 @@ class Rule(TypedDict, total=False):
     text: str
     live: bool
     alerting: bool
-    frequency: str
+    archived: bool
+    frequency: str | None
+    schedule_customizations: dict[str, Any] | None
+    scope: str | None
+    execution_state: str | None
+    config: dict[str, Any]
+    text_changed: bool
+    deployment_changed: bool
 
 
 class Deltas(TypedDict):
     missing: dict[str, Rule]
     changed: dict[str, Rule]
     extra: dict[str, Rule]
+
+
+def build_remote_config_dict(secops_rule: Rule) -> dict[str, Any]:
+    """Convert a fetched SecOps Rule dict into its canonical YAML config dict."""
+    cfg: dict[str, Any] = {
+        "enabled": secops_rule.get("live", False),
+        "alerting": secops_rule.get("alerting", False),
+        "archived": secops_rule.get("archived", False),
+    }
+    if secops_rule.get("frequency"):
+        cfg["run_frequency"] = secops_rule["frequency"]
+    if secops_rule.get("scope"):
+        cfg["scope"] = secops_rule["scope"]
+    if secops_rule.get("schedule_customizations"):
+        cfg["schedule_customizations"] = secops_rule["schedule_customizations"]
+    return cfg
+
+
+def has_deployment_drift(repo_cfg: dict[str, Any], secops_rule: Rule) -> bool:
+    """Return True if any deployment field configured in repo_cfg differs from SecOps."""
+    if not repo_cfg:
+        return False
+
+    if "enabled" in repo_cfg and repo_cfg["enabled"] != secops_rule.get("live", False):
+        return True
+    if "alerting" in repo_cfg and repo_cfg["alerting"] != secops_rule.get(
+        "alerting", False
+    ):
+        return True
+    if "archived" in repo_cfg and repo_cfg["archived"] != secops_rule.get(
+        "archived", False
+    ):
+        return True
+    if "scope" in repo_cfg:
+        repo_scope = deployment_common.extract_scope_id(repo_cfg.get("scope"))
+        if repo_scope != secops_rule.get("scope"):
+            return True
+    if "run_frequency" in repo_cfg and repo_cfg["run_frequency"] != secops_rule.get(
+        "frequency"
+    ):
+        return True
+    if "schedule_customizations" in repo_cfg or "run_frequency" in repo_cfg:
+        repo_sc = deployment_common.normalize_schedule_customizations(
+            repo_cfg.get("schedule_customizations")
+        )
+        remote_sc = deployment_common.normalize_schedule_customizations(
+            secops_rule.get("schedule_customizations")
+        )
+        if repo_sc != remote_sc:
+            return True
+
+    return False
 
 
 def fetch_rules_from_tenant(chronicle_client: ChronicleClient) -> dict[str, Rule]:
@@ -71,6 +133,7 @@ def fetch_rules_from_tenant(chronicle_client: ChronicleClient) -> dict[str, Rule
     secops_rules = {
         deployment_common.get_rule_id_from_location(rule["name"]): rule
         for rule in secops_rules_list
+        if rule.get("name")
     }
 
     try:
@@ -84,15 +147,27 @@ def fetch_rules_from_tenant(chronicle_client: ChronicleClient) -> dict[str, Rule
 
     secops_active_rules: dict[str, Rule] = {}
     for deployment in secops_rules_deployments:
-        rule_id = deployment["name"].split("/")[7]
-        rule = secops_rules[rule_id]
+        rule_id = deployment_common.get_rule_id_from_location(
+            deployment.get("name", "")
+        )
+        rule = secops_rules.get(rule_id)
+        if not rule:
+            continue
         secops_active_rules[rule["displayName"]] = {
             "id": rule_id,
-            "version": rule["revisionId"],
-            "text": rule["text"],
+            "version": rule.get("revisionId", ""),
+            "text": rule.get("text", ""),
             "live": deployment.get("enabled", False),
             "alerting": deployment.get("alerting", False),
-            "frequency": deployment["runFrequency"],
+            "archived": deployment.get("archived", False),
+            "frequency": deployment.get("runFrequency"),
+            "schedule_customizations": (
+                deployment_common.schedule_customizations_api_to_yaml(
+                    deployment.get("scheduleCustomizations")
+                )
+            ),
+            "scope": deployment_common.extract_scope_id(rule.get("scope")),
+            "execution_state": deployment.get("executionState"),
         }
 
     return secops_active_rules
@@ -109,46 +184,82 @@ def compare_rules(chronicle_client: ChronicleClient, rules_path: Path, tenant: s
     if not rules_dir_tenant.exists() or not rules_dir_tenant.is_dir():
         raise OSError(f"Directory not found for tenant '{tenant}': {rules_dir_tenant}")
 
-    repo_rules: dict[str, Rule] = {
-        p.stem: {"text": p.read_text()} for p in rules_dir_tenant.glob("*.yaral")
-    }
+    repo_rules: dict[str, Rule] = {}
+    for p in sorted(rules_dir_tenant.glob("*.yaral")):
+        rule_cfg = deployment_common.load_repo_rule_config(rules_path, tenant, p.stem)
+        repo_rules[p.stem] = {
+            "text": p.read_text(encoding="utf-8"),
+            "config": rule_cfg,
+        }
+
     secops_rules = fetch_rules_from_tenant(chronicle_client)
 
     all_repo_rule_names = set(repo_rules.keys())
     all_secops_rule_names = set(secops_rules.keys())
 
-    # Rules in repo but not in SecOps
+    # Rules in repo but not active in SecOps (skip rules marked archived: true locally)
     rules_missing_from_secops = all_repo_rule_names - all_secops_rule_names
     for rule_name in sorted(rules_missing_from_secops):
-        deltas["missing"][rule_name] = {}
+        repo_cfg = repo_rules[rule_name].get("config") or {}
+        if repo_cfg.get("archived", False):
+            continue
+        deltas["missing"][rule_name] = {"config": repo_cfg} if repo_cfg else {}
         if deployment_common.verbose:
             print(f"Missing in SecOps, present in repo: {rule_name}")
 
-    # Rules in both, check for differences
+    # Rules in both, check for text or YAML deployment differences
     rules_in_both = all_repo_rule_names.intersection(all_secops_rule_names)
     for rule_name in sorted(rules_in_both):
-        secops_text = secops_rules[rule_name]["text"]
+        secops_rule = secops_rules[rule_name]
+        secops_text = secops_rule["text"]
         repo_text = repo_rules[rule_name]["text"]
+        repo_cfg = repo_rules[rule_name].get("config") or {}
 
         # Approximate whitespace-insensitive diff by splitting lines by
         # whitespace and comparing tokens.
         repo_tokens = [line.split() for line in repo_text.splitlines()]
         secops_tokens = [line.split() for line in secops_text.splitlines()]
 
-        if repo_tokens != secops_tokens:
-            deltas["changed"][rule_name] = secops_rules[rule_name]
+        text_changed = repo_tokens != secops_tokens
+        deployment_changed = has_deployment_drift(repo_cfg, secops_rule)
+
+        if text_changed or deployment_changed:
+            changed_entry: Rule = dict(secops_rule)
+            changed_entry["text_changed"] = text_changed
+            changed_entry["deployment_changed"] = deployment_changed
+            deltas["changed"][rule_name] = changed_entry
+
             if deployment_common.verbose:
+                reasons = []
+                if text_changed:
+                    reasons.append("text")
+                if deployment_changed:
+                    reasons.append("deployment")
                 print(
-                    f"Different between SecOps and repo: {rule_name} ({secops_rules[rule_name]['id']})"
+                    f"Different between SecOps and repo ({', '.join(reasons)}): "
+                    f"{rule_name} ({secops_rule['id']})"
                 )
             if deployment_common.debug:
-                diff = difflib.unified_diff(
-                    secops_text.splitlines(keepends=True),
-                    repo_text.splitlines(keepends=True),
-                    fromfile=f"{rule_name} (SecOps)",
-                    tofile=f"{rule_name}.yaral (repository)",
-                )
-                sys.stdout.writelines(diff)
+                if text_changed:
+                    diff = difflib.unified_diff(
+                        secops_text.splitlines(keepends=True),
+                        repo_text.splitlines(keepends=True),
+                        fromfile=f"{rule_name} (SecOps)",
+                        tofile=f"{rule_name}.yaral (repository)",
+                    )
+                    sys.stdout.writelines(diff)
+                if deployment_changed:
+                    remote_yaml = yaml.safe_dump(
+                        build_remote_config_dict(secops_rule), sort_keys=False
+                    )
+                    local_yaml = yaml.safe_dump(repo_cfg, sort_keys=False)
+                    cfg_diff = difflib.unified_diff(
+                        remote_yaml.splitlines(keepends=True),
+                        local_yaml.splitlines(keepends=True),
+                        fromfile=f"{rule_name} deployment (SecOps)",
+                        tofile=f"{rule_name}.yaml (repository)",
+                    )
+                    sys.stdout.writelines(cfg_diff)
 
     # Rules in SecOps but not in repo
     rules_missing_from_repo = all_secops_rule_names - all_repo_rule_names
@@ -166,7 +277,7 @@ def compare_rules(chronicle_client: ChronicleClient, rules_path: Path, tenant: s
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Compare local YARA-L rules with SecOps"
+        description="Compare local YARA-L rules and YAML deployment configs with SecOps"
     )
     deployment_common.add_standard_arguments(parser)
     parser.add_argument(
@@ -184,8 +295,8 @@ if __name__ == "__main__":
     for tenant_name in sorted(selected_tenants_names):
         if (
             not all_tenants
-            or not env in all_tenants
-            or not tenant_name in all_tenants[env]
+            or env not in all_tenants
+            or tenant_name not in all_tenants[env]
         ):
             print(
                 f"Error: Tenant info not found for tenant {tenant_name} in environment {env}"
@@ -211,5 +322,5 @@ if __name__ == "__main__":
         deltas[tenant_name] = tenant_deltas
 
     if args.deltas_file:
-        with open(args.deltas_file, "w") as deltas_file:
+        with open(args.deltas_file, "w", encoding="utf-8") as deltas_file:
             json.dump(deltas, deltas_file, indent=4)

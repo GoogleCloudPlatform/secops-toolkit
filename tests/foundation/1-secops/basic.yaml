@@ -1937,6 +1937,7 @@ values:
     location: europe
     project: test-project
     run_frequency: LIVE
+    schedule_customizations: []
     timeouts: null
   module.secops-tenant-secrets.google_secret_manager_secret.default["secops-feeds-api-key"]:
     annotations: null

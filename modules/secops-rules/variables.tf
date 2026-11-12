@@ -44,17 +44,52 @@ variable "reference_lists_config" {
 variable "rules_config" {
   description = "SecOps Detection rules configuration."
   type = map(object({
-    enabled  = optional(bool, true)
-    alerting = optional(bool, false)
-    archived = optional(bool, false)
-    run_frequency : optional(string)
+    enabled       = optional(bool, true)
+    alerting      = optional(bool, false)
+    archived      = optional(bool, false)
+    run_frequency = optional(string)
+    scope         = optional(string)
+    schedule_customizations = optional(object({
+      ensure_enrichment_completeness = optional(bool)
+      late_arriving_data_adjustment  = optional(string)
+    }))
   }))
   default = {}
   validation {
     condition = alltrue([
-      for config in var.rules_config : contains(["LIVE", "HOURLY", "DAILY"], config.run_frequency)
+      for config in var.rules_config : config.run_frequency == null || contains([
+        "LIVE",
+        "HOURLY",
+        "DAILY",
+        "LIVE_CUSTOMIZABLE",
+        "HOURLY_CUSTOMIZABLE",
+      ], config.run_frequency)
     ])
-    error_message = "The 'run_frequency' attribute for each rule must be one of: LIVE, HOURLY, DAILY."
+    error_message = "The 'run_frequency' attribute for each rule must be null or one of: LIVE, HOURLY, DAILY, LIVE_CUSTOMIZABLE, HOURLY_CUSTOMIZABLE."
+  }
+  validation {
+    condition = alltrue([
+      for config in var.rules_config : config.schedule_customizations == null || contains([
+        "LIVE_CUSTOMIZABLE",
+        "HOURLY_CUSTOMIZABLE",
+      ], coalesce(config.run_frequency, "NONE"))
+    ])
+    error_message = "The 'schedule_customizations' attribute is only valid when 'run_frequency' is LIVE_CUSTOMIZABLE or HOURLY_CUSTOMIZABLE."
+  }
+  validation {
+    condition = alltrue([
+      for config in var.rules_config : (
+        try(config.schedule_customizations.late_arriving_data_adjustment, null) == null ||
+        can(regex("^\\d+(\\.\\d{1,9})?s$", config.schedule_customizations.late_arriving_data_adjustment))
+      )
+    ])
+    error_message = "The 'late_arriving_data_adjustment' attribute must be a valid duration in seconds ending with 's' (e.g., '300s' or '3.5s')."
+  }
+  validation {
+    condition = alltrue([
+      for config in var.rules_config : !config.archived || !config.enabled
+    ])
+    error_message = "Rules with 'archived = true' must also set 'enabled = false'."
   }
 }
 

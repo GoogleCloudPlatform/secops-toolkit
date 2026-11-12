@@ -45,13 +45,17 @@ Create `tenants.json` with your tenants information:
 
 You can specify multiple environments, in addition to the default `prod` one.
 
-### 4. Compare & Simulate Deployment (YARA-L rules only)
-Inspect detection drift against SecOps and simulate deployment safely:
+### 4. Compare, Verify & Simulate Deployment (YARA-L rules & deployment configs)
+Inspect detection and deployment schedule drift against SecOps, verify rules via `verifyRuleText`, and simulate deployment safely:
 ```bash
-# Compare local YARA-L rules against SecOps (--debug shows full rule text diffs between your repo and your SecOps instance)
+# Compare local YARA-L rules and companion YAML deployment configs against SecOps
+# (--debug shows full rule text and schedule customization diffs)
 ./pipelines/deployment/compare_rules.py --tenant=alfa --debug
 
-# Simulate deployment without applying changes
+# Verify YARA-L syntax and allowed run frequencies against Chronicle verifyRuleText
+./pipelines/deployment/verify_rules.py --tenant=alfa
+
+# Simulate deployment (rules, schedules, and archive state) without applying changes
 ./pipelines/deployment/deploy_rules.py --tenant=alfa --dry-run
 ```
 
@@ -63,8 +67,8 @@ Tenants are categorized into two stages based on Git release tags:
 
 | Stage | Definition | YARA-L Rule Structure | Curated Detections | Deployment Policy |
 | :--- | :--- | :--- | :--- | :--- |
-| **`build`** | Tenants currently in onboarding, testing, or tuning. | Symbolic links (`ln -s`) pointing to `rules/shared/`. | Symbolic links (`ln -s`) pointing to `curated/shared/`. | Deployed on commits to the development branch (`dev`). |
-| **`live`** | Stabilized production tenants handed over to operations. | May be decoupled into standalone `.yaral` files. | Symbolic links (`ln -s`) pointing to `curated/shared/`. | Deployed on commits to the production branch (`prod`). |
+| **`build`** | Tenants currently in onboarding, testing, or tuning. | Symbolic links (`ln -s`) pointing to `rules/shared/` (`.yaral` and optional `.yaml`). | Symbolic links (`ln -s`) pointing to `curated/shared/`. | Deployed on commits to the development branch (`dev`). |
+| **`live`** | Stabilized production tenants handed over to operations. | May be decoupled into standalone `.yaral` and `.yaml` files. | Symbolic links (`ln -s`) pointing to `curated/shared/`. | Deployed on commits to the production branch (`prod`). |
 
 ### Determining Live Status
 A tenant is classified as **`live`** if the repository contains a Git tag matching:
@@ -76,9 +80,9 @@ A tenant is classified as **`live`** if the repository contains a Git tag matchi
 *Example:* `alfa-golive` or `bravo-handover-20250101`. Any tenant without a matching tag is treated as being in the **`build`** stage.
 
 ### Optional Live Tenant Rule Decoupling
-Some organizations require that tenants in the `live` stage decouple their custom YARA-L rules from `rules/shared/` into independent standalone files to prevent accidental upstream updates from impacting production environments.
+Some organizations require that tenants in the `live` stage decouple their custom YARA-L rules and companion YAML deployment configurations from `rules/shared/` into independent standalone files to prevent accidental upstream updates from impacting production environments.
 
-This check is **optional** and controlled by the `DAC_ENFORCE_LIVE_DECOUPLING` environment variable or the `--enforce` flag on `pipelines/code-quality/check_live_tenants.py`. When enabled, the script verifies that no symbolic links exist in `rules/tenants/<live_tenant>/`.
+This check is **optional** and controlled by the `DAC_ENFORCE_LIVE_DECOUPLING` environment variable or the `--enforce` flag on `pipelines/code-quality/check_live_tenants.py`. When enabled, the script verifies that no symbolic links (`.yaral` or `.yaml`) exist in `rules/tenants/<live_tenant>/`.
 
 > **Note on Curated Detections**: Because curated detections represent Google-managed threat intelligence rulesets, they cannot be modified or decoupled per tenant. Consequently, curated detections are **always symbolic links** pointing to `curated/shared/` for all tenants across all lifecycle stages.
 
@@ -96,12 +100,13 @@ secops-detection-as-code-multitenant/
 │       ├── alfa/                         # Symlinked to shared/
 │       └── ...
 │
-├── rules/                                # YARA-L 2.0 Detection Rules
-│   ├── shared/                           # Base rules shared across tenants
-│   │   └── ExternalLoginAttempt_Linux.yaral
+├── rules/                                # YARA-L 2.0 Detection Rules & Deployment Configs
+│   ├── shared/                           # Base rules and schedules shared across tenants
+│   │   ├── ExternalLoginAttempt_Linux.yaral
+│   │   └── ExternalLoginAttempt_Linux.yaml
 │   └── tenants/                          # Tenant-specific rule directories
 │       ├── alfa/                         # Symlinked to shared/ (build stage)
-│       └── bravo/                        # Standalone decoupled rule with custom exclusions (live stage)
+│       └── bravo/                        # Standalone decoupled rule & schedule (live stage)
 │
 ├── tables/                               # Data Tables (Context & Reference Lists)
 │   ├── shared/                           # Shared table schemas & default values (.yaml)
@@ -121,15 +126,35 @@ secops-detection-as-code-multitenant/
 
 ## Detection Components
 
-### 1. YARA-L Rules
+### 1. YARA-L Rules & Companion Deployment Configurations
 - **Location**: `rules/shared/` and `rules/tenants/<tenant_id>/`
 - **Naming Rule**: The base filename must match the rule name inside the file:
   ```
   // File: rules/shared/ExternalLoginAttempt_Linux.yaral
   rule ExternalLoginAttempt_Linux {
   ```
-- **File Format**: The YARA-L text of the rule.
-- **Customization Pattern**: Onboarding tenants (e.g., `alfa`) symlink to the shared rule. When a tenant needs specific filtering (e.g., `bravo`), the symlink can be replaced with a standalone file containing custom logic.
+- **Rule Text Format (`.yaral`)**: The YARA-L 2.0 text of the rule.
+- **Companion Deployment Configuration (`.yaml`, optional)**: Each rule may define a companion `<RuleName>.yaml` file controlling Chronicle `v1` `RuleDeployment` state, run schedule, and scheduler customizations:
+  ```yaml
+  enabled: true
+  alerting: true
+  archived: false
+  run_frequency: "LIVE_CUSTOMIZABLE"  # LIVE | LIVE_CUSTOMIZABLE | HOURLY_CUSTOMIZABLE | DAILY
+  # Optional Data RBAC scope:
+  # scope: "projects/<project>/locations/<region>/instances/<id>/dataAccessScopes/<scope>"
+  # Optional scheduler customizations (valid only for LIVE_CUSTOMIZABLE or HOURLY_CUSTOMIZABLE):
+  schedule_customizations:
+    ensure_enrichment_completeness: false
+    late_arriving_data_adjustment: "300s"
+  ```
+  - **Supported `run_frequency` values**:
+    - `LIVE`: Near-real-time schedule for single-event rules (no `match:` window).
+    - `LIVE_CUSTOMIZABLE`: Customizable high-frequency schedule (every ~10 minutes) for multi-event rules with a `match:` window `< 1h`.
+    - `HOURLY_CUSTOMIZABLE`: Customizable hourly schedule for multi-event rules with a `match:` window `<= 2d`.
+    - `DAILY`: Daily schedule for multi-event rules with a `match:` window `> 2d`.
+    - *(Legacy `HOURLY` is deprecated by Google SecOps in favor of `HOURLY_CUSTOMIZABLE`; tools emit a migration warning unless `--strict` is specified).*
+  - **Resolution Precedence**: When evaluating a rule for `<tenant_id>`, the pipeline resolves `rules/tenants/<tenant_id>/<RuleName>.yaml` first, falls back to `rules/shared/<RuleName>.yaml`, and if neither file exists, manages only the YARA-L rule text (preserving full backward compatibility).
+- **Customization Pattern**: Onboarding tenants (e.g., `alfa`) symlink to the shared `.yaral` and `.yaml` files. A tenant can decouple its `.yaml` independently of `.yaral` (e.g., to disable alerting or adjust `late_arriving_data_adjustment` while keeping shared rule logic), or decouple both when custom YARA-L exclusions are required (e.g., `bravo`).
 
 ### 2. Curated Detection Rule Sets
 - **Location**: `curated/shared/` and `curated/tenants/<tenant_id>/`
@@ -146,7 +171,7 @@ secops-detection-as-code-multitenant/
 
 ### 3. Data Tables
 - **Location**: `tables/shared/` and `tables/tenants/<tenant_id>/`
-- **Automatic Rule Discovery**: When YARA-L rules use the `%table_name` syntax, the pipeline automatically detects the dependency and verifies the table in SecOps.
+- **Automatic Rule Discovery**: When YARA-L rules reference Data Table columns using the `%table_name.<column>` syntax (for example, `not $e.principal.ip in cidr %ip_private_addresses.main`), the pipeline automatically detects the dependency and verifies the table in SecOps.
 - **Schema Definition (`tables/shared/<table_name>.yaml`)**:
   ```yaml
   description: >
@@ -223,7 +248,8 @@ Configure default paths and settings through environment variables:
 | `DAC_CURATED_DIR` | Path to local curated detection definitions | `./curated` |
 | `DAC_TABLES_DIR` | Path to local Data Table definitions | `./tables` |
 | `DAC_IMPERSONATE_SA` | Service account email to impersonate | `None` |
-| `DAC_ENFORCE_LIVE_DECOUPLING` | When set to `true`, enforces that live tenants have no symlinked YARA-L rules | `""` (disabled) |
+| `DAC_ENFORCE_LIVE_DECOUPLING` | When set to `true`, enforces that live tenants have no symlinked YARA-L or YAML rule files | `""` (disabled) |
+| `DAC_STRICT_RULE_CONFIGS` | When set to `true`, treats legacy/deprecated schedule warnings in `check_rule_configs.py` as errors | `""` (disabled) |
 | `DAC_RULES_DELTAS_FILE` | Destination path for YARA-L comparison deltas | `""` |
 | `DAC_CURATED_DELTAS_FILE` | Destination path for curated comparison deltas | `""` |
 | `DAC_TABLES_DELTAS_FILE` | Destination path for tables comparison deltas | `""` |
@@ -238,7 +264,7 @@ All deployment and comparison scripts accept standardized arguments:
 - `-v, --verbose`: Display detailed per-action logs.
 - `-d, --debug`: Show deep diffs (line diffs for rules and tables).
 
-### Code Quality & Linting
+### Code Quality, Linting & Rule Verification
 Run pre-deployment quality checks locally or in CI:
 ```bash
 # 1. Verify filenames match YARA-L rule names
@@ -247,20 +273,28 @@ pipelines/code-quality/check_rule_names.py
 # 2. Check for broken or dangling symbolic links
 pipelines/code-quality/check_dangling_symlinks.sh
 
-# 3. Optional: Verify that live tenants do not contain symlinked YARA-L rules
+# 3. Validate companion <RuleName>.yaml deployment & schedule customization files offline
+pipelines/code-quality/check_rule_configs.py
+
+# 4. Optional: Verify that live tenants do not contain symlinked YARA-L or YAML rule files
 pipelines/code-quality/check_live_tenants.py --enforce
 # or via environment variable:
 DAC_ENFORCE_LIVE_DECOUPLING=true pipelines/code-quality/check_live_tenants.py
+
+# 5. Remote compiler & schedule verification via Chronicle v1alpha verifyRuleText
+#    (emits warnings on legacy coerced frequencies by default; pass --strict to fail)
+pipelines/deployment/verify_rules.py --env=prod --stage=build
+pipelines/deployment/verify_rules.py --env=prod --tenant=alfa --strict
 ```
 
 ### Drift Detection & Comparison
 Compare local Git repository state against live Google SecOps tenants without making changes:
 
 ```bash
-# Compare YARA-L rules for all tenants in the 'build' stage
+# Compare YARA-L rules and companion YAML deployment configs for 'build' tenants
 pipelines/deployment/compare_rules.py --env=prod --stage=build
 
-# Compare rules for a specific tenant with full unified line diffs
+# Compare rules and schedule customizations for a specific tenant with full diffs
 pipelines/deployment/compare_rules.py --env=prod --tenant=bravo --debug
 
 # Compare curated rule sets and export deltas to JSON
@@ -274,10 +308,10 @@ pipelines/deployment/compare_tables.py --env=prod --tenant=bravo --verbose
 Apply repository detection state directly to Google SecOps:
 
 ```bash
-# Dry-run: simulate YARA-L rule deployment without making changes
+# Dry-run: simulate YARA-L rule & schedule deployment without making changes
 pipelines/deployment/deploy_rules.py --env=prod --stage=build --dry-run
 
-# Deploy YARA-L rules to live tenants (safely preserving extra rules in SecOps)
+# Deploy YARA-L rules & schedules to live tenants (safely preserving extra rules in SecOps)
 pipelines/deployment/deploy_rules.py --env=prod --stage=live --skip-extras
 
 # Deploy curated detection rule sets
@@ -291,11 +325,17 @@ pipelines/deployment/deploy_tables.py --env=prod --stage=live
 ```
 
 ### Reverse Synchronization (Pulling)
-Pull active rules, curated rule sets, or tables from Google SecOps back into the Git repository (useful when reverse-engineering an existing tenant or reconciling console changes):
+Pull active rules, schedules, curated rule sets, or tables from Google SecOps back into the Git repository (useful when reverse-engineering an existing tenant or reconciling console changes):
 
 ```bash
-# Pull remote YARA-L rules for a tenant into rules/tenants/<tenant>/
+# Pull remote YARA-L rules and companion <RuleName>.yaml configs (including schedule_customizations)
 pipelines/deployment/pull_rules.py --env=prod --tenant=alfa
+
+# Pull remote YARA-L rules only (skip writing companion .yaml files)
+pipelines/deployment/pull_rules.py --env=prod --tenant=alfa --no-configs
+
+# Pull rules and write tenant .yaml files even when deployment settings match rules/shared/
+pipelines/deployment/pull_rules.py --env=prod --tenant=alfa --sync-all-configs
 
 # Pull active curated detections into curated/tenants/<tenant>/
 pipelines/deployment/pull_curated.py --env=prod --tenant=alfa
@@ -319,11 +359,12 @@ This script reads existing Reference Lists referenced by rules, converts types (
    ```bash
    mkdir -p rules/tenants/charlie curated/tenants/charlie tables/tenants/charlie
    ```
-3. Link standard rules and curated detections from shared baselines:
+3. Link standard rules, companion schedules, and curated detections from shared baselines:
    ```bash
-   # Link shared YARA-L rules
+   # Link shared YARA-L rules and companion deployment YAML configs
    cd rules/tenants/charlie
    ln -s ../../shared/ExternalLoginAttempt_Linux.yaral .
+   ln -s ../../shared/ExternalLoginAttempt_Linux.yaml .
    cd -
 
    # Link desired curated detections
@@ -335,6 +376,7 @@ This script reads existing Reference Lists referenced by rules, converts types (
    ```bash
    pipelines/code-quality/check_dangling_symlinks.sh
    pipelines/code-quality/check_rule_names.py
+   pipelines/code-quality/check_rule_configs.py
    ```
 5. Deploy to the build stage:
    ```bash
@@ -342,14 +384,17 @@ This script reads existing Reference Lists referenced by rules, converts types (
    pipelines/deployment/deploy_curated.py --env=prod --tenant=charlie
    ```
 
-### Step 2: Customizing Rules for a Tenant
-If tenant `charlie` requires a custom exclusion:
-1. Replace the YARA-L symlink with an independent file:
+### Step 2: Customizing Rules or Schedules for a Tenant
+If tenant `charlie` requires a custom YARA-L exclusion or a tenant-specific schedule (for example, adjusting `late_arriving_data_adjustment` or disabling alerting):
+1. Replace the `.yaral` and/or `.yaml` symlink with an independent file:
    ```bash
    rm rules/tenants/charlie/ExternalLoginAttempt_Linux.yaral
    cp rules/shared/ExternalLoginAttempt_Linux.yaral rules/tenants/charlie/
+   # Optional: decouple the deployment schedule independently
+   rm rules/tenants/charlie/ExternalLoginAttempt_Linux.yaml
+   cp rules/shared/ExternalLoginAttempt_Linux.yaml rules/tenants/charlie/
    ```
-2. Modify `rules/tenants/charlie/ExternalLoginAttempt_Linux.yaral` with the custom logic.
+2. Modify `rules/tenants/charlie/ExternalLoginAttempt_Linux.yaral` or `ExternalLoginAttempt_Linux.yaml`.
 3. Commit and deploy.
 
 *(Note: Curated detections cannot be edited; they remain symlinks to `curated/shared/`)*.
@@ -359,9 +404,9 @@ If tenant `charlie` requires a custom exclusion:
    ```bash
    git tag charlie-golive
    ```
-2. *(Optional — if rule decoupling is enforced in your organization)* Decouple remaining YARA-L symlinks into standalone files:
+2. *(Optional — if rule decoupling is enforced in your organization)* Decouple remaining YARA-L and companion YAML symlinks into standalone files:
    ```bash
-   for f in rules/tenants/charlie/*.yaral; do
+   for f in rules/tenants/charlie/*.yaral rules/tenants/charlie/*.yaml; do
      if [ -L "$f" ]; then
        cp --remove-destination "$(readlink -f "$f")" "$f"
      fi

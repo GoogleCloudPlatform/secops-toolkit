@@ -85,12 +85,13 @@ def check_live(enforce: bool = False):
     for tenant_id in sorted(get_live_tenant_ids()):
         tenant_dir = rules_path / "tenants" / tenant_id
         if tenant_dir.is_dir():
-            for yaral_file in tenant_dir.glob("*.yaral"):
-                if yaral_file.is_symlink():
-                    print(
-                        f"Symlink in tenant not in BUILD phase: {tenant_id}/{yaral_file.name}"
-                    )
-                    issues_count += 1
+            for pattern in ("*.yaral", "*.yaml"):
+                for rule_file in sorted(tenant_dir.glob(pattern)):
+                    if rule_file.is_symlink():
+                        print(
+                            f"Symlink in tenant not in BUILD phase: {tenant_id}/{rule_file.name}"
+                        )
+                        issues_count += 1
 
     if issues_count == 0:
         print("All live tenants have no symlink")

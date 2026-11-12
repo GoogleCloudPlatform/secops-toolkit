@@ -42,6 +42,7 @@ variables:
 
 stages:
 - gcp-auth
+- verify-rules
 - tf-plan-apply
 
 cache:
@@ -71,6 +72,19 @@ gcp-auth:
         --credential-source-file=token.txt
     - gcloud config set auth/credential_file_override $GOOGLE_CREDENTIALS
     - gcloud auth login --update-adc --cred-file=$GOOGLE_CREDENTIALS
+
+verify-rules:
+  image:
+    name: python:3.12-slim
+  stage: verify-rules
+  dependencies:
+    - gcp-auth
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  before_script: []
+  script:
+    - pip install --no-cache-dir -r scripts/requirements.txt
+    - GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_CREDENTIALS python scripts/main.py verify-rules
 
 tf-plan-apply:
   stage: tf-plan-apply

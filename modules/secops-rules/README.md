@@ -4,6 +4,7 @@ This module allows creation and management of [custom rules](https://cloud.googl
 
 - rule definition (yaral code) and reference list entries are managed as files in data folder as per the `factories_config` variable and sample code
 - rule and reference list deployments can leverage both `rules_config` and `reference_lists_config` variables or YAML file still specified in the `factories_config` variable.
+- supports Google SecOps `v1` `RuleDeployment` scheduler options (`LIVE`, `LIVE_CUSTOMIZABLE`, `HOURLY_CUSTOMIZABLE`, `DAILY`, and legacy `HOURLY`) as well as `schedule_customizations` (`ensure_enrichment_completeness` and `late_arriving_data_adjustment`, valid for `LIVE_CUSTOMIZABLE` and `HOURLY_CUSTOMIZABLE` schedules) and Data RBAC `scope`.
 
 <p align="center">
   <img src="images/diagram.png" alt="SecOPs Tenant">
@@ -37,7 +38,10 @@ module "secops" {
       enabled       = true
       alerting      = true
       archived      = false
-      run_frequency = "LIVE"
+      run_frequency = "LIVE_CUSTOMIZABLE"
+      schedule_customizations = {
+        late_arriving_data_adjustment = "300s"
+      }
     }
   }
   factories_config = {
@@ -94,7 +98,7 @@ outcome:
   $target_user_userid = array_distinct($network.target.user.userid)
 
 condition:
-  $network
+  #network > 1
 }
 # tftest-file id=rule path=data/rules/network_traffic_to_specific_country.yaral
 ```
@@ -134,7 +138,10 @@ network_traffic_to_specific_country:
   enabled: true
   alerting: true
   archived: false
-  run_frequency: "DAILY"
+  run_frequency: "HOURLY_CUSTOMIZABLE"
+  schedule_customizations:
+    ensure_enrichment_completeness: true
+    late_arriving_data_adjustment: "300s"
 # tftest-file id=1 path=secops_rules.yaml
 ```
 
@@ -191,7 +198,7 @@ outcome:
   $target_user_userid = array_distinct($network.target.user.userid)
 
 condition:
-  $network
+  #network > 1
 }
 # tftest-file id=rule path=data/rules/network_traffic_to_specific_country.yaral
 ```
@@ -211,8 +218,8 @@ fe80::/10
 
 | name | description | type | required | default |
 |---|---|:---:|:---:|:---:|
-| [secops_config](variables.tf#L61) | SecOps configuration. | <code title="object&#40;&#123;&#10;  customer_id &#61; string&#10;  project     &#61; string&#10;  region      &#61; string&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> | ✓ |  |
+| [secops_config](variables.tf#L96) | SecOps configuration. | <code title="object&#40;&#123;&#10;  customer_id &#61; string&#10;  project     &#61; string&#10;  region      &#61; string&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> | ✓ |  |
 | [factories_config](variables.tf#L17) | Paths to  YAML config expected in 'rules' and 'reference_lists'. Path to folders containing rules definitions (yaral files) and reference lists content (txt files) for the corresponding _defs keys. | <code title="object&#40;&#123;&#10;  rules                &#61; optional&#40;string&#41;&#10;  rules_defs           &#61; optional&#40;string, &#34;data&#47;rules&#34;&#41;&#10;  reference_lists      &#61; optional&#40;string&#41;&#10;  reference_lists_defs &#61; optional&#40;string, &#34;data&#47;reference_lists&#34;&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>&#123;&#125;</code> |
 | [reference_lists_config](variables.tf#L29) | SecOps Reference lists configuration. | <code title="map&#40;object&#40;&#123;&#10;  description &#61; string&#10;  type        &#61; string&#10;&#125;&#41;&#41;">map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
-| [rules_config](variables.tf#L44) | SecOps Detection rules configuration. | <code title="map&#40;object&#40;&#123;&#10;  enabled  &#61; optional&#40;bool, true&#41;&#10;  alerting &#61; optional&#40;bool, false&#41;&#10;  archived &#61; optional&#40;bool, false&#41;&#10;  run_frequency : optional&#40;string&#41;&#10;&#125;&#41;&#41;">map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
+| [rules_config](variables.tf#L44) | SecOps Detection rules configuration. | <code title="map&#40;object&#40;&#123;&#10;  enabled       &#61; optional&#40;bool, true&#41;&#10;  alerting      &#61; optional&#40;bool, false&#41;&#10;  archived      &#61; optional&#40;bool, false&#41;&#10;  run_frequency &#61; optional&#40;string&#41;&#10;  scope         &#61; optional&#40;string&#41;&#10;  schedule_customizations &#61; optional&#40;object&#40;&#123;&#10;    ensure_enrichment_completeness &#61; optional&#40;bool&#41;&#10;    late_arriving_data_adjustment  &#61; optional&#40;string&#41;&#10;  &#125;&#41;&#41;&#10;&#125;&#41;&#41;">map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
 <!-- END TFDOC -->

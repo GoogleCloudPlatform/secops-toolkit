@@ -30,7 +30,7 @@ env:
   SERVICE_ACCOUNT: # TODO replace with WIF SA
   WIF_PROVIDER: projects/XXXXXXXXX/locations/global/workloadIdentityPools/xxxxxxxx/providers/xxxxxx #TODO replace with wif provider
   SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-  TF_VERSION: 1.6.5
+  TF_VERSION: 1.12.2
 
 jobs:
   secops-pr:

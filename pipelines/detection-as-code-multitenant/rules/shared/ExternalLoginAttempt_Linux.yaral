@@ -30,7 +30,7 @@ rule ExternalLoginAttempt_Linux {
     net.ip_in_range_cidr($e.principal.ip, "0.0.0.0/0")
 
     // Exclude private sources
-    not $e.principal.ip in cidr %ip_private_addresses
+    not $e.principal.ip in cidr %ip_private_addresses.main
     // Exclude IAP sources for Google Cloud workloads
     not net.ip_in_range_cidr($e.principal.ip, "35.235.240.0/20")
 

@@ -23,13 +23,17 @@ load_dotenv()
 
 # --- Configuration ---
 # Environment variables are checked first.
-def get_env_variable(name: str, default: str | None = None) -> str:
-    """Get an environment variable or raise an error if it's not set."""
+def get_env_variable(
+    name: str, default: str | None = None, required: bool = False
+) -> str:
+    """Get an environment variable or optionally raise an error if not set."""
     value = os.getenv(name)
     if not value:
-        if default:
+        if default is not None:
             return default
-        raise ValueError(f"Environment variable {name} not set.")
+        if required:
+            raise ValueError(f"Environment variable {name} not set.")
+        return ""
     return value
 
 
