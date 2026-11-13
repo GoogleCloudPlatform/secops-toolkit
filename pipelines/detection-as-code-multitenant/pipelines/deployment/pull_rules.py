@@ -119,8 +119,9 @@ if __name__ == "__main__":
                 if rule_file.is_symlink():
                     rule_file.unlink()
                 rule_file.write_text(secops_rule_details["text"], encoding="utf-8")
-            if not args.no_configs and secops_rule_details.get(
-                "deployment_changed", False
+            if not args.no_configs and (
+                secops_rule_details.get("deployment_changed", False)
+                or secops_rule_details.get("tags_changed", False)
             ):
                 write_rule_config_file(
                     rules_path, tenant_name, rule_name, secops_rule_details

@@ -92,6 +92,13 @@ jobs:
         run: cd scripts && python main.py verify-rules
         shell: bash
 
+      - id: dry-run-rule-tags
+        if: github.event.pull_request.merged != true && success()
+        name: Preview rule tag changes (dry-run)
+        continue-on-error: true
+        run: cd scripts && python main.py update-rule-tags --dry-run
+        shell: bash
+
       - id: tf-setup
         name: Set up Terraform
         uses: hashicorp/setup-terraform@v4.0.1
@@ -123,6 +130,13 @@ jobs:
         continue-on-error: true
         run: |
           terraform apply -input=false -auto-approve -no-color ../plan.out
+
+      - id: update-rule-tags
+        if: github.event.pull_request.merged == true && steps.tf-apply.outcome == 'success'
+        name: Synchronize v1alpha rule tags
+        continue-on-error: true
+        run: cd scripts && python main.py update-rule-tags
+        shell: bash
 
       # PR comment with Terraform result from previous steps
       # length is checked and trimmed for length so as to stay within the limit
@@ -219,4 +233,14 @@ jobs:
       - id: check-apply
         name: Check apply failure
         if: github.event.pull_request.merged == true && steps.tf-apply.outcome != 'success'
+        run: exit 1
+
+      - id: check-dry-run-rule-tags
+        name: Check rule tags dry-run failure
+        if: github.event.pull_request.merged != true && steps.dry-run-rule-tags.outcome != 'success'
+        run: exit 1
+
+      - id: check-update-rule-tags
+        name: Check rule tags update failure
+        if: github.event.pull_request.merged == true && steps.update-rule-tags.outcome != 'success'
         run: exit 1

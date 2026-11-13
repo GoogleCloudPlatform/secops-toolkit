@@ -17,6 +17,9 @@ network_traffic_to_specific_country:
   alerting: true
   archived: false
   run_frequency: "LIVE_CUSTOMIZABLE"
+  tags:
+    - "soc_tier1"
+    - "google.mitre.tactic.TA0011"
   schedule_customizations:
     late_arriving_data_adjustment: "300s"
 remote_desktop_from_internet_via_audit:
@@ -24,3 +27,5 @@ remote_desktop_from_internet_via_audit:
   alerting: true
   archived: false
   run_frequency: "LIVE"
+  tags:
+    - "google.mitre.technique.T1021.001"

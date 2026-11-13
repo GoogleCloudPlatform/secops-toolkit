@@ -16,4 +16,7 @@ enabled: true
 alerting: true
 archived: false
 run_frequency: "LIVE"
+tags:
+  - "soc_tier1"
+  - "google.mitre.technique.T1078"
 

@@ -59,10 +59,13 @@ class Rule(TypedDict, total=False):
     frequency: str | None
     schedule_customizations: dict[str, Any] | None
     scope: str | None
+    tags: list[str]
+    rule_text_tags: list[str]
     execution_state: str | None
     config: dict[str, Any]
     text_changed: bool
     deployment_changed: bool
+    tags_changed: bool
 
 
 class Deltas(TypedDict):
@@ -82,9 +85,23 @@ def build_remote_config_dict(secops_rule: Rule) -> dict[str, Any]:
         cfg["run_frequency"] = secops_rule["frequency"]
     if secops_rule.get("scope"):
         cfg["scope"] = secops_rule["scope"]
+    if secops_rule.get("tags"):
+        cfg["tags"] = secops_rule["tags"]
     if secops_rule.get("schedule_customizations"):
         cfg["schedule_customizations"] = secops_rule["schedule_customizations"]
     return cfg
+
+
+def has_tags_drift(repo_cfg: dict[str, Any], secops_rule: Rule) -> bool:
+    """Return True if `tags` is configured in repo_cfg and differs from SecOps API tags."""
+    if not repo_cfg or "tags" not in repo_cfg or repo_cfg["tags"] is None:
+        return False
+    effective_desired = deployment_common.filter_out_rule_text_tags(
+        repo_cfg["tags"], secops_rule.get("rule_text_tags") or []
+    )
+    return not deployment_common.tags_equal(
+        effective_desired, secops_rule.get("tags") or []
+    )
 
 
 def has_deployment_drift(repo_cfg: dict[str, Any], secops_rule: Rule) -> bool:
@@ -125,7 +142,9 @@ def has_deployment_drift(repo_cfg: dict[str, Any], secops_rule: Rule) -> bool:
 
 def fetch_rules_from_tenant(chronicle_client: ChronicleClient) -> dict[str, Rule]:
     try:
-        secops_rules_list = chronicle_client.list_rules(as_list=True)
+        secops_rules_list = deployment_common.list_customer_rules_with_tags_v1alpha(
+            chronicle_client
+        )
     except APIError as e:
         print(f"Error fetching rules: {e!r}")
         raise
@@ -167,6 +186,8 @@ def fetch_rules_from_tenant(chronicle_client: ChronicleClient) -> dict[str, Rule
                 )
             ),
             "scope": deployment_common.extract_scope_id(rule.get("scope")),
+            "tags": deployment_common.extract_api_rule_tags(rule),
+            "rule_text_tags": deployment_common.extract_rule_text_tags(rule),
             "execution_state": deployment.get("executionState"),
         }
 
@@ -222,11 +243,13 @@ def compare_rules(chronicle_client: ChronicleClient, rules_path: Path, tenant: s
 
         text_changed = repo_tokens != secops_tokens
         deployment_changed = has_deployment_drift(repo_cfg, secops_rule)
+        tags_changed = has_tags_drift(repo_cfg, secops_rule)
 
-        if text_changed or deployment_changed:
+        if text_changed or deployment_changed or tags_changed:
             changed_entry: Rule = dict(secops_rule)
             changed_entry["text_changed"] = text_changed
             changed_entry["deployment_changed"] = deployment_changed
+            changed_entry["tags_changed"] = tags_changed
             deltas["changed"][rule_name] = changed_entry
 
             if deployment_common.verbose:
@@ -235,6 +258,8 @@ def compare_rules(chronicle_client: ChronicleClient, rules_path: Path, tenant: s
                     reasons.append("text")
                 if deployment_changed:
                     reasons.append("deployment")
+                if tags_changed:
+                    reasons.append("tags")
                 print(
                     f"Different between SecOps and repo ({', '.join(reasons)}): "
                     f"{rule_name} ({secops_rule['id']})"
@@ -248,7 +273,7 @@ def compare_rules(chronicle_client: ChronicleClient, rules_path: Path, tenant: s
                         tofile=f"{rule_name}.yaral (repository)",
                     )
                     sys.stdout.writelines(diff)
-                if deployment_changed:
+                if deployment_changed or tags_changed:
                     remote_yaml = yaml.safe_dump(
                         build_remote_config_dict(secops_rule), sort_keys=False
                     )

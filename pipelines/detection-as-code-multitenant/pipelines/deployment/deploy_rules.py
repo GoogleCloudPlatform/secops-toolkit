@@ -35,6 +35,7 @@ import argparse
 import json
 import os
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -42,7 +43,7 @@ import argcomplete
 import deployment_common
 from compare_rules import Deltas, Rule, compare_rules
 from secops.chronicle.client import ChronicleClient
-from secops.exceptions import APIError
+from secops.exceptions import APIError, SecOpsError
 
 SKIP_EXTRAS = False
 
@@ -183,6 +184,178 @@ def delete_rule(chronicle_client: ChronicleClient, rule_details: Rule):
     chronicle_client.update_rule_deployment(rule_details["id"], archived=True)
 
 
+def sync_tenant_rule_tags(
+    chronicle_client: ChronicleClient,
+    tenant_details: dict[str, str],
+    tag_updates: Sequence[tuple[str, str, Sequence[str]]],
+) -> list[str]:
+    """Auto-create missing custom tags and batch-apply rule tags via Chronicle v1alpha."""
+    if not tag_updates:
+        return []
+
+    all_desired_tags: set[str] = set()
+    for _rule_name, _rule_id, desired_tags in tag_updates:
+        all_desired_tags.update(desired_tags)
+
+    if all_desired_tags:
+        deployment_common.ensure_custom_tags_v1alpha(chronicle_client, all_desired_tags)
+
+    region = tenant_details.get("region", deployment_common.REGION)
+    return deployment_common.modify_rule_tags_v1alpha(
+        chronicle_client,
+        tenant_details["gcpProject"],
+        region,
+        tenant_details["customerId"],
+        tag_updates,
+    )
+
+
+def deploy_tenant_rules(
+    chronicle_client: ChronicleClient,
+    rules_path: Path,
+    tenant_name: str,
+    tenant_details: dict[str, str],
+    *,
+    env: str = "prod",
+    skip_extras: bool = False,
+) -> tuple[Deltas, bool]:
+    """Compare and deploy rules, schedules, and v1alpha rule tags for a single tenant."""
+    region = tenant_details.get("region", deployment_common.REGION)
+    tenant_errors = False
+
+    if deployment_common.verbose:
+        print(f"Processing {tenant_name}")
+
+    tenant_deltas, repo_rules, _ = compare_rules(
+        chronicle_client, rules_path, tenant_name
+    )
+
+    if (
+        len(tenant_deltas["missing"])
+        + len(tenant_deltas["changed"])
+        + len(tenant_deltas["extra"])
+        > deployment_common.THROTTLE_THRESHOLD
+    ):
+        deployment_common.throttle_calls = True
+
+    pending_tag_updates: list[tuple[str, str, list[str]]] = []
+
+    for rule_name in tenant_deltas["missing"]:
+        if deployment_common.verbose:
+            print(f"Creating missing rule {rule_name}")
+        if not deployment_common.dry_run:
+            deployment_common.start_iteration()
+            repo_cfg = repo_rules[rule_name].get("config") or {}
+            scope_resource = deployment_common.format_scope_resource(
+                tenant_details["gcpProject"],
+                region,
+                tenant_details["customerId"],
+                repo_cfg.get("scope"),
+            )
+            try:
+                new_rule_id = create_rule(
+                    chronicle_client,
+                    repo_rules[rule_name]["text"],
+                    scope_resource=scope_resource,
+                )
+                if repo_cfg.get("tags"):
+                    pending_tag_updates.append(
+                        (rule_name, new_rule_id, list(repo_cfg["tags"]))
+                    )
+                try:
+                    apply_rule_deployment_config(
+                        chronicle_client,
+                        new_rule_id,
+                        repo_cfg,
+                        env=env,
+                        current_rule=None,
+                    )
+                except APIError as e:
+                    tenant_errors = True
+                    print(
+                        f"Error configuring deployment for rule {tenant_name}/{rule_name}: {e!r}"
+                    )
+            except APIError as e:
+                tenant_errors = True
+                print(f"Error creating rule {tenant_name}/{rule_name}: {e!r}")
+            deployment_common.end_iteration()
+
+    for rule_name, secops_rule_details in tenant_deltas["changed"].items():
+        if deployment_common.verbose:
+            print(f"Updating changed rule {rule_name}")
+        if not deployment_common.dry_run:
+            deployment_common.start_iteration()
+            repo_cfg = repo_rules[rule_name].get("config") or {}
+            try:
+                update_rule(
+                    chronicle_client,
+                    secops_rule_details,
+                    repo_rules[rule_name]["text"],
+                    repo_cfg,
+                    tenant_details,
+                    env,
+                )
+                if secops_rule_details.get("tags_changed", False):
+                    effective_desired_tags = (
+                        deployment_common.filter_out_rule_text_tags(
+                            list(repo_cfg.get("tags") or []),
+                            secops_rule_details.get("rule_text_tags") or [],
+                        )
+                    )
+                    pending_tag_updates.append(
+                        (
+                            rule_name,
+                            secops_rule_details["id"],
+                            effective_desired_tags,
+                        )
+                    )
+            except APIError as e:
+                tenant_errors = True
+                print(f"Error updating rule {tenant_name}/{rule_name}: {e!r}")
+            deployment_common.end_iteration()
+
+    if not deployment_common.dry_run and pending_tag_updates:
+        deployment_common.start_iteration()
+        try:
+            sync_tenant_rule_tags(chronicle_client, tenant_details, pending_tag_updates)
+        except (APIError, SecOpsError) as e:
+            tenant_errors = True
+            print(f"Error updating rule tags for tenant {tenant_name}: {e!r}")
+        deployment_common.end_iteration()
+
+    for rule_name, secops_rule_details in tenant_deltas["extra"].items():
+        if deployment_common.verbose:
+            print(f"Deleting extra rule {rule_name}")
+        if not deployment_common.dry_run and not skip_extras:
+            deployment_common.start_iteration()
+            try:
+                delete_rule(chronicle_client, secops_rule_details)
+            except APIError as e:
+                tenant_errors = True
+                print(f"Error deleting rule {tenant_name}/{rule_name}: {e!r}")
+            deployment_common.end_iteration()
+
+    if not deployment_common.dry_run:
+        print(
+            f"{tenant_name}: ",
+            f"{len(tenant_deltas['missing'])} created,",
+            f"{len(tenant_deltas['changed'])} updated,",
+            f"{len(tenant_deltas['extra'])}",
+            "deleted" if not skip_extras else "to be deleted",
+            flush=True,
+        )
+    else:
+        print(
+            f"{tenant_name}: ",
+            f"{len(tenant_deltas['missing'])} to be created,",
+            f"{len(tenant_deltas['changed'])} to be updated,",
+            f"{len(tenant_deltas['extra'])} to be deleted",
+            flush=True,
+        )
+
+    return tenant_deltas, tenant_errors
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Deploy local YARA-L rules and YAML deployment configs to SecOps"
@@ -227,109 +400,18 @@ if __name__ == "__main__":
         chronicle_client = deployment_common.create_chronicle_client(
             tenant_details, args.impersonate_sa
         )
-        region = tenant_details.get("region", deployment_common.REGION)
 
-        if deployment_common.verbose:
-            print(f"Processing {tenant_name}")
-
-        tenant_deltas, repo_rules, _ = compare_rules(
-            chronicle_client, rules_path, tenant_name
+        tenant_deltas, tenant_errors = deploy_tenant_rules(
+            chronicle_client,
+            rules_path,
+            tenant_name,
+            tenant_details,
+            env=env,
+            skip_extras=SKIP_EXTRAS,
         )
         deltas[tenant_name] = tenant_deltas
-
-        if (
-            len(tenant_deltas["missing"])
-            + len(tenant_deltas["changed"])
-            + len(tenant_deltas["extra"])
-            > deployment_common.THROTTLE_THRESHOLD
-        ):
-            deployment_common.throttle_calls = True
-
-        for rule_name in tenant_deltas["missing"]:
-            if deployment_common.verbose:
-                print(f"Creating missing rule {rule_name}")
-            if not deployment_common.dry_run:
-                deployment_common.start_iteration()
-                repo_cfg = repo_rules[rule_name].get("config") or {}
-                scope_resource = deployment_common.format_scope_resource(
-                    tenant_details["gcpProject"],
-                    region,
-                    tenant_details["customerId"],
-                    repo_cfg.get("scope"),
-                )
-                try:
-                    new_rule_id = create_rule(
-                        chronicle_client,
-                        repo_rules[rule_name]["text"],
-                        scope_resource=scope_resource,
-                    )
-                    try:
-                        apply_rule_deployment_config(
-                            chronicle_client,
-                            new_rule_id,
-                            repo_cfg,
-                            env=env,
-                            current_rule=None,
-                        )
-                    except APIError as e:
-                        errors = True
-                        print(
-                            f"Error configuring deployment for rule {tenant_name}/{rule_name}: {e!r}"
-                        )
-                except APIError as e:
-                    errors = True
-                    print(f"Error creating rule {tenant_name}/{rule_name}: {e!r}")
-                deployment_common.end_iteration()
-
-        for rule_name, secops_rule_details in tenant_deltas["changed"].items():
-            if deployment_common.verbose:
-                print(f"Updating changed rule {rule_name}")
-            if not deployment_common.dry_run:
-                deployment_common.start_iteration()
-                repo_cfg = repo_rules[rule_name].get("config") or {}
-                try:
-                    update_rule(
-                        chronicle_client,
-                        secops_rule_details,
-                        repo_rules[rule_name]["text"],
-                        repo_cfg,
-                        tenant_details,
-                        env,
-                    )
-                except APIError as e:
-                    errors = True
-                    print(f"Error updating rule {tenant_name}/{rule_name}: {e!r}")
-                deployment_common.end_iteration()
-
-        for rule_name, secops_rule_details in tenant_deltas["extra"].items():
-            if deployment_common.verbose:
-                print(f"Deleting extra rule {rule_name}")
-            if not deployment_common.dry_run and not SKIP_EXTRAS:
-                deployment_common.start_iteration()
-                try:
-                    delete_rule(chronicle_client, secops_rule_details)
-                except APIError as e:
-                    errors = True
-                    print(f"Error deleting rule {tenant_name}/{rule_name}: {e!r}")
-                deployment_common.end_iteration()
-
-        if not deployment_common.dry_run:
-            print(
-                f"{tenant_name}: ",
-                f"{len(tenant_deltas['missing'])} created,",
-                f"{len(tenant_deltas['changed'])} updated,",
-                f"{len(tenant_deltas['extra'])}",
-                "deleted" if not SKIP_EXTRAS else "to be deleted",
-                flush=True,
-            )
-        else:
-            print(
-                f"{tenant_name}: ",
-                f"{len(tenant_deltas['missing'])} to be created,",
-                f"{len(tenant_deltas['changed'])} to be updated,",
-                f"{len(tenant_deltas['extra'])} to be deleted",
-                flush=True,
-            )
+        if tenant_errors:
+            errors = True
 
     if args.deltas_file:
         with open(args.deltas_file, "w", encoding="utf-8") as deltas_file:

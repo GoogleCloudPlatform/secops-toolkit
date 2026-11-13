@@ -35,7 +35,7 @@ import re
 import subprocess
 import sys
 import time
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -44,8 +44,11 @@ from secops import SecOpsClient
 from secops.auth import RetryConfig
 from secops.chronicle.client import ChronicleClient
 from secops.chronicle.models import APIVersion
-from secops.chronicle.utils.request_utils import chronicle_request
-from secops.exceptions import SecOpsError
+from secops.chronicle.utils.request_utils import (
+    chronicle_paginated_request,
+    chronicle_request,
+)
+from secops.exceptions import APIError, SecOpsError
 
 REGION = "me-central1"
 THROTTLE_ITERATION = 1.1
@@ -67,12 +70,18 @@ ALLOWED_RULE_CONFIG_KEYS = frozenset(
         "run_frequency",
         "schedule_customizations",
         "scope",
+        "tags",
     }
 )
 ALLOWED_SCHEDULE_CUSTOMIZATION_KEYS = frozenset(
     {"ensure_enrichment_completeness", "late_arriving_data_adjustment"}
 )
 DURATION_PATTERN = re.compile(r"^\d+(\.\d{1,9})?s$")
+CUSTOM_TAG_ID_PATTERN = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]{0,98}$")
+GOOGLE_TAG_ID_PATTERN = re.compile(r"^google\.[a-zA-Z0-9][a-zA-Z0-9._-]*$")
+FULL_TAG_RESOURCE_PATTERN = re.compile(
+    r"^projects/[^/]+/locations/[^/]+/instances/[^/]+/tags/(.+)$"
+)
 
 YAML_BOILERPLATE_HEADER = """\
 # Copyright 2026 Google LLC
@@ -159,6 +168,113 @@ def format_scope_resource(
         f"projects/{project_id}/locations/{region}/instances/{customer_id}"
         f"/dataAccessScopes/{scope}"
     )
+
+
+def extract_tag_id(tag: str) -> str:
+    """Extract short tag ID from a short tag ID or full Chronicle Tag resource name."""
+    cleaned = tag.strip()
+    match = FULL_TAG_RESOURCE_PATTERN.match(cleaned)
+    if match:
+        return match.group(1)
+    return cleaned
+
+
+def is_google_tag_id(tag_id: str) -> bool:
+    """Return True if tag_id uses the Google-managed `google.*` namespace."""
+    return bool(GOOGLE_TAG_ID_PATTERN.match(tag_id))
+
+
+def is_valid_tag_identifier(tag: str) -> bool:
+    """Return True if tag is a valid custom tag ID, `google.*` tag ID, or full resource path."""
+    if not isinstance(tag, str) or not tag.strip() or tag != tag.strip():
+        return False
+    if "/" in tag:
+        match = FULL_TAG_RESOURCE_PATTERN.match(tag)
+        if not match:
+            return False
+        tag_id = match.group(1)
+    else:
+        tag_id = tag
+    return bool(
+        CUSTOM_TAG_ID_PATTERN.match(tag_id) or GOOGLE_TAG_ID_PATTERN.match(tag_id)
+    )
+
+
+def canonical_tag_key(tag: str) -> str:
+    """Return canonical comparison key (case-insensitive for `google.*`, exact for custom)."""
+    tag_id = extract_tag_id(tag)
+    if tag_id.lower().startswith("google."):
+        return tag_id.lower()
+    return tag_id
+
+
+def format_tag_resource(
+    project_id: str, region: str, customer_id: str, tag: str
+) -> str:
+    """Format a short tag ID or full Tag path into a full Chronicle Tag resource name."""
+    cleaned = tag.strip()
+    if FULL_TAG_RESOURCE_PATTERN.match(cleaned):
+        return cleaned
+    return (
+        f"projects/{project_id}/locations/{region}/instances/{customer_id}"
+        f"/tags/{extract_tag_id(cleaned)}"
+    )
+
+
+def extract_rule_text_tags(rule_dict: Mapping[str, Any]) -> list[str]:
+    """Return inline YARA-L `meta` tags (`ruleTextTags`) as normalized short tag IDs."""
+    rule_text_tags = rule_dict.get("ruleTextTags") or []
+    result: list[str] = []
+    seen: set[str] = set()
+    for raw_tag in rule_text_tags:
+        if not isinstance(raw_tag, str) or not raw_tag.strip():
+            continue
+        key = canonical_tag_key(raw_tag)
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(extract_tag_id(raw_tag))
+    return result
+
+
+def filter_out_rule_text_tags(
+    desired_tags: Sequence[str], rule_text_tags: Sequence[str]
+) -> list[str]:
+    """Exclude tags already present in `ruleTextTags` (YARA-L `meta`) from desired API tags."""
+    if not rule_text_tags:
+        return list(desired_tags)
+    text_keys = {
+        canonical_tag_key(t) for t in rule_text_tags if isinstance(t, str) and t.strip()
+    }
+    return [t for t in desired_tags if canonical_tag_key(t) not in text_keys]
+
+
+def extract_api_rule_tags(rule_dict: Mapping[str, Any]) -> list[str]:
+    """Return API-applied rule tags (`tags` minus `ruleTextTags`) as short tag IDs."""
+    all_tags = rule_dict.get("tags") or []
+    rule_text_tags = rule_dict.get("ruleTextTags") or []
+    text_keys = {
+        canonical_tag_key(t) for t in rule_text_tags if isinstance(t, str) and t.strip()
+    }
+
+    api_tags: list[str] = []
+    seen: set[str] = set()
+    for raw_tag in all_tags:
+        if not isinstance(raw_tag, str) or not raw_tag.strip():
+            continue
+        key = canonical_tag_key(raw_tag)
+        if key in text_keys or key in seen:
+            continue
+        seen.add(key)
+        api_tags.append(extract_tag_id(raw_tag))
+    return api_tags
+
+
+def tags_equal(desired_tags: Iterable[str], remote_api_tags: Iterable[str]) -> bool:
+    """Return True if desired and remote API tag iterables represent the same tag set."""
+    return {canonical_tag_key(t) for t in desired_tags} == {
+        canonical_tag_key(t) for t in remote_api_tags
+    }
 
 
 def schedule_customizations_api_to_yaml(
@@ -341,6 +457,34 @@ def validate_rule_config_dict(
                 f"in seconds ending with 's' (e.g., '300s'), got {late_adj!r}."
             )
 
+    tags = rule_cfg.get("tags")
+    if tags is not None:
+        if not isinstance(tags, list):
+            raise TypeError(
+                f"Rule '{rule_name}': 'tags' must be a YAML list of strings."
+            )
+        seen_tag_keys: set[str] = set()
+        for raw_tag in tags:
+            if not isinstance(raw_tag, str):
+                raise TypeError(
+                    f"Rule '{rule_name}': every entry in 'tags' must be a string, "
+                    f"got {type(raw_tag).__name__}."
+                )
+            if not is_valid_tag_identifier(raw_tag):
+                raise ValueError(
+                    f"Rule '{rule_name}': invalid tag {raw_tag!r}. Custom tags must start "
+                    "with a letter, contain only letters/numbers/underscores, and be < 100 "
+                    "characters (or use a Google-managed 'google.*' tag or full "
+                    "'projects/.../locations/.../instances/.../tags/...' resource name)."
+                )
+            key = canonical_tag_key(raw_tag)
+            if key in seen_tag_keys:
+                dup_msg = f"Rule '{rule_name}' contains duplicate tag {raw_tag!r}."
+                if strict:
+                    raise ValueError(dup_msg)
+                warnings.append(dup_msg)
+            seen_tag_keys.add(key)
+
     return warnings
 
 
@@ -381,6 +525,9 @@ def format_rule_config_yaml(rule_cfg: dict[str, Any]) -> str:
     for key in ("enabled", "alerting", "archived", "run_frequency", "scope"):
         if key in rule_cfg and rule_cfg[key] is not None:
             ordered[key] = rule_cfg[key]
+    tags = rule_cfg.get("tags")
+    if isinstance(tags, list) and tags:
+        ordered["tags"] = [extract_tag_id(t) for t in tags]
     sc = rule_cfg.get("schedule_customizations")
     if isinstance(sc, dict) and sc:
         ordered_sc: dict[str, Any] = {}
@@ -515,6 +662,213 @@ def verify_rule_text_v1alpha(
         json={"ruleText": cleaned},
         error_message="Failed to validate rule",
     )
+
+
+def list_tags_v1alpha(chronicle_client: ChronicleClient) -> set[str]:
+    """List existing Tag IDs in the SecOps instance via Chronicle v1alpha tags.list."""
+    raw_items = chronicle_paginated_request(
+        chronicle_client,
+        path="tags",
+        items_key="tags",
+        api_version=APIVersion.V1ALPHA,
+        as_list=True,
+    )
+    items = (
+        raw_items.get("tags", [])
+        if isinstance(raw_items, Mapping)
+        else (raw_items or [])
+    )
+    existing: set[str] = set()
+    for item in items:
+        if isinstance(item, Mapping) and item.get("name"):
+            existing.add(extract_tag_id(str(item["name"])))
+    return existing
+
+
+def _rule_recency_key(rule_dict: Mapping[str, Any]) -> tuple[str, str]:
+    """Return a comparison tuple favoring the most recently created/revised rule."""
+    return (
+        str(rule_dict.get("createTime") or ""),
+        str(rule_dict.get("revisionCreateTime") or ""),
+    )
+
+
+def list_customer_rules_with_tags_v1alpha(
+    chronicle_client: ChronicleClient,
+) -> list[dict[str, Any]]:
+    """
+    List active (non-archived) customer rules via v1alpha, merging `CONFIG_ONLY` and `FULL`.
+
+    In Chronicle v1alpha `rules.list`, `view=FULL` populates `text`, `scope`,
+    `createTime`, and `ruleTextTags` (without `tags` or `archived`), whereas
+    `view=CONFIG_ONLY` populates `tags` and `archived` (without `ruleTextTags`).
+    Joining both views avoids per-rule `rules.get` calls, excludes archived rules,
+    and deduplicates rules sharing the same `displayName` to the newest active rule.
+    """
+    raw_full = chronicle_client.list_rules(
+        view="FULL", api_version=APIVersion.V1ALPHA, as_list=True
+    )
+    full_list = (
+        raw_full.get("rules", []) if isinstance(raw_full, Mapping) else (raw_full or [])
+    )
+
+    raw_cfg = chronicle_client.list_rules(
+        view="CONFIG_ONLY", api_version=APIVersion.V1ALPHA, as_list=True
+    )
+    cfg_list = (
+        raw_cfg.get("rules", []) if isinstance(raw_cfg, Mapping) else (raw_cfg or [])
+    )
+
+    cfg_by_id: dict[str, Mapping[str, Any]] = {}
+    for cfg_rule in cfg_list:
+        if not isinstance(cfg_rule, Mapping) or not cfg_rule.get("name"):
+            continue
+        rid = get_rule_id_from_location(str(cfg_rule["name"]))
+        if rid:
+            cfg_by_id[rid] = cfg_rule
+
+    deduped_by_name: dict[str, dict[str, Any]] = {}
+    unnamed_rules: list[dict[str, Any]] = []
+    for rule in full_list:
+        if not isinstance(rule, Mapping) or rule.get("ruleOwner") == "GOOGLE":
+            continue
+        rid = get_rule_id_from_location(str(rule.get("name", "")))
+        if not rid or rid.startswith("ur_"):
+            continue
+        rule_copy = dict(rule)
+        cfg_rule = cfg_by_id.get(rid)
+        if cfg_rule is not None:
+            if cfg_rule.get("tags") is not None:
+                rule_copy["tags"] = list(cfg_rule.get("tags") or [])
+            if cfg_rule.get("archived") is not None:
+                rule_copy["archived"] = bool(cfg_rule.get("archived"))
+
+        if rule_copy.get("archived", False):
+            continue
+
+        display_name = str(rule_copy.get("displayName") or "").strip()
+        if not display_name:
+            unnamed_rules.append(rule_copy)
+            continue
+
+        existing = deduped_by_name.get(display_name)
+        if existing is None or _rule_recency_key(rule_copy) > _rule_recency_key(
+            existing
+        ):
+            deduped_by_name[display_name] = rule_copy
+
+    return list(deduped_by_name.values()) + unnamed_rules
+
+
+def ensure_custom_tags_v1alpha(
+    chronicle_client: ChronicleClient,
+    desired_tag_ids: Iterable[str],
+) -> list[str]:
+    """Auto-create missing customer Tag resources via v1alpha (skipping `google.*` tags)."""
+    custom_ids = sorted(
+        {
+            extract_tag_id(t)
+            for t in desired_tag_ids
+            if t and not is_google_tag_id(extract_tag_id(t))
+        }
+    )
+    if not custom_ids:
+        return []
+
+    existing_ids = list_tags_v1alpha(chronicle_client)
+    missing_ids = [tag_id for tag_id in custom_ids if tag_id not in existing_ids]
+    created: list[str] = []
+
+    for tag_id in missing_ids:
+        if verbose:
+            print(f"Creating missing custom Tag '{tag_id}'")
+        try:
+            chronicle_request(
+                chronicle_client,
+                method="POST",
+                endpoint_path="tags",
+                api_version=APIVersion.V1ALPHA,
+                params={"tagId": tag_id},
+                json={"displayName": tag_id},
+                error_message=f"Failed to create custom tag '{tag_id}'",
+            )
+            created.append(tag_id)
+        except APIError as exc:
+            err_text = str(exc)
+            if "status=409" not in err_text and "ALREADY_EXISTS" not in err_text:
+                raise
+    return created
+
+
+def modify_rule_tags_v1alpha(
+    chronicle_client: ChronicleClient,
+    project_id: str,
+    region: str,
+    customer_id: str,
+    updates: Sequence[tuple[str, str, Sequence[str]]],
+    *,
+    batch_size: int = 200,
+) -> list[str]:
+    """
+    Batch-update rule tags via POST /v1alpha/{parent}/rules:modifyRules.
+
+    Raises SecOpsError if `failedRequests` / `failed_requests` reports partial failures.
+    """
+    if not updates:
+        return []
+
+    parent = f"projects/{project_id}/locations/{region}/instances/{customer_id}"
+    updated_names: list[str] = []
+    failures: list[str] = []
+
+    for start in range(0, len(updates), batch_size):
+        chunk = updates[start : start + batch_size]
+        requests_payload = [
+            {
+                "rule": {
+                    "name": f"{parent}/rules/{rule_id}",
+                    "tags": [
+                        format_tag_resource(project_id, region, customer_id, t)
+                        for t in desired_tags
+                    ],
+                },
+                "updateMask": "tags",
+            }
+            for _rule_name, rule_id, desired_tags in chunk
+        ]
+
+        response = chronicle_request(
+            chronicle_client,
+            method="POST",
+            endpoint_path="rules:modifyRules",
+            api_version=APIVersion.V1ALPHA,
+            json={"requests": requests_payload},
+            error_message="Failed to batch-modify rule tags",
+        )
+
+        failed_map = (
+            response.get("failedRequests") or response.get("failed_requests") or {}
+        )
+        failed_indices: set[int] = set()
+        for raw_idx, status_obj in failed_map.items():
+            idx = int(raw_idx)
+            failed_indices.add(idx)
+            failed_rule_name, failed_rule_id, _ = chunk[idx]
+            msg = (
+                status_obj.get("message", str(status_obj))
+                if isinstance(status_obj, Mapping)
+                else str(status_obj)
+            )
+            failures.append(f"{failed_rule_name} ({failed_rule_id}): {msg}")
+
+        for idx, (rule_name, _rule_id, _desired) in enumerate(chunk):
+            if idx not in failed_indices:
+                updated_names.append(rule_name)
+
+    if failures:
+        raise SecOpsError("rules:modifyRules reported failures: " + "; ".join(failures))
+
+    return updated_names
 
 
 def create_chronicle_client(
