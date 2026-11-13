@@ -296,11 +296,17 @@ def deploy_tenant_rules(
                     env,
                 )
                 if secops_rule_details.get("tags_changed", False):
+                    effective_desired_tags = (
+                        deployment_common.filter_out_rule_text_tags(
+                            list(repo_cfg.get("tags") or []),
+                            secops_rule_details.get("rule_text_tags") or [],
+                        )
+                    )
                     pending_tag_updates.append(
                         (
                             rule_name,
                             secops_rule_details["id"],
-                            list(repo_cfg.get("tags") or []),
+                            effective_desired_tags,
                         )
                     )
             except APIError as e:

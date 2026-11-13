@@ -221,6 +221,34 @@ def format_tag_resource(
     )
 
 
+def extract_rule_text_tags(rule_dict: Mapping[str, Any]) -> list[str]:
+    """Return inline YARA-L `meta` tags (`ruleTextTags`) as normalized short tag IDs."""
+    rule_text_tags = rule_dict.get("ruleTextTags") or []
+    result: list[str] = []
+    seen: set[str] = set()
+    for raw_tag in rule_text_tags:
+        if not isinstance(raw_tag, str) or not raw_tag.strip():
+            continue
+        key = canonical_tag_key(raw_tag)
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(extract_tag_id(raw_tag))
+    return result
+
+
+def filter_out_rule_text_tags(
+    desired_tags: Sequence[str], rule_text_tags: Sequence[str]
+) -> list[str]:
+    """Exclude tags already present in `ruleTextTags` (YARA-L `meta`) from desired API tags."""
+    if not rule_text_tags:
+        return list(desired_tags)
+    text_keys = {
+        canonical_tag_key(t) for t in rule_text_tags if isinstance(t, str) and t.strip()
+    }
+    return [t for t in desired_tags if canonical_tag_key(t) not in text_keys]
+
+
 def extract_api_rule_tags(rule_dict: Mapping[str, Any]) -> list[str]:
     """Return API-applied rule tags (`tags` minus `ruleTextTags`) as short tag IDs."""
     all_tags = rule_dict.get("tags") or []
@@ -657,15 +685,25 @@ def list_tags_v1alpha(chronicle_client: ChronicleClient) -> set[str]:
     return existing
 
 
+def _rule_recency_key(rule_dict: Mapping[str, Any]) -> tuple[str, str]:
+    """Return a comparison tuple favoring the most recently created/revised rule."""
+    return (
+        str(rule_dict.get("createTime") or ""),
+        str(rule_dict.get("revisionCreateTime") or ""),
+    )
+
+
 def list_customer_rules_with_tags_v1alpha(
     chronicle_client: ChronicleClient,
 ) -> list[dict[str, Any]]:
     """
-    List customer rules via v1alpha, merging `CONFIG_ONLY` `tags` with `FULL` `ruleTextTags`.
+    List active (non-archived) customer rules via v1alpha, merging `CONFIG_ONLY` and `FULL`.
 
-    In Chronicle v1alpha `rules.list`, `view=FULL` populates `text`, `scope`, and
-    `ruleTextTags` (without `tags`), whereas `view=CONFIG_ONLY` populates `tags`
-    (without `ruleTextTags`). Joining both views avoids per-rule `rules.get` calls.
+    In Chronicle v1alpha `rules.list`, `view=FULL` populates `text`, `scope`,
+    `createTime`, and `ruleTextTags` (without `tags` or `archived`), whereas
+    `view=CONFIG_ONLY` populates `tags` and `archived` (without `ruleTextTags`).
+    Joining both views avoids per-rule `rules.get` calls, excludes archived rules,
+    and deduplicates rules sharing the same `displayName` to the newest active rule.
     """
     raw_full = chronicle_client.list_rules(
         view="FULL", api_version=APIVersion.V1ALPHA, as_list=True
@@ -681,19 +719,16 @@ def list_customer_rules_with_tags_v1alpha(
         raw_cfg.get("rules", []) if isinstance(raw_cfg, Mapping) else (raw_cfg or [])
     )
 
-    cfg_tags_by_id: dict[str, list[str]] = {}
+    cfg_by_id: dict[str, Mapping[str, Any]] = {}
     for cfg_rule in cfg_list:
-        if (
-            not isinstance(cfg_rule, Mapping)
-            or not cfg_rule.get("name")
-            or cfg_rule.get("tags") is None
-        ):
+        if not isinstance(cfg_rule, Mapping) or not cfg_rule.get("name"):
             continue
         rid = get_rule_id_from_location(str(cfg_rule["name"]))
         if rid:
-            cfg_tags_by_id[rid] = list(cfg_rule.get("tags") or [])
+            cfg_by_id[rid] = cfg_rule
 
-    merged: list[dict[str, Any]] = []
+    deduped_by_name: dict[str, dict[str, Any]] = {}
+    unnamed_rules: list[dict[str, Any]] = []
     for rule in full_list:
         if not isinstance(rule, Mapping) or rule.get("ruleOwner") == "GOOGLE":
             continue
@@ -701,11 +736,28 @@ def list_customer_rules_with_tags_v1alpha(
         if not rid or rid.startswith("ur_"):
             continue
         rule_copy = dict(rule)
-        if rid in cfg_tags_by_id:
-            rule_copy["tags"] = cfg_tags_by_id[rid]
-        merged.append(rule_copy)
+        cfg_rule = cfg_by_id.get(rid)
+        if cfg_rule is not None:
+            if cfg_rule.get("tags") is not None:
+                rule_copy["tags"] = list(cfg_rule.get("tags") or [])
+            if cfg_rule.get("archived") is not None:
+                rule_copy["archived"] = bool(cfg_rule.get("archived"))
 
-    return merged
+        if rule_copy.get("archived", False):
+            continue
+
+        display_name = str(rule_copy.get("displayName") or "").strip()
+        if not display_name:
+            unnamed_rules.append(rule_copy)
+            continue
+
+        existing = deduped_by_name.get(display_name)
+        if existing is None or _rule_recency_key(rule_copy) > _rule_recency_key(
+            existing
+        ):
+            deduped_by_name[display_name] = rule_copy
+
+    return list(deduped_by_name.values()) + unnamed_rules
 
 
 def ensure_custom_tags_v1alpha(

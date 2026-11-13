@@ -194,7 +194,6 @@ def dac_single_tenant_modules():
             "data_tables", SINGLE_TENANT_SCRIPTS_DIR / "data_tables.py"
         )
         load_module_from_path("rule_tags", SINGLE_TENANT_SCRIPTS_DIR / "rule_tags.py")
-        load_module_from_path("rule_tags", SINGLE_TENANT_SCRIPTS_DIR / "rule_tags.py")
         main_mod = load_module_from_path(
             "dac_single_main", SINGLE_TENANT_SCRIPTS_DIR / "main.py"
         )

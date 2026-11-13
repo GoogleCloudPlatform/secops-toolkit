@@ -493,6 +493,30 @@ def test_multitenant_rule_tags_compare_deploy_and_pull(
     alfa_deltas, _, _ = compare.compare_rules(mock_client, rules_dir, "alfa")
     assert alfa_deltas["changed"] == {}
 
+    # 2b. Even if YAML explicitly includes `google.mitre.tactic.TA0001` (which is also in
+    #     ruleTextTags), compare_rules does not report false-positive tag drift
+    (rules_dir / "shared" / "MultiEventRule.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "enabled": True,
+                "alerting": True,
+                "archived": False,
+                "run_frequency": "LIVE_CUSTOMIZABLE",
+                "tags": [
+                    "soc_tier1",
+                    "google.mitre.tactic.TA0001",
+                    "google.mitre.tactic.TA0011",
+                ],
+                "schedule_customizations": {
+                    "late_arriving_data_adjustment": "300s",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    alfa_deltas_overlap, _, _ = compare.compare_rules(mock_client, rules_dir, "alfa")
+    assert alfa_deltas_overlap["changed"] == {}
+
     # 3. Tenant bravo has tag-only drift on MultiEventRule + missing NewRule
     bravo_deltas, _, _ = compare.compare_rules(mock_client, rules_dir, "bravo")
     assert "NewRule" in bravo_deltas["missing"]

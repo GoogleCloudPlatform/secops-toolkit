@@ -243,12 +243,16 @@ def pull_rules(ctx: AppContext):
         config.BASE_RULES_DIR.mkdir(parents=True, exist_ok=True)
 
         import_commands = []
+        seen_rule_names: set[str] = set()
 
         for rule in rules_data:
             if rule.get("ruleOwner") == "GOOGLE":
                 continue
             rule_id = _extract_rule_id_from_resource_name(rule.get("name", ""))
             if rule_id.startswith("ur_"):
+                continue
+            dep = deployments_map.get(rule_id, {})
+            if rule.get("archived", False) or dep.get("archived", False):
                 continue
             rule_text = rule.get("text", "")
 
@@ -261,13 +265,15 @@ def pull_rules(ctx: AppContext):
                 continue
 
             rule_name = match.group(1)
+            if rule_name in seen_rule_names:
+                continue
+            seen_rule_names.add(rule_name)
 
             # Save rule to file
             rule_file_path = config.BASE_RULES_DIR / f"{rule_name}.yaral"
             rule_file_path.write_text(rule_text, encoding="utf-8")
 
             # Update secops_rules_config
-            dep = deployments_map.get(rule_id, {})
             if rule_name not in rules_config or not isinstance(
                 rules_config[rule_name], dict
             ):

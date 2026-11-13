@@ -60,6 +60,7 @@ class Rule(TypedDict, total=False):
     schedule_customizations: dict[str, Any] | None
     scope: str | None
     tags: list[str]
+    rule_text_tags: list[str]
     execution_state: str | None
     config: dict[str, Any]
     text_changed: bool
@@ -95,8 +96,11 @@ def has_tags_drift(repo_cfg: dict[str, Any], secops_rule: Rule) -> bool:
     """Return True if `tags` is configured in repo_cfg and differs from SecOps API tags."""
     if not repo_cfg or "tags" not in repo_cfg or repo_cfg["tags"] is None:
         return False
+    effective_desired = deployment_common.filter_out_rule_text_tags(
+        repo_cfg["tags"], secops_rule.get("rule_text_tags") or []
+    )
     return not deployment_common.tags_equal(
-        repo_cfg["tags"], secops_rule.get("tags") or []
+        effective_desired, secops_rule.get("tags") or []
     )
 
 
@@ -183,6 +187,7 @@ def fetch_rules_from_tenant(chronicle_client: ChronicleClient) -> dict[str, Rule
             ),
             "scope": deployment_common.extract_scope_id(rule.get("scope")),
             "tags": deployment_common.extract_api_rule_tags(rule),
+            "rule_text_tags": deployment_common.extract_rule_text_tags(rule),
             "execution_state": deployment.get("executionState"),
         }
 

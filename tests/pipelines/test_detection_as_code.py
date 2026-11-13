@@ -540,3 +540,145 @@ def test_update_rule_tags_auto_creates_custom_tags_and_batches_modify_rules(
     with pytest.raises(SystemExit) as exc_info:
         update_fn(ctx, dry_run=False)
     assert exc_info.value.code == 1
+
+
+def test_duplicate_display_names_ignore_archived_and_rule_text_tag_overlap(
+    dac_single_tenant_modules, tmp_path, monkeypatch
+):
+    """Active rules are preferred over archived/older duplicates, and YAML tags overlapping ruleTextTags do not drift."""
+    import sys as _sys
+
+    config_mod, main_mod = dac_single_tenant_modules
+    rule_tags_mod = _sys.modules["rule_tags"]
+    _rules_dir, rules_yaml = _configure_temp_paths(config_mod, tmp_path)
+
+    monkeypatch.setenv("SECOPS_PROJECT_ID", "123456789012")
+    monkeypatch.setenv("SECOPS_REGION", "eu")
+    monkeypatch.setenv("SECOPS_CUSTOMER_ID", "00000000-0000-0000-0000-000000000001")
+
+    instance_prefix = (
+        "projects/123456789012/locations/eu/"
+        "instances/00000000-0000-0000-0000-000000000001"
+    )
+    active_rule_id = "ru_aaaaaaaa-1111-2222-3333-444444444444"
+    older_active_id = "ru_bbbbbbbb-1111-2222-3333-444444444444"
+    archived_rule_id = "ru_cccccccc-1111-2222-3333-444444444444"
+
+    mock_client = MagicMock()
+    mock_client.instance_id = instance_prefix
+
+    def _mock_list_rules(*, view="FULL", api_version=None, as_list=False):
+        assert api_version == main_mod.APIVersion.V1ALPHA
+        assert as_list is True
+        if view == "FULL":
+            return [
+                {
+                    "name": f"{instance_prefix}/rules/{active_rule_id}",
+                    "displayName": "network_traffic_to_specific_country",
+                    "text": MULTI_EVENT_RULE_TEXT,
+                    "createTime": "2026-09-22T10:34:21Z",
+                    "ruleTextTags": [
+                        f"{instance_prefix}/tags/google.mitre.tactic.ta0001",
+                    ],
+                },
+                {
+                    "name": f"{instance_prefix}/rules/{older_active_id}",
+                    "displayName": "network_traffic_to_specific_country",
+                    "text": MULTI_EVENT_RULE_TEXT,
+                    "createTime": "2025-10-06T17:58:48Z",
+                    "ruleTextTags": [],
+                },
+                {
+                    "name": f"{instance_prefix}/rules/{archived_rule_id}",
+                    "displayName": "network_traffic_to_specific_country",
+                    "text": MULTI_EVENT_RULE_TEXT,
+                    "createTime": "2024-12-04T08:21:47Z",
+                    "ruleTextTags": [],
+                },
+            ]
+        if view == "CONFIG_ONLY":
+            return [
+                {
+                    "name": f"{instance_prefix}/rules/{active_rule_id}",
+                    "displayName": "network_traffic_to_specific_country",
+                    "tags": [
+                        f"{instance_prefix}/tags/google.mitre.tactic.ta0001",
+                        f"{instance_prefix}/tags/google.mitre.tactic.ta0011",
+                    ],
+                },
+                {
+                    "name": f"{instance_prefix}/rules/{older_active_id}",
+                    "displayName": "network_traffic_to_specific_country",
+                },
+                {
+                    "name": f"{instance_prefix}/rules/{archived_rule_id}",
+                    "displayName": "network_traffic_to_specific_country",
+                    "archived": True,
+                },
+            ]
+        raise AssertionError(f"Unexpected view: {view}")
+
+    mock_client.list_rules.side_effect = _mock_list_rules
+    mock_client.list_rule_deployments.return_value = {
+        "ruleDeployments": [
+            {
+                "name": f"{instance_prefix}/rules/{active_rule_id}/deployment",
+                "enabled": True,
+                "alerting": True,
+                "runFrequency": "LIVE_CUSTOMIZABLE",
+            },
+            {
+                "name": f"{instance_prefix}/rules/{older_active_id}/deployment",
+                "enabled": False,
+                "alerting": False,
+                "runFrequency": "LIVE",
+            },
+            {
+                "name": f"{instance_prefix}/rules/{archived_rule_id}/deployment",
+                "enabled": False,
+                "alerting": False,
+                "archived": True,
+                "runFrequency": "LIVE",
+            },
+        ]
+    }
+
+    ctx = main_mod.AppContext()
+    ctx.chronicle_client = mock_client
+
+    # 1. pull-rules selects the newest active rule (enabled=True, LIVE_CUSTOMIZABLE)
+    #    rather than being overwritten by the older or archived duplicate rules
+    inspect.unwrap(main_mod.pull_rules.callback)(ctx)
+    pulled_cfg = yaml.safe_load(rules_yaml.read_text(encoding="utf-8"))
+    assert pulled_cfg["network_traffic_to_specific_country"] == {
+        "enabled": True,
+        "alerting": True,
+        "archived": False,
+        "run_frequency": "LIVE_CUSTOMIZABLE",
+        "tags": ["google.mitre.tactic.ta0011"],
+    }
+
+    # 2. If YAML also lists `google.mitre.tactic.TA0001` (already present in ruleTextTags),
+    #    update-rule-tags sees zero drift and makes no modifyRules call
+    rules_yaml.write_text(
+        yaml.safe_dump(
+            {
+                "network_traffic_to_specific_country": {
+                    "enabled": True,
+                    "tags": [
+                        "google.mitre.tactic.TA0001",
+                        "google.mitre.tactic.TA0011",
+                    ],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    api_calls: list[dict] = []
+    monkeypatch.setattr(
+        rule_tags_mod,
+        "chronicle_request",
+        lambda _client, **kwargs: api_calls.append(kwargs) or {},
+    )
+    inspect.unwrap(main_mod.update_rule_tags.callback)(ctx, dry_run=False)
+    assert api_calls == []
