@@ -92,15 +92,22 @@ jobs:
 
       - name: Commit and push event file changes
         if: steps.git-check.outputs.changed > 0 && github.event.pull_request.merged != true
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        shell: bash
         run: |
+          if [[ -z "$HEAD_REF" || "$HEAD_REF" == -* ]] || ! git check-ref-format "refs/heads/$HEAD_REF" >/dev/null; then
+            echo "Invalid head_ref: $HEAD_REF" >&2
+            exit 1
+          fi
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git config set advice.addIgnoredFile false
           git add 'parsers/**/events/*.yaml' ':(exclude)parsers/**/events/*_old.yaml'
           git commit -m "chore: update parser events from API"
-          git fetch origin ${{ github.head_ref }}
-          git pull --rebase origin ${{ github.head_ref }}
-          git push origin HEAD:${{ github.head_ref }}
+          git fetch origin -- "refs/heads/$HEAD_REF"
+          git pull --rebase origin "refs/heads/$HEAD_REF"
+          git push origin -- "HEAD:refs/heads/$HEAD_REF"
 
       - id: activate-parsers
         if: github.event.pull_request.merged == true && success()
