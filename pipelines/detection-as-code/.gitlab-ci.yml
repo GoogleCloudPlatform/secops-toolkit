@@ -76,7 +76,7 @@ gcp-auth:
 
 verify-rules:
   image:
-    name: python:3.12-slim
+    name: python:3.15-slim
   stage: verify-rules
   dependencies:
     - gcp-auth
