@@ -20,13 +20,13 @@ import uuid
 from typing import Any
 
 from cache import Cache
-from config import PLAYBOOKS_PATH, SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION
+from config import SECOPS_CUSTOMER_ID, SECOPS_PROJECT_ID, SECOPS_REGION
 from constants import ALL_ENVIRONMENTS_IDENTIFIER, ROOT_README, STEP_TYPE
 from jinja2 import Template
 from models import APIError, File, SocRole, Workflow, WorkflowMenuCard, WorkflowTypes
 from requests.exceptions import HTTPError
 from secops_client import SecOpsClient
-from utils import _push_obj, update_objects
+from utils import _push_obj, build_playbook_base_path, update_objects
 
 LOGGER = logging.getLogger("rac")
 
@@ -72,7 +72,7 @@ class ResponseManager:
             playbook,
             playbook.name,
             "Playbook",
-            f"{PLAYBOOKS_PATH}/{playbook.category}/{playbook.name}",
+            build_playbook_base_path(playbook),
         )
 
     def install_playbooks(self, workflows: list[Workflow]) -> None:

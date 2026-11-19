@@ -44,13 +44,75 @@ def get_local_playbooks() -> list[Workflow]:
         return []
 
 
+def _validate_path_segment(value: str, label: str) -> str:
+    """Validates that a value is a single relative directory or file name segment."""
+    if (
+        not isinstance(value, str)
+        or not value.strip()
+        or "\x00" in value
+        or value in {".", ".."}
+        or "/" in value
+        or "\\" in value
+    ):
+        raise ValueError(f"Invalid {label}: {value!r}")
+    return value
+
+
+def _resolve_confined_dir(
+    rel_path: str, param_name: str = "base_path"
+) -> tuple[str, str]:
+    """Resolves a relative directory path and ensures it stays within WD."""
+    wd_real = os.path.realpath(WD)
+    if not rel_path:
+        return WD, wd_real
+
+    if (
+        not isinstance(rel_path, str)
+        or "\x00" in rel_path
+        or os.path.isabs(rel_path)
+        or ".." in rel_path.replace("\\", "/").split("/")
+    ):
+        LOGGER.error(
+            f"Invalid {param_name} {rel_path!r}: must be a relative path within {wd_real!r}."
+        )
+        raise ValueError(
+            f"{param_name} must be a relative path within the working directory: {rel_path!r}"
+        )
+
+    candidate = os.path.join(WD, rel_path)
+    target_real = os.path.realpath(candidate)
+    if target_real != wd_real and not target_real.startswith(wd_real + os.sep):
+        LOGGER.error(
+            f"Invalid {param_name} {rel_path!r}: resolves outside {wd_real!r}."
+        )
+        raise ValueError(
+            f"{param_name} resolves outside the working directory: {rel_path!r}"
+        )
+    return candidate, target_real
+
+
+def build_playbook_base_path(playbook: Workflow) -> str:
+    """Builds and validates the relative directory path for a playbook."""
+    category = _validate_path_segment(playbook.category, "playbook category")
+    name = _validate_path_segment(playbook.name, "playbook name")
+    base_path = f"{PLAYBOOKS_PATH}/{category}/{name}"
+
+    _, playbooks_root = _resolve_confined_dir(PLAYBOOKS_PATH, "PLAYBOOKS_PATH")
+    _, target_real = _resolve_confined_dir(base_path, "playbook path")
+    if not target_real.startswith(playbooks_root + os.sep):
+        raise ValueError(
+            f"Playbook path resolves outside {PLAYBOOKS_PATH!r}: {base_path!r}"
+        )
+    return base_path
+
+
 def push_playbook(playbook: Workflow) -> None:
     """Writes a workflow to the repo"""
     _push_obj(
         playbook,
         playbook.name,
         "Playbook",
-        f"{PLAYBOOKS_PATH}/{playbook.category}/{playbook.name}",
+        build_playbook_base_path(playbook),
     )
 
 
@@ -101,10 +163,14 @@ def update_objects(
                                     the content of the `base_path` subdirectory
                                     is fully replaced. Defaults to False.
     """
-    effective_target_dir = os.path.join(WD, base_path)
+    effective_target_dir, target_real = _resolve_confined_dir(base_path, "base_path")
 
     if base_path:  # True if base_path is not an empty string
         if replace_content_in_base_path:
+            if target_real == os.path.realpath(WD):
+                raise ValueError(
+                    f"Cannot replace content at working directory root: {base_path!r}"
+                )
             LOGGER.info(
                 f"Mode: Replace content. Target directory: {effective_target_dir}"
             )
@@ -190,7 +256,10 @@ def update_objects(
 
         # Security check: ensure the normalized path is truly relative and does not try to escape.
         if (
-            os.path.isabs(relative_path_in_file_obj)
+            "\x00" in file_obj.path
+            or os.path.isabs(relative_path_in_file_obj)
+            or relative_path_in_file_obj in {".", ".."}
+            or ".." in file_obj.path.replace("\\", "/").split("/")
             or relative_path_in_file_obj.startswith("..")
             or (os.path.sep + ".." in relative_path_in_file_obj)
             or (
@@ -205,6 +274,11 @@ def update_objects(
             continue
 
         full_file_path = os.path.join(effective_target_dir, relative_path_in_file_obj)
+        if not os.path.realpath(full_file_path).startswith(target_real + os.sep):
+            LOGGER.error(
+                f"Invalid file path '{file_obj.path}': resolves outside '{target_real}'."
+            )
+            continue
 
         try:
             # Ensure the parent directory for this specific file exists.
@@ -246,7 +320,8 @@ def get_file_objects_from_path(dir_path: str = "") -> list[File]:
     Raises:
         FileNotFoundError: If the initial dir_path (resolved to an absolute path) does not exist.
     """
-    search_root_abs = os.path.normpath(os.path.join(WD, dir_path))
+    search_root_candidate, _ = _resolve_confined_dir(dir_path, "dir_path")
+    search_root_abs = os.path.normpath(search_root_candidate)
 
     if not os.path.exists(search_root_abs):
         LOGGER.warning(f"Path not found: {search_root_abs}")
