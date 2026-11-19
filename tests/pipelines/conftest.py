@@ -44,22 +44,29 @@ def _new_shim_module(name: str, *, is_package: bool = False) -> types.ModuleType
     return mod
 
 
+def _is_module_available(name: str) -> bool:
+    """Return True if a module can be resolved without raising on missing parent packages."""
+    if name in sys.modules:
+        return True
+    try:
+        return importlib.util.find_spec(name) is not None
+    except (ModuleNotFoundError, ValueError):
+        return False
+
+
 def _ensure_optional_pipeline_dependencies() -> None:
     """Install lightweight shims only when optional pipeline packages are absent."""
-    if "dotenv" not in sys.modules and importlib.util.find_spec("dotenv") is None:
+    if not _is_module_available("dotenv"):
         dotenv_mod = _new_shim_module("dotenv")
         dotenv_mod.load_dotenv = lambda *_args, **_kwargs: False  # type: ignore[attr-defined]
         sys.modules["dotenv"] = dotenv_mod
 
-    if (
-        "argcomplete" not in sys.modules
-        and importlib.util.find_spec("argcomplete") is None
-    ):
+    if not _is_module_available("argcomplete"):
         argcomplete_mod = _new_shim_module("argcomplete")
         argcomplete_mod.autocomplete = lambda *_args, **_kwargs: None  # type: ignore[attr-defined]
         sys.modules["argcomplete"] = argcomplete_mod
 
-    if "click" not in sys.modules and importlib.util.find_spec("click") is None:
+    if not _is_module_available("click"):
         click_mod = _new_shim_module("click")
 
         def _identity_decorator(*_dargs, **_dkwargs):
@@ -78,7 +85,7 @@ def _ensure_optional_pipeline_dependencies() -> None:
         click_mod.echo = print  # type: ignore[attr-defined]
         sys.modules["click"] = click_mod
 
-    if "ruamel.yaml" not in sys.modules and importlib.util.find_spec("ruamel") is None:
+    if not _is_module_available("ruamel.yaml"):
         ruamel_pkg = _new_shim_module("ruamel", is_package=True)
         ruamel_yaml_mod = _new_shim_module("ruamel.yaml")
 
@@ -97,7 +104,7 @@ def _ensure_optional_pipeline_dependencies() -> None:
         sys.modules["ruamel"] = ruamel_pkg
         sys.modules["ruamel.yaml"] = ruamel_yaml_mod
 
-    if "pydantic" not in sys.modules and importlib.util.find_spec("pydantic") is None:
+    if not _is_module_available("pydantic"):
         pydantic_mod = _new_shim_module("pydantic")
 
         class _BaseModel:
@@ -110,7 +117,7 @@ def _ensure_optional_pipeline_dependencies() -> None:
         pydantic_mod.ConfigDict = dict  # type: ignore[attr-defined]
         sys.modules["pydantic"] = pydantic_mod
 
-    if "secops" not in sys.modules and importlib.util.find_spec("secops") is None:
+    if not _is_module_available("secops"):
 
         class _APIVersion(enum.StrEnum):
             V1 = "v1"
@@ -160,7 +167,7 @@ def _ensure_optional_pipeline_dependencies() -> None:
         sys.modules["secops.chronicle.utils"] = utils_pkg
         sys.modules["secops.chronicle.utils.request_utils"] = req_mod
 
-    if "jinja2" not in sys.modules and importlib.util.find_spec("jinja2") is None:
+    if not _is_module_available("jinja2"):
         jinja2_mod = _new_shim_module("jinja2")
 
         class _RenderedTemplate:
@@ -182,7 +189,7 @@ def _ensure_optional_pipeline_dependencies() -> None:
         jinja2_mod.Template = _RenderedTemplate  # type: ignore[attr-defined]
         sys.modules["jinja2"] = jinja2_mod
 
-    if "requests" not in sys.modules and importlib.util.find_spec("requests") is None:
+    if not _is_module_available("requests"):
         requests_pkg = _new_shim_module("requests", is_package=True)
         requests_exc_mod = _new_shim_module("requests.exceptions")
 
@@ -197,10 +204,7 @@ def _ensure_optional_pipeline_dependencies() -> None:
         sys.modules["requests"] = requests_pkg
         sys.modules["requests.exceptions"] = requests_exc_mod
 
-    if (
-        "google.auth" not in sys.modules
-        and importlib.util.find_spec("google.auth") is None
-    ):
+    if not _is_module_available("google.auth"):
         google_pkg = sys.modules.get("google") or _new_shim_module(
             "google", is_package=True
         )
