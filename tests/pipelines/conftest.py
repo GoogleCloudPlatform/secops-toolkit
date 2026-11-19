@@ -30,6 +30,7 @@ SINGLE_TENANT_SCRIPTS_DIR = REPO_ROOT / "pipelines" / "detection-as-code" / "scr
 MULTITENANT_DIR = REPO_ROOT / "pipelines" / "detection-as-code-multitenant"
 MULTITENANT_DEPLOYMENT_DIR = MULTITENANT_DIR / "pipelines" / "deployment"
 MULTITENANT_QUALITY_DIR = MULTITENANT_DIR / "pipelines" / "code-quality"
+RESPONSE_AS_CODE_SCRIPTS_DIR = REPO_ROOT / "pipelines" / "response-as-code" / "script"
 
 
 def _new_shim_module(name: str, *, is_package: bool = False) -> types.ModuleType:
@@ -43,22 +44,29 @@ def _new_shim_module(name: str, *, is_package: bool = False) -> types.ModuleType
     return mod
 
 
+def _is_module_available(name: str) -> bool:
+    """Return True if a module can be resolved without raising on missing parent packages."""
+    if name in sys.modules:
+        return True
+    try:
+        return importlib.util.find_spec(name) is not None
+    except (ModuleNotFoundError, ValueError):
+        return False
+
+
 def _ensure_optional_pipeline_dependencies() -> None:
     """Install lightweight shims only when optional pipeline packages are absent."""
-    if "dotenv" not in sys.modules and importlib.util.find_spec("dotenv") is None:
+    if not _is_module_available("dotenv"):
         dotenv_mod = _new_shim_module("dotenv")
         dotenv_mod.load_dotenv = lambda *_args, **_kwargs: False  # type: ignore[attr-defined]
         sys.modules["dotenv"] = dotenv_mod
 
-    if (
-        "argcomplete" not in sys.modules
-        and importlib.util.find_spec("argcomplete") is None
-    ):
+    if not _is_module_available("argcomplete"):
         argcomplete_mod = _new_shim_module("argcomplete")
         argcomplete_mod.autocomplete = lambda *_args, **_kwargs: None  # type: ignore[attr-defined]
         sys.modules["argcomplete"] = argcomplete_mod
 
-    if "click" not in sys.modules and importlib.util.find_spec("click") is None:
+    if not _is_module_available("click"):
         click_mod = _new_shim_module("click")
 
         def _identity_decorator(*_dargs, **_dkwargs):
@@ -77,7 +85,7 @@ def _ensure_optional_pipeline_dependencies() -> None:
         click_mod.echo = print  # type: ignore[attr-defined]
         sys.modules["click"] = click_mod
 
-    if "ruamel.yaml" not in sys.modules and importlib.util.find_spec("ruamel") is None:
+    if not _is_module_available("ruamel.yaml"):
         ruamel_pkg = _new_shim_module("ruamel", is_package=True)
         ruamel_yaml_mod = _new_shim_module("ruamel.yaml")
 
@@ -96,7 +104,7 @@ def _ensure_optional_pipeline_dependencies() -> None:
         sys.modules["ruamel"] = ruamel_pkg
         sys.modules["ruamel.yaml"] = ruamel_yaml_mod
 
-    if "pydantic" not in sys.modules and importlib.util.find_spec("pydantic") is None:
+    if not _is_module_available("pydantic"):
         pydantic_mod = _new_shim_module("pydantic")
 
         class _BaseModel:
@@ -109,7 +117,7 @@ def _ensure_optional_pipeline_dependencies() -> None:
         pydantic_mod.ConfigDict = dict  # type: ignore[attr-defined]
         sys.modules["pydantic"] = pydantic_mod
 
-    if "secops" not in sys.modules and importlib.util.find_spec("secops") is None:
+    if not _is_module_available("secops"):
 
         class _APIVersion(enum.StrEnum):
             V1 = "v1"
@@ -158,6 +166,60 @@ def _ensure_optional_pipeline_dependencies() -> None:
         sys.modules["secops.chronicle.data_table"] = dt_mod
         sys.modules["secops.chronicle.utils"] = utils_pkg
         sys.modules["secops.chronicle.utils.request_utils"] = req_mod
+
+    if not _is_module_available("jinja2"):
+        jinja2_mod = _new_shim_module("jinja2")
+
+        class _RenderedTemplate:
+            def __init__(self, source: str):
+                self._source = source
+
+            def render(self, **_kwargs) -> str:
+                return self._source
+
+        class _JinjaEnvironment:
+            def __init__(self, **_kwargs):
+                self.globals: dict[str, Any] = {}
+                self.filters: dict[str, Any] = {}
+
+            def from_string(self, source: str) -> _RenderedTemplate:
+                return _RenderedTemplate(source)
+
+        jinja2_mod.Environment = _JinjaEnvironment  # type: ignore[attr-defined]
+        jinja2_mod.Template = _RenderedTemplate  # type: ignore[attr-defined]
+        sys.modules["jinja2"] = jinja2_mod
+
+    if not _is_module_available("requests"):
+        requests_pkg = _new_shim_module("requests", is_package=True)
+        requests_exc_mod = _new_shim_module("requests.exceptions")
+
+        class _HTTPError(Exception):
+            def __init__(self, *args, response=None):
+                super().__init__(*args)
+                self.response = response
+
+        requests_pkg.HTTPError = _HTTPError  # type: ignore[attr-defined]
+        requests_exc_mod.HTTPError = _HTTPError  # type: ignore[attr-defined]
+        requests_pkg.exceptions = requests_exc_mod  # type: ignore[attr-defined]
+        sys.modules["requests"] = requests_pkg
+        sys.modules["requests.exceptions"] = requests_exc_mod
+
+    if not _is_module_available("google.auth"):
+        google_pkg = sys.modules.get("google") or _new_shim_module(
+            "google", is_package=True
+        )
+        google_auth_pkg = _new_shim_module("google.auth", is_package=True)
+        google_auth_pkg.default = MagicMock(return_value=(MagicMock(), "proj"))  # type: ignore[attr-defined]
+        transport_pkg = _new_shim_module("google.auth.transport", is_package=True)
+        transport_req_mod = _new_shim_module("google.auth.transport.requests")
+        transport_req_mod.AuthorizedSession = MagicMock  # type: ignore[attr-defined]
+        google_pkg.auth = google_auth_pkg  # type: ignore[attr-defined]
+        google_auth_pkg.transport = transport_pkg  # type: ignore[attr-defined]
+        transport_pkg.requests = transport_req_mod  # type: ignore[attr-defined]
+        sys.modules.setdefault("google", google_pkg)
+        sys.modules["google.auth"] = google_auth_pkg
+        sys.modules["google.auth.transport"] = transport_pkg
+        sys.modules["google.auth.transport.requests"] = transport_req_mod
 
 
 def load_module_from_path(
@@ -240,3 +302,58 @@ def dac_multitenant_modules():
         }
     finally:
         sys.path.remove(str(MULTITENANT_DEPLOYMENT_DIR))
+
+
+@pytest.fixture(scope="module")
+def rac_modules():
+    """Load modules from pipelines/response-as-code/script."""
+    _ensure_optional_pipeline_dependencies()
+    shared_names = (
+        "config",
+        "constants",
+        "models",
+        "utils",
+        "cache",
+        "secops_client",
+        "manager",
+    )
+    saved_modules = {name: sys.modules.get(name) for name in shared_names}
+    sys.path.insert(0, str(RESPONSE_AS_CODE_SCRIPTS_DIR))
+    try:
+        config_mod = load_module_from_path(
+            "config", RESPONSE_AS_CODE_SCRIPTS_DIR / "config.py"
+        )
+        constants_mod = load_module_from_path(
+            "constants", RESPONSE_AS_CODE_SCRIPTS_DIR / "constants.py"
+        )
+        models_mod = load_module_from_path(
+            "models", RESPONSE_AS_CODE_SCRIPTS_DIR / "models.py"
+        )
+        utils_mod = load_module_from_path(
+            "utils", RESPONSE_AS_CODE_SCRIPTS_DIR / "utils.py"
+        )
+        cache_mod = load_module_from_path(
+            "cache", RESPONSE_AS_CODE_SCRIPTS_DIR / "cache.py"
+        )
+        secops_client_mod = load_module_from_path(
+            "secops_client", RESPONSE_AS_CODE_SCRIPTS_DIR / "secops_client.py"
+        )
+        manager_mod = load_module_from_path(
+            "manager", RESPONSE_AS_CODE_SCRIPTS_DIR / "manager.py"
+        )
+        return {
+            "config": config_mod,
+            "constants": constants_mod,
+            "models": models_mod,
+            "utils": utils_mod,
+            "cache": cache_mod,
+            "secops_client": secops_client_mod,
+            "manager": manager_mod,
+        }
+    finally:
+        sys.path.remove(str(RESPONSE_AS_CODE_SCRIPTS_DIR))
+        for name, mod in saved_modules.items():
+            if mod is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = mod
